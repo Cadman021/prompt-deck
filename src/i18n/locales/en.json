@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "PromptDeck",
+    "version": "v0.1.0 MVP",
+    "refreshModels": "Refresh Models",
+    "run": "Run (Ctrl+Enter)",
+    "running": "Running...",
+    "promptPlaceholder": "Enter your prompt for comparison (e.g., Write a factorial function in Rust)...",
+    "ollamaError": "Failed to connect to Ollama. Make sure Ollama service is running.",
+    "modelPlaceholder1": "Select Model 1",
+    "modelPlaceholder2": "Select Model 2",
+    "outputPlaceholder1": "Output from Model 1 will appear here...",
+    "outputPlaceholder2": "Output from Model 2 will appear here...",
+    "noModelsFound": "No models found. Please install a model via Ollama.",
+    "stop": "Stop",
+    "waitingOutput": "Waiting for output...",
+    "historyTitle": "Open History",
+    "toggleTheme": "Toggle Theme",
+    "switchLanguage": "Switch Language",
+    "copyReportTitle": "Copy benchmark report as Markdown",
+    "copyReport": "Copy Report",
+    "copyReportDone": "Copied!",
+    "copyJsonTitle": "Copy full history as JSON",
+    "copyJson": "Copy JSON",
+    "copyJsonDone": "JSON Copied!"
+  },
+  "metrics": {
+    "tps": "tok/s",
+    "ttft": "TTFT"
+  },
+  "history": {
+    "title": "Benchmark History",
+    "clearAllTitle": "Clear All History",
+    "clearAllConfirm": "Are you sure you want to clear all history?",
+    "loading": "Loading history...",
+    "empty": "No benchmarks recorded yet.",
+    "deleteRecordTitle": "Delete this record",
+    "vs": "vs"
+  },
+  "export": {
+    "noHistoryToExport": "No history records to export.",
+    "copyJsonError": "Failed to copy history JSON."
+  },
+  "advanced": {
+    "title": "Advanced Model Controls",
+    "systemPrompt": "System Prompt:",
+    "systemPromptPlaceholder": "e.g., You are a senior engineer. Keep answers short and technical...",
+    "temperature": "Temperature (creativity):",
+    "topP": "Top-P:",
+    "contextLength": "Context Length (max memory):"
+  },
+  "presets": {
+    "quickPrompts": "Quick Prompts:",
+    "codeLabel": "💻 Coding (TypeScript)",
+    "codePrompt": "Write an async TypeScript function that downloads a list of URLs in parallel with a max concurrency of 3 requests.",
+    "logicLabel": "🧠 Logical Reasoning",
+    "logicPrompt": "Solve the following puzzle step by step:\nIf 3 cats catch 3 mice in 3 minutes, how many mice do 60 cats catch in 60 minutes? Explain your reasoning.",
+    "summaryLabel": "📝 Summarization",
+    "summaryPrompt": "Explain the key differences between Microservices and Monolithic architecture in a comparison table, including pros and cons of each."
+  },
+  "service": {
+    "connectOllama": "Could not connect to Ollama. Is the Ollama service running?",
+    "errorModels": "Error retrieving models",
+    "error": "Server-side error"
+  }
+}

@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Force Tailwind v4 to use class-based dark mode instead of media query */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "PromptDeck",
+    "version": "v0.1.0 MVP",
+    "refreshModels": "به‌روزرسانی مدل‌ها",
+    "run": "اجرا (Ctrl+Enter)",
+    "running": "در حال پردازش...",
+    "promptPlaceholder": "پرومپت خود را برای مقایسه بنویسید (مثلاً: یک تابع فاکتوریل به زبان رُست بنویس)...",
+    "ollamaError": "ارتباط با سرویس Ollama برقرار نشد. از فعال بودن آن مطمئن شوید.",
+    "modelPlaceholder1": "انتخاب مدل اول",
+    "modelPlaceholder2": "انتخاب مدل دوم",
+    "outputPlaceholder1": "خروجی مدل اول در اینجا نمایش داده می‌شود...",
+    "outputPlaceholder2": "خروجی مدل دوم در اینجا نمایش داده می‌شود...",
+    "noModelsFound": "مدلی پیدا نشد. لطفاً از طریق Ollama یک مدل نصب کنید.",
+    "stop": "توقف",
+    "waitingOutput": "در انتظار خروجی...",
+    "historyTitle": "باز کردن تاریخچه",
+    "toggleTheme": "تغییر پوسته",
+    "switchLanguage": "تغییر زبان",
+    "copyReportTitle": "کپی گزارش بنچمارک به فرمت Markdown",
+    "copyReport": "کپی گزارش",
+    "copyReportDone": "کپی شد!",
+    "copyJsonTitle": "کپی JSON کامل تاریخچه در کلیپ‌بورد",
+    "copyJson": "کپی JSON",
+    "copyJsonDone": "JSON کپی شد!"
+  },
+  "metrics": {
+    "tps": "توکن/ثانیه",
+    "ttft": "زمان اولین توکن"
+  },
+  "history": {
+    "title": "تاریخچه بنچمارک",
+    "clearAllTitle": "پاک کردن کل تاریخچه",
+    "clearAllConfirm": "آیا از پاک کردن تمام تاریخچه مطمئن هستید؟",
+    "loading": "در حال دریافت تاریخچه...",
+    "empty": "هیچ بنچمارکی ثبت نشده است.",
+    "deleteRecordTitle": "حذف این رکورد",
+    "vs": "vs"
+  },
+  "export": {
+    "noHistoryToExport": "هیچ رکورد تاریخچه‌ای برای خروجی وجود ندارد.",
+    "copyJsonError": "خطا در کپی کردن JSON تاریخچه"
+  },
+  "advanced": {
+    "title": "تنظیمات پیشرفته مدل‌ها",
+    "systemPrompt": "پرامپت سیستمی:",
+    "systemPromptPlaceholder": "مثال: شما یک برنامه‌نویس ارشد هستید. پاسخ‌ها را خلاصه و فنی بدهید...",
+    "temperature": "Temperature (خلاقیت):",
+    "topP": "Top-P:",
+    "contextLength": "Context Length (حداکثر حافظه):"
+  },
+  "presets": {
+    "quickPrompts": "پرامپت‌های سریع:",
+    "codeLabel": "💻 کدنویسی (TypeScript)",
+    "codePrompt": "یک تابع async به زبان TypeScript بنویس که لیستی از URLها را دریافت کرده و آن‌ها را به‌صورت موازی با محدودیت حداکثر ۳ درخواست هم‌زمان دانلود کند.",
+    "logicLabel": "🧠 استدلال منطقی",
+    "logicPrompt": "معمای زیر را مرحله به مرحله حل کن:\nاگر ۳ گربه در ۳ دقیقه ۳ موش بگیرند، ۶۰ گربه در ۶۰ دقیقه چند موش می‌گیرند؟ دلیل آن را توضیح بده.",
+    "summaryLabel": "📝 خلاصه‌سازی",
+    "summaryPrompt": "تفاوت‌های اصلی بین معماری Microservices و Monolithic را در قالب یک جدول مقایسه‌ای همراه با مزایا و معایب هرکدام توضیح بده."
+  },
+  "service": {
+    "connectOllama": "ارتباط با Ollama برقرار نشد. آیا سرویس Ollama در حال اجراست؟",
+    "errorModels": "خطا در دریافت مدل‌ها",
+    "error": "خطا از سمت سرور"
+  }
+}
