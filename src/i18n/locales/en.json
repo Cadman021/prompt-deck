@@ -56,11 +56,18 @@
     "logicLabel": "🧠 Logical Reasoning",
     "logicPrompt": "Solve the following puzzle step by step:\nIf 3 cats catch 3 mice in 3 minutes, how many mice do 60 cats catch in 60 minutes? Explain your reasoning.",
     "summaryLabel": "📝 Summarization",
-    "summaryPrompt": "Explain the key differences between Microservices and Monolithic architecture in a comparison table, including pros and cons of each."
+    "summaryPrompt": "Explain the key differences between Microservices and Monolithic architecture in a comparison table, including pros and cons of each.",
+    "namePromptTitle": "Name this preset:",
+    "saveCurrentTitle": "Save current prompt as preset",
+    "saveCurrent": "Save current"
   },
   "service": {
     "connectOllama": "Could not connect to Ollama. Is the Ollama service running?",
     "errorModels": "Error retrieving models",
     "error": "Server-side error"
+  },
+  "Chart":{
+    "moreIsBetter":"More is better",
+    "lessIsBetter": "Less is better"
   }
 }
