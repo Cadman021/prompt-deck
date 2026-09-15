@@ -1,3 +1,6 @@
+
+![PromptDeck Git](./docs/demo.gif)
+
 # 🚀 PromptDeck
 
 **PromptDeck** is a local, open-source desktop studio for prompting and benchmarking LLMs side-by-side — fully offline, with no data ever leaving your machine.
