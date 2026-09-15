@@ -32,6 +32,7 @@ export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
     name: e.name,
     value: e.metrics.tps,
     fill: COLORS[i % COLORS.length],
+    estimated: e.metrics.tpsEstimated,
   }));
 
   const ttftData = entries.map((e, i) => ({
@@ -70,11 +71,21 @@ export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
               }}
               labelStyle={{ color: '#f1f5f9', fontWeight: 600, marginBottom: 4 }}
               itemStyle={{ color: '#f1f5f9' }}
-              formatter={(value) => [`${value} tok/s`, 'TPS']}
+              formatter={(value, _name, item) => {
+                const estimated = (item?.payload as { estimated?: boolean } | undefined)?.estimated;
+                return [
+                  `${estimated ? '~' : ''}${value} tok/s${estimated ? ` (${t('metrics.estimatedShort')})` : ''}`,
+                  'TPS',
+                ];
+              }}
             />
             <Bar dataKey="value" radius={[6, 6, 0, 0]}>
               {tpsData.map((entry, index) => (
-                <Cell key={`cell-tps-${index}`} fill={entry.fill} />
+                <Cell
+                  key={`cell-tps-${index}`}
+                  fill={entry.fill}
+                  fillOpacity={entry.estimated ? 0.55 : 1}
+                />
               ))}
             </Bar>
           </BarChart>

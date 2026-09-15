@@ -18,7 +18,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({ config, onCh
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleChange = (key: keyof AdvancedConfig, value: any) => {
+  const handleChange = <K extends keyof AdvancedConfig>(key: K, value: AdvancedConfig[K]) => {
     onChange({
       ...config,
       [key]: value,

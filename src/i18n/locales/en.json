@@ -1,9 +1,9 @@
 {
   "app": {
     "title": "PromptDeck",
-    "version": "v0.1.0 MVP",
     "refreshModels": "Refresh Models",
     "run": "Run (Ctrl+Enter)",
+    "runHint": "Ctrl+Enter to run · Esc to stop",
     "running": "Running...",
     "promptPlaceholder": "Enter your prompt for comparison (e.g., Write a factorial function in Rust)...",
     "ollamaError": "Failed to connect to Ollama. Make sure Ollama service is running.",
@@ -22,11 +22,19 @@
     "copyReportDone": "Copied!",
     "copyJsonTitle": "Copy full history as JSON",
     "copyJson": "Copy JSON",
-    "copyJsonDone": "JSON Copied!"
+    "copyJsonDone": "JSON Copied!",
+    "exportCsvTitle": "Export full history as CSV",
+    "exportCsv": "Export CSV",
+    "exportCsvWorking": "Exporting...",
+    "exportCsvDone": "Downloaded!",
+    "exportCsvEmpty": "No history!",
+    "retry": "Retry"
   },
   "metrics": {
     "tps": "tok/s",
-    "ttft": "TTFT"
+    "ttft": "TTFT",
+    "estimatedTooltip": "Estimated — server did not report token usage",
+    "estimatedShort": "estimated"
   },
   "history": {
     "title": "Benchmark History",
@@ -66,8 +74,33 @@
     "errorModels": "Error retrieving models",
     "error": "Server-side error"
   },
-  "Chart":{
-    "moreIsBetter":"More is better",
+  "Chart": {
+    "moreIsBetter": "More is better",
     "lessIsBetter": "Less is better"
+  },
+  "vote": {
+    "voteTitle": "Vote this output as winner",
+    "winner": "Winner"
+  },
+  "diff": {
+    "toggle": "Diff",
+    "toggleTitle": "Show side-by-side diff of two outputs",
+    "title": "Diff",
+    "leftSide": "Left side",
+    "rightSide": "Right side",
+    "similar": "similar",
+    "showUnchanged": "Show unchanged",
+    "close": "Close diff",
+    "allSameHidden": "Outputs are identical — unchanged lines are hidden.",
+    "hint": "Red lines exist only on the left, green lines only on the right."
+  },
+  "leaderboard": {
+    "title": "Model Leaderboard",
+    "openTitle": "Open model leaderboard",
+    "loading": "Loading stats...",
+    "empty": "No benchmarks recorded yet. Run a comparison first!",
+    "runs": "runs",
+    "wins": "wins",
+    "hint": "Sorted by win rate, then average speed. Averages ignore failed runs."
   }
 }

@@ -5,7 +5,7 @@
 Run the same prompt against multiple local models — via [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or a `llama.cpp` server — watch them stream in real time, and compare **Tokens/sec (TPS)**, **Time-To-First-Token (TTFT)**, and total duration, with results saved locally in SQLite for later review.
 
 ![PromptDeck Screenshot](./docs/screenshot-main.png)
-<!-- Main app view: multi-model comparison grid with streaming output -->
+<!-- RETAKE for v0.3.0: main grid with 2+ models finished, winner crown badge on one column, Diff/CSV/Leaderboard buttons visible in header. Keep the same filename docs/screenshot-main.png and overwrite it -->
 
 ---
 
@@ -13,12 +13,22 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
 - ⚡ **Compare 2 to 4 models simultaneously** — run the same prompt across multiple models at once and watch them stream side-by-side
 - 🔌 **Multi-provider support** — connect to [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or any `llama.cpp` server (OpenAI-compatible API)
-- 📊 **Live metrics & visual charts** — TPS, TTFT, and total duration tracked per run, with bar charts comparing every model at a glance
+- 📊 **Live metrics & visual charts** — TPS, TTFT, and total duration tracked per run, with bar charts comparing every model at a glance (`~` marks estimated TPS when the server doesn't report token usage)
 
   ![Benchmark Chart](./docs/screenshot-chart.png)
-  <!-- TPS/TTFT comparison bar charts -->
+  <!-- Optional retake: TPS/TTFT comparison bar charts (estimated bars render slightly faded) -->
 
-- 🕘 **Local history** — every benchmark run is saved to SQLite and browsable from a sidebar, with full theme support
+- 🏆 **Winner votes & leaderboard** — crown the best answer per run and track win rate plus average speed per model over time
+
+  ![Model Leaderboard](./docs/screenshot-leaderboard.png)
+  <!-- NEW IMAGE: open the leaderboard panel (trophy button in header) with 2-3 models visible showing runs / avg TPS / wins. Save exactly as docs/screenshot-leaderboard.png -->
+
+- 🔍 **Side-by-side diff view** — compare any two outputs line-by-line with similarity percentage and added/removed counts
+
+  ![Diff View](./docs/screenshot-diff.png)
+  <!-- NEW IMAGE: run a comparison, click Diff, capture the diff panel below the grid with red/green lines visible. Save exactly as docs/screenshot-diff.png -->
+
+- 🕘 **Local history** — every benchmark run is saved to SQLite and browsable from a sidebar, with winner crowns, `~` markers for estimated TPS, and full theme support
 
   ![History Sidebar](./docs/screenshot-history.png)
   <!-- History sidebar in light/dark mode -->
@@ -30,10 +40,11 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   <!-- Built-in + user-saved presets row -->
 
 - 📄 **Rich PDF export** — export any benchmark run as a fully-formatted PDF report, preserving Markdown rendering (tables, code blocks, bold text)
-- ⚙️ **Advanced controls** — tweak system prompt, temperature, top-p, and context length
+- ⌨️ **Keyboard shortcuts** — `Ctrl+Enter` (or `Cmd+Enter`) to run, `Esc` to stop generation or close panels
+- ⚙️ **Advanced controls** — tweak system prompt, temperature, top-p, and context length (persisted across restarts)
 - 🌗 **Dark / light theme** — applied consistently across the entire app, including history and charts
 - 🌍 **i18n ready** — English and Persian (Farsi) included, with full RTL support
-- 📋 **One-click export** — copy a Markdown report or full JSON history to clipboard
+- 📋 **One-click export** — copy a Markdown report or full JSON history to clipboard, or download history as CSV
 - 🔒 **100% local & private** — built with [Tauri](https://tauri.app), no telemetry, no cloud calls
 
 ---
@@ -45,7 +56,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 | Shell | [Tauri 2](https://tauri.app) (Rust) |
 | Frontend | React + TypeScript + Vite |
 | Styling | Tailwind CSS v4 |
-| State | Zustand |
+| State | Zustand (persisted) |
 | Database | SQLite (via `tauri-plugin-sql`) |
 | Charts | Recharts |
 | PDF Export | jsPDF + html2canvas |
@@ -96,16 +107,17 @@ npm run tauri build
 
 1. Launch the app and pick your provider (Ollama, LM Studio, or llama.cpp) from the header — PromptDeck auto-detects available models
 2. Add up to 4 model columns, write a prompt (or pick/save a preset)
-3. Hit **Run** — all selected models stream their responses live
-4. Compare TPS / TTFT instantly via the chart, revisit past runs from the history sidebar, or export the whole report as PDF or Markdown
+3. Hit **Run** (or `Ctrl+Enter`) — all selected models stream their responses live
+4. Compare TPS / TTFT instantly via the chart, crown a winner, open the **Diff** view for any two outputs, or check the **Leaderboard** for long-term stats
+5. Revisit past runs from the history sidebar, or export the whole report as PDF, Markdown, JSON, or CSV
 
 ---
 
 ## 🗺️ Roadmap
 
 - [ ] Cost/pricing estimation for cloud-hosted OpenAI-compatible endpoints
-- [ ] Side-by-side diff view between two model outputs
-- [ ] Export benchmark history as CSV
+- [x] Side-by-side diff view between two model outputs
+- [x] Export benchmark history as CSV
 - [ ] Custom color themes
 
 Contributions and ideas are very welcome — see [Contributing](#-contributing) below.

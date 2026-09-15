@@ -22,12 +22,17 @@ export interface PromptOptions {
   num_ctx?: number;
 }
 
+export type TokenSource = 'server' | 'heuristic';
+
 export interface BenchmarkMetrics {
   ttftMs: number;           // Time To First Token (ms)
-  tps: number;              // Tokens Per Second
+  tps: number;              // Tokens Per Second (generation phase only)
   totalDurationMs: number;
   totalTokens: number;
   evalDurationMs?: number;
+  /** true when TPS is estimated (server did not report usage) — render with `~`. */
+  tpsEstimated: boolean;
+  tokenSource: TokenSource;
 }
 
 export interface StreamCallbacks {

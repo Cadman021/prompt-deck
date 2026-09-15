@@ -1,6 +1,6 @@
 // src/components/ModelColumn.tsx
 import React from 'react';
-import { Cpu, Zap, Clock, X } from 'lucide-react';
+import { Cpu, Zap, Clock, X, RotateCcw, ThumbsUp, Crown } from 'lucide-react';
 import { OllamaModel, BenchmarkMetrics } from '../types/ollama';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useTranslation } from 'react-i18next';
@@ -20,9 +20,18 @@ interface ModelColumnProps {
   selectedModel: string;
   output: string;
   metrics: BenchmarkMetrics | null;
+  error: string | null;
+  canRemove: boolean;
+  isWinner: boolean;
   onModelChange: (name: string) => void;
   onRemove?: () => void;
-  canRemove: boolean;
+  onRetry?: () => void;
+  onVote?: () => void;
+}
+
+function formatTps(metrics: BenchmarkMetrics): string {
+  const value = metrics.tpsEstimated ? `~${metrics.tps}` : `${metrics.tps}`;
+  return value;
 }
 
 export const ModelColumn: React.FC<ModelColumnProps> = ({
@@ -31,18 +40,32 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   selectedModel,
   output,
   metrics,
+  error,
   onModelChange,
   onRemove,
   canRemove,
+  isWinner,
+  onRetry,
+  onVote,
 }) => {
   const { t } = useTranslation();
   const color = COLUMN_COLORS[index % COLUMN_COLORS.length];
 
   return (
-    <div className="flex flex-col bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm min-w-0">
+    <div
+      className={`flex flex-col bg-white dark:bg-slate-900/60 border rounded-xl overflow-hidden shadow-sm min-w-0 transition-colors ${
+        isWinner
+          ? 'border-amber-400 dark:border-amber-500 ring-1 ring-amber-400/40'
+          : 'border-slate-200 dark:border-slate-800'
+      }`}
+    >
       <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <Cpu className={`w-4 h-4 ${color} shrink-0`} />
+          {isWinner ? (
+            <Crown className="w-4 h-4 text-amber-500 shrink-0" />
+          ) : (
+            <Cpu className={`w-4 h-4 ${color} shrink-0`} />
+          )}
           <select
             value={selectedModel}
             onChange={(e) => onModelChange(e.target.value)}
@@ -55,22 +78,49 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
             ))}
           </select>
         </div>
-        {canRemove && onRemove && (
-          <button
-            onClick={onRemove}
-            title="Remove this model"
-            className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {output && !error && onVote && (
+            <button
+              onClick={onVote}
+              title={t('vote.voteTitle')}
+              className={`p-1 rounded transition ${
+                isWinner
+                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
+                  : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+              }`}
+            >
+              <ThumbsUp className={`w-4 h-4 ${isWinner ? 'fill-current' : ''}`} />
+            </button>
+          )}
+          {canRemove && onRemove && (
+            <button
+              onClick={onRemove}
+              title="Remove this model"
+              className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {isWinner && (
+        <div className="px-3 py-1 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/50 text-[11px] font-semibold text-amber-600 dark:text-amber-300 flex items-center gap-1">
+          <Crown className="w-3 h-3" />
+          <span>{t('vote.winner')}</span>
+        </div>
+      )}
 
       {metrics && (
         <div className="grid grid-cols-3 gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono">
-          <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+          <div
+            className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
+            title={metrics.tpsEstimated ? t('metrics.estimatedTooltip') : undefined}
+          >
             <Zap className="w-3 h-3" />
-            <span>{metrics.tps} {t('metrics.tps')}</span>
+            <span>
+              {formatTps(metrics)} {t('metrics.tps')}
+            </span>
           </div>
           <div className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
             <Clock className="w-3 h-3" />
@@ -83,7 +133,22 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
       )}
 
       <div className="flex-1 overflow-y-auto p-4">
-        {output ? (
+        {error ? (
+          <div className="rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-xs">
+            <p className="text-rose-600 dark:text-rose-400 font-medium mb-2" dir="auto">
+              {error}
+            </p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t('app.retry')}</span>
+              </button>
+            )}
+          </div>
+        ) : output ? (
           <MarkdownRenderer content={output} />
         ) : (
           <div className="text-slate-500 text-sm italic">{t('app.waitingOutput')}</div>

@@ -1,18 +1,21 @@
 // src/utils/exportUtils.ts
 import { DbService, BenchmarkResult } from '../services/dbService';
-import { useTranslation } from 'react-i18next';
 
 interface CurrentBenchmarkData {
   prompt: string;
   results: BenchmarkResult[];
 }
 
+function formatTpsCell(r: BenchmarkResult): string {
+  if (!r.tps) return 'N/A';
+  const value = r.tps.toFixed(2);
+  return r.tpsEstimated ? `~${value} tok/s (estimated)` : `**${value}** tok/s`;
+}
+
 export const generateMarkdownReport = (data: CurrentBenchmarkData): string => {
   const tableHeader = `| Metric | ${data.results.map((r) => r.model).join(' | ')} |`;
   const tableDivider = `| :--- | ${data.results.map(() => ':---').join(' | ')} |`;
-  const tpsRow = `| **Tokens / Sec (TPS)** | ${data.results
-    .map((r) => `**${r.tps ? r.tps.toFixed(2) : 'N/A'}** tok/s`)
-    .join(' | ')} |`;
+  const tpsRow = `| **Tokens / Sec (TPS)** | ${data.results.map(formatTpsCell).join(' | ')} |`;
   const ttftRow = `| **Time To First Token (TTFT)** | ${data.results
     .map((r) => (r.ttft ? `${r.ttft} ms` : 'N/A'))
     .join(' | ')} |`;
@@ -26,6 +29,11 @@ ${r.output || '_No output_'}
     )
     .join('\n---\n');
 
+  const hasEstimated = data.results.some((r) => r.tpsEstimated);
+  const footnote = hasEstimated
+    ? '\n> ~ = estimated TPS (server did not report token usage).\n'
+    : '';
+
   return `# 📊 PromptDeck Benchmark Report
 
 **Prompt:**
@@ -36,7 +44,7 @@ ${tableHeader}
 ${tableDivider}
 ${tpsRow}
 ${ttftRow}
-
+${footnote}
 ---
 
 ## 📝 Model Outputs
@@ -48,12 +56,11 @@ ${outputSections}
 };
 
 export const copyHistoryAsJson = async (): Promise<boolean> => {
-  const { t } = useTranslation();
   try {
     const history = await DbService.getHistory();
 
     if (!history || history.length === 0) {
-      alert(t("export.noHistoryToExport"));
+      alert('No history records to export.');
       return false;
     }
 
@@ -62,7 +69,58 @@ export const copyHistoryAsJson = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Failed to copy history JSON:', error);
-    alert(t("export.copyJsonError"));
+    alert('Failed to copy history JSON.');
+    return false;
+  }
+};
+
+function csvEscape(value: string | number | null | undefined): string {
+  const s = value == null ? '' : String(value);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/**
+ * Exports the full benchmark history as a CSV file (one row per model result).
+ * Downloads via a Blob URL so it works in both Tauri and plain web builds.
+ * Returns false when there is nothing to export.
+ */
+export const exportHistoryAsCsv = async (): Promise<boolean> => {
+  try {
+    const history = await DbService.getHistory();
+    if (!history || history.length === 0) return false;
+
+    const header = ['run_id', 'created_at', 'prompt', 'model', 'tps', 'tps_estimated', 'ttft_ms', 'winner_model', 'output'];
+    const lines = [header.join(',')];
+    for (const record of history) {
+      for (const r of record.results) {
+        lines.push(
+          [
+            csvEscape(record.id),
+            csvEscape(record.created_at),
+            csvEscape(record.prompt),
+            csvEscape(r.model),
+            csvEscape(r.tps),
+            csvEscape(r.tpsEstimated ? 1 : 0),
+            csvEscape(r.ttft),
+            csvEscape(record.winnerModel),
+            csvEscape(r.output),
+          ].join(',')
+        );
+      }
+    }
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `promptdeck-history-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (error) {
+    console.error('Failed to export history CSV:', error);
     return false;
   }
 };

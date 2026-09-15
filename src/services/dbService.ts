@@ -6,12 +6,15 @@ export interface BenchmarkResult {
   output: string;
   tps: number;
   ttft: number;
+  tpsEstimated?: boolean;
+  tokenSource?: string;
 }
 
 export interface HistoryRecord {
   id?: number;
   prompt: string;
   results: BenchmarkResult[];
+  winnerModel?: string | null;
   created_at?: string;
 }
 
@@ -20,6 +23,30 @@ export interface UserPreset {
   label: string;
   prompt: string;
   created_at?: string;
+}
+
+export interface ModelStat {
+  model: string;
+  runs: number;
+  avgTps: number;
+  wins: number;
+  winRate: number; // 0..1
+}
+
+interface RawResultRow {
+  model: string;
+  tps: number;
+  ttft: number;
+  output: string;
+  tps_estimated?: number | null;
+  token_source?: string | null;
+}
+
+interface RawRunRow {
+  id: number;
+  prompt: string;
+  created_at: string;
+  winner_model?: string | null;
 }
 
 export class DbService {
@@ -37,6 +64,7 @@ export class DbService {
       CREATE TABLE IF NOT EXISTS benchmark_runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         prompt TEXT NOT NULL,
+        winner_model TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -50,9 +78,29 @@ export class DbService {
         ttft INTEGER,
         output TEXT,
         position INTEGER,
+        tps_estimated INTEGER DEFAULT 0,
+        token_source TEXT DEFAULT 'server',
         FOREIGN KEY (run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE
       );
     `);
+
+    // --- Non-destructive migrations for databases created by older versions ---
+    // Each ALTER runs in its own try/catch: failure means the column already exists.
+    try {
+      await this.db.execute(`ALTER TABLE benchmark_runs ADD COLUMN winner_model TEXT`);
+    } catch (_) {
+      // column already exists
+    }
+    try {
+      await this.db.execute(`ALTER TABLE benchmark_results ADD COLUMN tps_estimated INTEGER DEFAULT 0`);
+    } catch (_) {
+      // column already exists
+    }
+    try {
+      await this.db.execute(`ALTER TABLE benchmark_results ADD COLUMN token_source TEXT DEFAULT 'server'`);
+    } catch (_) {
+      // column already exists
+    }
 
     await this.db.execute(`
       CREATE TABLE IF NOT EXISTS user_presets (
@@ -95,21 +143,36 @@ export class DbService {
 
   /**
    * Save one benchmark run with an arbitrary number of model results (2+).
+   * Partial runs (some slots failed) are saved as-is; failed slots carry
+   * tps=0 and the error text as output. winnerModel is optional.
    */
-  static async saveHistory(prompt: string, results: BenchmarkResult[]): Promise<void> {
+  static async saveHistory(
+    prompt: string,
+    results: BenchmarkResult[],
+    winnerModel?: string | null
+  ): Promise<void> {
     try {
       const db = await this.init();
       const runInsert = await db.execute(
-        `INSERT INTO benchmark_runs (prompt) VALUES (?)`,
-        [prompt]
+        `INSERT INTO benchmark_runs (prompt, winner_model) VALUES (?, ?)`,
+        [prompt, winnerModel ?? null]
       );
       const runId = runInsert.lastInsertId;
 
       for (let i = 0; i < results.length; i++) {
         const r = results[i];
         await db.execute(
-          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position) VALUES (?, ?, ?, ?, ?, ?)`,
-          [runId, r.model, r.tps, r.ttft, r.output || '', i]
+          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            runId,
+            r.model,
+            r.tps,
+            r.ttft,
+            r.output || '',
+            i,
+            r.tpsEstimated ? 1 : 0,
+            r.tokenSource || 'server',
+          ]
         );
       }
     } catch (error) {
@@ -120,27 +183,80 @@ export class DbService {
   static async getHistory(): Promise<HistoryRecord[]> {
     try {
       const db = await this.init();
-      const runs = await db.select<
-        { id: number; prompt: string; created_at: string }[]
-      >('SELECT * FROM benchmark_runs ORDER BY id DESC LIMIT 50');
+      const runs = await db.select<RawRunRow[]>(
+        'SELECT id, prompt, created_at, winner_model FROM benchmark_runs ORDER BY id DESC LIMIT 50'
+      );
 
       const records: HistoryRecord[] = [];
       for (const run of runs) {
-        const results = await db.select<BenchmarkResult[]>(
-          'SELECT model, tps, ttft, output FROM benchmark_results WHERE run_id = ? ORDER BY position ASC',
+        const rows = await db.select<RawResultRow[]>(
+          'SELECT model, tps, ttft, output, tps_estimated, token_source FROM benchmark_results WHERE run_id = ? ORDER BY position ASC',
           [run.id]
         );
         records.push({
           id: run.id,
           prompt: run.prompt,
           created_at: run.created_at,
-          results,
+          winnerModel: run.winner_model ?? null,
+          results: rows.map((r) => ({
+            model: r.model,
+            tps: r.tps,
+            ttft: r.ttft,
+            output: r.output,
+            tpsEstimated: Boolean(r.tps_estimated),
+            tokenSource: r.token_source || 'server',
+          })),
         });
       }
       return records;
     } catch (error) {
       console.error('Failed to fetch history:', error);
       return [];
+    }
+  }
+
+  /**
+   * Aggregated per-model stats for the leaderboard:
+   * run count, average TPS (ignoring failed 0-TPS rows), win count and win rate.
+   */
+  static async getModelStats(): Promise<ModelStat[]> {
+    try {
+      const db = await this.init();
+      const rows = await db.select<{ model: string; runs: number; avgTps: number | null }[]>(
+        `SELECT model, COUNT(*) as runs, AVG(NULLIF(tps, 0)) as avgTps
+         FROM benchmark_results GROUP BY model ORDER BY runs DESC`
+      );
+      const winRows = await db.select<{ winner_model: string; wins: number }[]>(
+        `SELECT winner_model, COUNT(*) as wins FROM benchmark_runs
+         WHERE winner_model IS NOT NULL AND winner_model != ''
+         GROUP BY winner_model`
+      );
+      const winMap = new Map(winRows.map((w) => [w.winner_model, w.wins]));
+      return rows.map((r) => {
+        const wins = winMap.get(r.model) ?? 0;
+        return {
+          model: r.model,
+          runs: r.runs,
+          avgTps: Number((r.avgTps ?? 0).toFixed(2)),
+          wins,
+          winRate: r.runs > 0 ? wins / r.runs : 0,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to fetch model stats:', error);
+      return [];
+    }
+  }
+
+  static async setWinner(runId: number, winnerModel: string | null): Promise<void> {
+    try {
+      const db = await this.init();
+      await db.execute('UPDATE benchmark_runs SET winner_model = ? WHERE id = ?', [
+        winnerModel,
+        runId,
+      ]);
+    } catch (error) {
+      console.error('Failed to set winner:', error);
     }
   }
 

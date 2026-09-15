@@ -1,9 +1,9 @@
 {
   "app": {
     "title": "PromptDeck",
-    "version": "v0.1.0 MVP",
     "refreshModels": "به‌روزرسانی مدل‌ها",
     "run": "اجرا (Ctrl+Enter)",
+    "runHint": "اجرا با Ctrl+Enter · توقف با Esc",
     "running": "در حال پردازش...",
     "promptPlaceholder": "پرومپت خود را برای مقایسه بنویسید (مثلاً: یک تابع فاکتوریل به زبان رُست بنویس)...",
     "ollamaError": "ارتباط با سرویس Ollama برقرار نشد. از فعال بودن آن مطمئن شوید.",
@@ -22,11 +22,19 @@
     "copyReportDone": "کپی شد!",
     "copyJsonTitle": "کپی JSON کامل تاریخچه در کلیپ‌بورد",
     "copyJson": "کپی JSON",
-    "copyJsonDone": "JSON کپی شد!"
+    "copyJsonDone": "JSON کپی شد!",
+    "exportCsvTitle": "خروجی CSV از کل تاریخچه",
+    "exportCsv": "خروجی CSV",
+    "exportCsvWorking": "در حال ساخت...",
+    "exportCsvDone": "دانلود شد!",
+    "exportCsvEmpty": "تاریخچه‌ای نیست!",
+    "retry": "تلاش مجدد"
   },
   "metrics": {
     "tps": "توکن/ثانیه",
-    "ttft": "زمان اولین توکن"
+    "ttft": "زمان اولین توکن",
+    "estimatedTooltip": "تخمینی — سرور تعداد توکن را گزارش نکرد",
+    "estimatedShort": "تخمینی"
   },
   "history": {
     "title": "تاریخچه بنچمارک",
@@ -69,5 +77,30 @@
   "Chart": {
     "moreIsBetter": "بیشتر بهتر است",
     "lessIsBetter": "کمتر بهتر است"
+  },
+  "vote": {
+    "voteTitle": "این خروجی را برنده اعلام کن",
+    "winner": "برنده"
+  },
+  "diff": {
+    "toggle": "مقایسه",
+    "toggleTitle": "نمایش تفاوت دو خروجی کنار هم",
+    "title": "مقایسه تفاوت‌ها",
+    "leftSide": "سمت چپ",
+    "rightSide": "سمت راست",
+    "similar": "مشابه",
+    "showUnchanged": "نمایش خطوط مشترک",
+    "close": "بستن مقایسه",
+    "allSameHidden": "خروجی‌ها یکسان‌اند — خطوط مشترک مخفی شده‌اند.",
+    "hint": "خطوط قرمز فقط در چپ و خطوط سبز فقط در راست هستند."
+  },
+  "leaderboard": {
+    "title": "جدول برترین مدل‌ها",
+    "openTitle": "باز کردن جدول برترین مدل‌ها",
+    "loading": "در حال محاسبه آمار...",
+    "empty": "هنوز بنچمارکی ثبت نشده. اول یک مقایسه اجرا کن!",
+    "runs": "اجرا",
+    "wins": "برد",
+    "hint": "مرتب‌سازی بر اساس نرخ برد، بعد میانگین سرعت. اجراهای ناموفق در میانگین حساب نمی‌شوند."
   }
 }

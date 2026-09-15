@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { DbService, HistoryRecord } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
+import { Crown } from 'lucide-react';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -118,7 +119,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-1 border-t border-slate-200 dark:border-slate-700/40">
                 {record.results.map((r, i) => (
                   <span key={i} className="flex items-center gap-1">
-                    <span className="truncate max-w-[90px]" title={r.model}>
+                    <span
+                      className={`truncate max-w-[90px] flex items-center gap-0.5 ${record.winnerModel === r.model ? 'text-amber-600 dark:text-amber-300 font-semibold' : ''}`}
+                      title={r.model}
+                    >
+                      {record.winnerModel === r.model && <Crown className="w-3 h-3 shrink-0" />}
                       {r.model.split(':')[0]}
                     </span>
                     {i < record.results.length - 1 && (
@@ -132,7 +137,9 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
               <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
                 {record.results.map((r, i) => (
-                  <span key={i}>{r.tps ? r.tps.toFixed(1) : '0'} tok/s</span>
+                  <span key={i}>
+                    {r.tpsEstimated ? '~' : ''}{r.tps ? r.tps.toFixed(1) : '0'} tok/s
+                  </span>
                 ))}
               </div>
             </div>

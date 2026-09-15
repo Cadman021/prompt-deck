@@ -57,7 +57,6 @@ async function generateOpenAICompatibleStream(
   const startTime = performance.now();
   let firstTokenTime: number | null = null;
   let fullText = '';
-  let chunkCount = 0;
   let usageTokens: number | null = null;
 
   try {
@@ -107,15 +106,23 @@ async function generateOpenAICompatibleStream(
           const totalDurationMs = Math.round(endTime - startTime);
           const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : 0;
 
-          const totalTokens = usageTokens ?? chunkCount;
-          const tps =
-            totalDurationMs > 0 ? Number((totalTokens / (totalDurationMs / 1000)).toFixed(2)) : 0;
+          // Unit definition (same meaning as Ollama's eval_count/eval_duration):
+          // TPS measures the generation phase only, excluding time-to-first-token.
+          // Token source is exact when the server reports usage, otherwise a
+          // chars/4 heuristic flagged as estimated so the UI can render `~`.
+          const tokenSource = usageTokens != null ? 'server' : 'heuristic';
+          const totalTokens = usageTokens ?? Math.max(1, Math.ceil(fullText.length / 4));
+          const evalMs = Math.max(1, totalDurationMs - ttftMs);
+          const tps = Number((totalTokens / (evalMs / 1000)).toFixed(2));
 
           const metrics: BenchmarkMetrics = {
             ttftMs,
             tps,
             totalDurationMs,
             totalTokens,
+            evalDurationMs: evalMs,
+            tpsEstimated: tokenSource === 'heuristic',
+            tokenSource,
           };
 
           callbacks.onComplete(fullText, metrics);
@@ -137,7 +144,6 @@ async function generateOpenAICompatibleStream(
               callbacks.onFirstToken?.(ttft);
             }
             fullText += delta;
-            chunkCount++;
             callbacks.onChunk(delta, fullText);
           }
         } catch {

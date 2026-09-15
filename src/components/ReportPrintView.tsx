@@ -42,7 +42,9 @@ export const ReportPrintView = React.forwardRef<HTMLDivElement, ReportPrintViewP
             {results.map((r, i) => (
               <tr key={i}>
                 <td className="p-2 border border-slate-300 font-mono">{r.model}</td>
-                <td className="p-2 border border-slate-300">{r.tps ? r.tps.toFixed(2) : 'N/A'}</td>
+                <td className="p-2 border border-slate-300">
+                  {r.tps ? `${r.tpsEstimated ? '~' : ''}${r.tps.toFixed(2)}` : 'N/A'}
+                </td>
                 <td className="p-2 border border-slate-300">{r.ttft ? r.ttft : 'N/A'}</td>
               </tr>
             ))}

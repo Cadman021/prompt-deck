@@ -73,7 +73,17 @@ export class OllamaService {
         for (const line of lines) {
           if (!line.trim()) continue;
 
-          const json = JSON.parse(line);
+          let json: {
+            response?: string;
+            done?: boolean;
+            eval_count?: number;
+            eval_duration?: number;
+          };
+          try {
+            json = JSON.parse(line);
+          } catch {
+            continue; // ignore malformed NDJSON lines
+          }
 
           //Time To First Token (TTFT)
           if (!firstTokenTime && json.response) {
@@ -107,6 +117,8 @@ export class OllamaService {
               totalDurationMs,
               totalTokens: evalCount,
               evalDurationMs: Math.round(evalDurationNs / 1e6),
+              tpsEstimated: false,
+              tokenSource: 'server',
             };
 
             callbacks.onComplete(fullText, metrics);
