@@ -87,7 +87,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             {t('history.loading')}
           </div>
         ) : records.length === 0 ? (
-          <div className="text-center text-slate-400 dark:text-slate-500 py-8 text-sm">
+          <div className="text-center text-slate-400 dark:text-slate-500 py-8 px-4 text-sm leading-relaxed">
             {t('history.empty')}
           </div>
         ) : (

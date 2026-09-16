@@ -12,6 +12,8 @@
     "outputPlaceholder1": "Output from Model 1 will appear here...",
     "outputPlaceholder2": "Output from Model 2 will appear here...",
     "noModelsFound": "No models found. Please install a model via Ollama.",
+    "noModelsHintOllama": "Try: ollama pull llama3",
+    "noModelsHintLMStudio": "Start Server in LM Studio → Developer tab",
     "stop": "Stop",
     "waitingOutput": "Waiting for output...",
     "historyTitle": "Open History",
@@ -43,7 +45,7 @@
     "clearAllTitle": "Clear All History",
     "clearAllConfirm": "Are you sure you want to clear all history?",
     "loading": "Loading history...",
-    "empty": "No benchmarks recorded yet.",
+    "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "deleteRecordTitle": "Delete this record",
     "vs": "vs"
   },
@@ -100,7 +102,7 @@
     "title": "Model Leaderboard",
     "openTitle": "Open model leaderboard",
     "loading": "Loading stats...",
-    "empty": "No benchmarks recorded yet. Run a comparison first!",
+    "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "runs": "runs",
     "wins": "wins",
     "hint": "Sorted by win rate, then average speed. Averages ignore failed runs."
