@@ -1,0 +1,68 @@
+name: 🐛 Bug report
+description: Something broken? Tell us what happened.
+title: "[bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The more detail you give, the faster we can fix it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. What did you expect, and what did you see instead?
+      placeholder: "Example: clicking Retry on a failed column does nothing — the spinner never starts."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps so we can trigger the same bug locally.
+      placeholder: |
+        1. Start Ollama with model X pulled
+        2. Add 2 model columns, enter prompt "..."
+        3. Click Run, then ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options:
+        - Ollama
+        - LM Studio
+        - llama.cpp server
+        - Not provider-related
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: PromptDeck version
+      description: Find it in the header badge (e.g. v0.3.0).
+      placeholder: "v0.3.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      description: Your operating system and version.
+      placeholder: "Windows 11 / macOS 15 / Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Paste console errors (DevTools or terminal) or drag a screenshot here.
+      render: shell
+      placeholder: "Paste relevant logs here, if any."

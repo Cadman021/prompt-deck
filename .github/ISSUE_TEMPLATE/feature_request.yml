@@ -1,0 +1,46 @@
+name: 💡 Feature request
+description: Have an idea? Describe the use case first.
+title: "[feat]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Big features go further when they start from a real use case. Tell us the *problem* before the *solution*.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who hits this problem, and when? What do you do today as a workaround?
+      placeholder: "Example: I run the same 5 prompts every release and have to retype them each time..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should it work from the user's point of view?
+      placeholder: "Example: a 'Test Suite' button that runs a saved list of prompts across all columns..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, and why they fit worse.
+      placeholder: "I considered exporting/importing presets, but that doesn't cover bulk runs."
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: How big does this feel?
+      options:
+        - Small (a day or less)
+        - Medium (a few days)
+        - Large (needs design discussion first)
+        - Not sure
+    validations:
+      required: false
