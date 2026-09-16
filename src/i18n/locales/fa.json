@@ -20,6 +20,8 @@
     "copyReportTitle": "کپی گزارش بنچمارک به فرمت Markdown",
     "copyReport": "کپی گزارش",
     "copyReportDone": "کپی شد!",
+    "copyOutput": "کپی خروجی",
+    "copyOutputDone": "کپی شد!",
     "copyJsonTitle": "کپی JSON کامل تاریخچه در کلیپ‌بورد",
     "copyJson": "کپی JSON",
     "copyJsonDone": "JSON کپی شد!",
