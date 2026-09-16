@@ -1,0 +1,110 @@
+{
+  "app": {
+    "title": "PromptDeck",
+    "refreshModels": "Modelle aktualisieren",
+    "run": "Ausführen (Strg+Enter)",
+    "runHint": "Strg+Enter zum Ausführen · Esc zum Stoppen",
+    "running": "Wird ausgeführt...",
+    "promptPlaceholder": "Geben Sie Ihren Prompt zum Vergleich ein (z. B. Schreibe eine Fakultätsfunktion in Rust)...",
+    "ollamaError": "Verbindung zu Ollama fehlgeschlagen. Stellen Sie sicher, dass der Ollama-Dienst läuft.",
+    "modelPlaceholder1": "Modell 1 auswählen",
+    "modelPlaceholder2": "Modell 2 auswählen",
+    "outputPlaceholder1": "Die Ausgabe von Modell 1 erscheint hier...",
+    "outputPlaceholder2": "Die Ausgabe von Modell 2 erscheint hier...",
+    "noModelsFound": "Keine Modelle gefunden. Bitte installieren Sie ein Modell über Ollama.",
+    "noModelsHintOllama": "Versuchen Sie: ollama pull llama3",
+    "noModelsHintLMStudio": "Starten Sie den Server in LM Studio → Entwickler-Tab",
+    "stop": "Stoppen",
+    "waitingOutput": "Warten auf Ausgabe...",
+    "historyTitle": "Verlauf öffnen",
+    "toggleTheme": "Design umschalten",
+    "switchLanguage": "Sprache wechseln",
+    "copyReportTitle": "Benchmark-Bericht als Markdown kopieren",
+    "copyReport": "Bericht kopieren",
+    "copyReportDone": "Kopiert!",
+    "copyOutput": "Ausgabe kopieren",
+    "copyOutputDone": "Kopiert!",
+    "copyJsonTitle": "Vollständigen Verlauf als JSON kopieren",
+    "copyJson": "JSON kopieren",
+    "copyJsonDone": "JSON kopiert!",
+    "exportCsvTitle": "Vollständigen Verlauf als CSV exportieren",
+    "exportCsv": "CSV exportieren",
+    "exportCsvWorking": "Wird exportiert...",
+    "exportCsvDone": "Heruntergeladen!",
+    "exportCsvEmpty": "Kein Verlauf!",
+    "retry": "Wiederholen"
+  },
+  "metrics": {
+    "tps": "Tok/s",
+    "ttft": "TTFT",
+    "estimatedTooltip": "Geschätzt — Server hat keine Token-Nutzung gemeldet",
+    "estimatedShort": "geschätzt"
+  },
+  "history": {
+    "title": "Benchmark-Verlauf",
+    "clearAllTitle": "Gesamten Verlauf löschen",
+    "clearAllConfirm": "Möchten Sie den gesamten Verlauf wirklich löschen?",
+    "loading": "Verlauf wird geladen...",
+    "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
+    "deleteRecordTitle": "Diesen Eintrag löschen",
+    "vs": "vs"
+  },
+  "export": {
+    "noHistoryToExport": "Keine Verlaufsdaten zum Exportieren vorhanden.",
+    "copyJsonError": "Fehler beim Kopieren des Verlaufs als JSON."
+  },
+  "advanced": {
+    "title": "Erweiterte Modellsteuerung",
+    "systemPrompt": "System-Prompt:",
+    "systemPromptPlaceholder": "z. B. Du bist ein erfahrener Ingenieur. Halte Antworten kurz und technisch...",
+    "temperature": "Temperatur (Kreativität):",
+    "topP": "Top-P:",
+    "contextLength": "Kontextlänge (max. Speicher):"
+  },
+  "presets": {
+    "quickPrompts": "Schnell-Prompts:",
+    "codeLabel": "💻 Programmierung (TypeScript)",
+    "codePrompt": "Schreibe eine asynchrone TypeScript-Funktion, die eine Liste von URLs parallel mit maximal 3 gleichzeitigen Anfragen herunterlädt.",
+    "logicLabel": "🧠 Logisches Denken",
+    "logicPrompt": "Löse das folgende Rätsel Schritt für Schritt:\nWenn 3 Katzen in 3 Minuten 3 Mäuse fangen, wie viele Mäuse fangen dann 60 Katzen in 60 Minuten? Erkläre deine Schlussfolgerung.",
+    "summaryLabel": "📝 Zusammenfassung",
+    "summaryPrompt": "Erkläre die wichtigsten Unterschiede zwischen Microservices und monolithischer Architektur in einer Vergleichstabelle, einschließlich Vor- und Nachteilen beider Ansätze.",
+    "namePromptTitle": "Namen für diese Vorlage eingeben:",
+    "saveCurrentTitle": "Aktuellen Prompt als Vorlage speichern",
+    "saveCurrent": "Aktuellen speichern"
+  },
+  "service": {
+    "connectOllama": "Verbindung zu Ollama konnte nicht hergestellt werden. Läuft der Ollama-Dienst?",
+    "errorModels": "Fehler beim Abrufen der Modelle",
+    "error": "Serverseitiger Fehler"
+  },
+  "Chart": {
+    "moreIsBetter": "Mehr ist besser",
+    "lessIsBetter": "Weniger ist besser"
+  },
+  "vote": {
+    "voteTitle": "Diese Ausgabe als Gewinner wählen",
+    "winner": "Gewinner"
+  },
+  "diff": {
+    "toggle": "Diff",
+    "toggleTitle": "Nebeneinander-Vergleich zweier Ausgaben anzeigen",
+    "title": "Diff",
+    "leftSide": "Linke Seite",
+    "rightSide": "Rechte Seite",
+    "similar": "ähnlich",
+    "showUnchanged": "Unveränderte anzeigen",
+    "close": "Diff schließen",
+    "allSameHidden": "Ausgaben sind identisch — unveränderte Zeilen sind ausgeblendet.",
+    "hint": "Rote Zeilen existieren nur links, grüne Zeilen nur rechts."
+  },
+  "leaderboard": {
+    "title": "Modell-Rangliste",
+    "openTitle": "Modell-Rangliste öffnen",
+    "loading": "Statistiken werden geladen...",
+    "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
+    "runs": "Durchläufe",
+    "wins": "Siege",
+    "hint": "Sortiert nach Gewinnrate, dann nach Durchschnittsgeschwindigkeit. Fehlgeschlagene Durchläufe werden ignoriert."
+  }
+}

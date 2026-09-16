@@ -458,7 +458,7 @@ export default function App() {
           <ProviderSettings />
 
           <button
-            onClick={() => setLanguage(language === 'en' ? 'fa' : 'en')}
+            onClick={() => setLanguage(language === 'en' ? 'de' : language === 'de' ? 'fa' : 'en')}
             className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
             title={t('app.switchLanguage')}
           >
