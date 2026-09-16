@@ -1,6 +1,6 @@
 // src/components/ModelColumn.tsx
 import React from 'react';
-import { Cpu, Zap, Clock, X, RotateCcw, ThumbsUp, Crown } from 'lucide-react';
+import { Cpu, Zap, Clock, X, RotateCcw, ThumbsUp, Crown, Copy, Check } from 'lucide-react';
 import { OllamaModel, BenchmarkMetrics } from '../types/ollama';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +50,14 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
 }) => {
   const { t } = useTranslation();
   const color = COLUMN_COLORS[index % COLUMN_COLORS.length];
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    if (!output) return;
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div
@@ -79,6 +87,19 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           </select>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {output && !error && (
+            <button
+              onClick={handleCopy}
+              title={copied ? t('app.copyOutputDone') : t('app.copyOutput')}
+              className="p-1 rounded text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition shrink-0"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+          )}
           {output && !error && onVote && (
             <button
               onClick={onVote}

@@ -20,6 +20,8 @@
     "copyReportTitle": "Copy benchmark report as Markdown",
     "copyReport": "Copy Report",
     "copyReportDone": "Copied!",
+    "copyOutput": "Copy Output",
+    "copyOutputDone": "Copied!",
     "copyJsonTitle": "Copy full history as JSON",
     "copyJson": "Copy JSON",
     "copyJsonDone": "JSON Copied!",
