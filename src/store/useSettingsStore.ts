@@ -5,7 +5,7 @@ import i18n from '../i18n/config';
 import type { AdvancedConfig } from '../components/AdvancedSettings';
 
 type Theme = 'dark' | 'light';
-type Language = 'en' | 'fa';
+type Language = 'en' | 'fa' | 'de';
 export type Provider = 'ollama' | 'openai-compatible';
 
 const DEFAULT_BASE_URLS: Record<Provider, string> = {
