@@ -562,7 +562,14 @@ export default function App() {
 
       {error && (
         <div className="bg-rose-500/10 border-b border-rose-500/20 px-6 py-2 text-xs text-rose-500 flex justify-between items-center">
-          <span>{error}</span>
+          <span>
+            {error}
+            {error === t('app.noModelsFound') && (
+              <span className="ms-2 font-mono opacity-90">
+                ({provider === 'openai-compatible' ? t('app.noModelsHintLMStudio') : t('app.noModelsHintOllama')})
+              </span>
+            )}
+          </span>
         </div>
       )}
 
