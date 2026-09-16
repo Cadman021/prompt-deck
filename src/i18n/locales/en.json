@@ -45,6 +45,10 @@
     "clearAllTitle": "Clear All History",
     "clearAllConfirm": "Are you sure you want to clear all history?",
     "loading": "Loading history...",
+    "empty": "No benchmarks recorded yet.",
+    "noResults": "No matching benchmarks found.",
+    "searchPlaceholder": "Search prompts or models…",
+    "resultsCount": "{{count}} results",
     "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "deleteRecordTitle": "Delete this record",
     "vs": "vs"

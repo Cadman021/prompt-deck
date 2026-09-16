@@ -18,6 +18,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const { t } = useTranslation();
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -29,6 +30,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchRecords();
+      setSearchQuery('');
     }
   }, [isOpen]);
 
@@ -44,6 +46,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       setRecords([]);
     }
   };
+
+  const filteredRecords = records.filter((record) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const promptMatch = record.prompt.toLowerCase().includes(q);
+    const modelMatch = record.results.some((r) => r.model.toLowerCase().includes(q));
+    return promptMatch || modelMatch;
+  });
 
   if (!isOpen) return null;
 
@@ -80,6 +90,24 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
         </div>
       </div>
 
+      {/* Search Bar */}
+      {records.length > 0 && (
+        <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('history.searchPlaceholder')}
+            className="w-full bg-slate-100 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
+          {searchQuery.trim() && (
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              {t('history.resultsCount', { count: filteredRecords.length })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50 dark:bg-slate-900">
         {loading ? (
@@ -90,8 +118,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           <div className="text-center text-slate-400 dark:text-slate-500 py-8 px-4 text-sm leading-relaxed">
             {t('history.empty')}
           </div>
+        ) : filteredRecords.length === 0 ? (
+          <div className="text-center text-slate-400 dark:text-slate-500 py-8 text-sm">
+            {t('history.noResults')}
+          </div>
         ) : (
-          records.map((record) => (
+          filteredRecords.map((record) => (
             <div
               key={record.id}
               onClick={() => {
