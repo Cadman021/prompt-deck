@@ -1,5 +1,6 @@
 
 ![PromptDeck Git](./docs/demo.gif)
+<!-- Retake recommended for v1.0.0: new App Shell + a Test Suite run. Keep filename docs/demo.gif -->
 
 # 🚀 PromptDeck
 
@@ -8,13 +9,19 @@
 Run the same prompt against multiple local models — via [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or a `llama.cpp` server — watch them stream in real time, and compare **Tokens/sec (TPS)**, **Time-To-First-Token (TTFT)**, and total duration, with results saved locally in SQLite for later review.
 
 ![PromptDeck Screenshot](./docs/screenshot-main.png)
-<!-- RETAKE for v0.3.0: main grid with 2+ models finished, winner crown badge on one column, Diff/CSV/Leaderboard buttons visible in header. Keep the same filename docs/screenshot-main.png and overwrite it -->
+<!-- RETAKE for v1.0.0: new App Shell — icon-rail sidebar on the left, slim TopBar with provider pill, 2 model columns finished. Keep the same filename docs/screenshot-main.png and overwrite it -->
 
 ---
 
 ## ✨ Features
 
+- 🧭 **App Shell workspace** — icon-rail sidebar (Bench, Tests, History, Board, Config) plus a slim 48px TopBar with a provider connection pill (status dot, server URL, model count). Result actions live in a contextual toolbar that only appears when there are results, so model outputs always get maximum space
 - ⚡ **Compare 2 to 4 models simultaneously** — run the same prompt across multiple models at once and watch them stream side-by-side
+- 🧪 **Test Suite (batch execution)** — run a list of 1–10 test prompts across all selected models sequentially and compare them in a scoreboard matrix: per-cell TPS, 👑 crown for the fastest model on each test, average-TPS + wins summary, click-to-read full outputs, Markdown copy, and CSV download
+
+  ![Test Suite Scoreboard](./docs/screenshot-testsuite.png)
+  <!-- NEW IMAGE for v1.0.0: open the Tests page (flask icon in sidebar), run a suite with 2+ models, capture the scoreboard table with crowns + summary row. Save exactly as docs/screenshot-testsuite.png -->
+
 - 🔌 **Multi-provider support** — connect to [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or any `llama.cpp` server (OpenAI-compatible API)
 - 📊 **Live metrics & visual charts** — TPS, TTFT, and total duration tracked per run, with bar charts comparing every model at a glance (`~` marks estimated TPS when the server doesn't report token usage)
 
@@ -24,12 +31,12 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 - 🏆 **Winner votes & leaderboard** — crown the best answer per run and track win rate plus average speed per model over time
 
   ![Model Leaderboard](./docs/screenshot-leaderboard.png)
-  <!-- NEW IMAGE: open the leaderboard panel (trophy button in header) with 2-3 models visible showing runs / avg TPS / wins. Save exactly as docs/screenshot-leaderboard.png -->
+  <!-- Retake recommended: leaderboard panel now opens from the sidebar; capture with 2-3 models visible showing runs / avg TPS / wins. Keep filename docs/screenshot-leaderboard.png -->
 
 - 🔍 **Side-by-side diff view** — compare any two outputs line-by-line with similarity percentage and added/removed counts
 
   ![Diff View](./docs/screenshot-diff.png)
-  <!-- NEW IMAGE: run a comparison, click Diff, capture the diff panel below the grid with red/green lines visible. Save exactly as docs/screenshot-diff.png -->
+  <!-- Retake recommended: run a comparison, click Diff in the result toolbar, capture the diff panel with red/green lines. Keep filename docs/screenshot-diff.png -->
 
 - 🕘 **Local history** — every benchmark run is saved to SQLite and browsable from a sidebar, with winner crowns, `~` markers for estimated TPS, and full theme support
 
@@ -44,9 +51,21 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
 - 📄 **Rich PDF export** — export any benchmark run as a fully-formatted PDF report, preserving Markdown rendering (tables, code blocks, bold text)
 - ⌨️ **Keyboard shortcuts** — `Ctrl+Enter` (or `Cmd+Enter`) to run, `Esc` to stop generation or close panels
-- ⚙️ **Advanced controls** — tweak system prompt, temperature, top-p, and context length (persisted across restarts)
-- 🌗 **Dark / light theme** — applied consistently across the entire app, including history and charts
-- 🌍 **i18n ready** — English and Persian (Farsi) included, with full RTL support
+- ⚙️ **Settings panel** — provider & connection, appearance, language, and advanced model controls (system prompt, temperature, top-p, context length) in a slide-over panel, all persisted across restarts
+
+  ![Settings Panel](./docs/screenshot-settings.png)
+  <!-- NEW IMAGE for v1.0.0: open Config (gear icon, bottom of sidebar), capture the panel with Appearance + Language + Provider sections. Save exactly as docs/screenshot-settings.png -->
+
+- 🌑 **Three themes** — Light, Dark, and **AMOLED Dark** (pure-black `#000000` canvas with neon glows). Cycle from the header or pick explicitly in settings
+
+  ![AMOLED Dark Theme](./docs/screenshot-amoled.png)
+  <!-- NEW IMAGE for v1.0.0: same bench view as screenshot-main but with AMOLED theme active. Save exactly as docs/screenshot-amoled.png -->
+
+- 🌍 **Language picker** — English, Deutsch, and فارسی (full RTL support) in a grid-style popup, opened from the header or settings
+
+  ![Language Picker](./docs/screenshot-language.png)
+  <!-- NEW IMAGE for v1.0.0: click the language button in the TopBar, capture the centered Select Language modal. Save exactly as docs/screenshot-language.png -->
+
 - 📋 **One-click export** — copy a Markdown report or full JSON history to clipboard, or download history as CSV
 - 🔒 **100% local & private** — built with [Tauri](https://tauri.app), no telemetry, no cloud calls
 
@@ -108,20 +127,23 @@ npm run tauri build
 
 ## 📸 How it works
 
-1. Launch the app and pick your provider (Ollama, LM Studio, or llama.cpp) from the header — PromptDeck auto-detects available models
-2. Add up to 4 model columns, write a prompt (or pick/save a preset)
+1. Launch the app and pick your provider (Ollama, LM Studio, or llama.cpp) from the Config panel — PromptDeck auto-detects available models
+2. On the **Bench** page, add up to 4 model columns, write a prompt (or pick/save a preset)
 3. Hit **Run** (or `Ctrl+Enter`) — all selected models stream their responses live
 4. Compare TPS / TTFT instantly via the chart, crown a winner, open the **Diff** view for any two outputs, or check the **Leaderboard** for long-term stats
-5. Revisit past runs from the history sidebar, or export the whole report as PDF, Markdown, JSON, or CSV
+5. Need a deeper comparison? Switch to the **Tests** page, stack up to 10 prompts, hit **Run suite**, and read the scoreboard to see which model wins across the whole batch
+6. Revisit past runs from the history sidebar, or export the whole report as PDF, Markdown, JSON, or CSV
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Cost/pricing estimation for cloud-hosted OpenAI-compatible endpoints
+- [ ] Cloud input — run benchmarks against cloud-hosted OpenAI-compatible endpoints (sidebar slot already reserved)
+- [ ] Cost/pricing estimation for cloud-hosted endpoints
+- [x] Test Suite — batch execution with scoreboard matrix
+- [x] AMOLED Dark theme (+ Light / Dark)
 - [x] Side-by-side diff view between two model outputs
 - [x] Export benchmark history as CSV
-- [ ] Custom color themes
 
 Contributions and ideas are very welcome — see [Contributing](#-contributing) below.
 

@@ -106,5 +106,54 @@
     "runs": "Durchläufe",
     "wins": "Siege",
     "hint": "Sortiert nach Gewinnrate, dann nach Durchschnittsgeschwindigkeit. Fehlgeschlagene Durchläufe werden ignoriert."
+  },
+  "nav": {
+    "bench": "Bench",
+    "history": "Verlauf",
+    "leaderboard": "Board",
+    "settings": "Config",
+    "cloud": "Cloud",
+    "tests": "Tests",
+    "soon": "Bald",
+    "models": "Modelle",
+    "cloudInputSoon": "Cloud-Input — bald",
+    "testSuiteSoon": "Test-Suite — bald"
+  },
+  "settings": {
+    "providerTitle": "Provider & Verbindung",
+    "providerHint": "Ollama für lokale Modelle, OpenAI-kompatibel für LM Studio / llama.cpp Server."
+  },
+  "theme": {
+    "appearance": "Darstellung",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "amoled": "AMOLED",
+    "switchTo": "Zu {{theme}}-Design wechseln"
+  },
+  "language": {
+    "title": "Sprache wählen",
+    "hint": "Weitere Sprachen folgen — English, Deutsch und فارسی werden vollständig unterstützt."
+  },
+  "testsuite": {
+    "title": "Test-Suite",
+    "subtitle": "Mehrere Prompts stapelweise auf Modellen ausführen und Scoreboard vergleichen.",
+    "reportTitle": "Test-Suite-Bericht",
+    "prompts": "Test-Prompts",
+    "tests": "Tests",
+    "test": "Test",
+    "addPrompt": "Hinzufügen",
+    "removePrompt": "Entfernen",
+    "promptPlaceholder": "Test-Prompt…",
+    "models": "Modelle",
+    "emptyModels": "Keine Modelle installiert — erst ein Modell laden, dann hier auswählen.",
+    "needPrompt": "Mindestens einen nicht-leeren Test-Prompt hinzufügen.",
+    "runAll": "Suite ausführen",
+    "stop": "Stoppen",
+    "stopped": "Gestoppt",
+    "scoreboard": "Scoreboard",
+    "average": "Ø Tok/s · Siege",
+    "scoreHint": "👑 = schnellste Tok/s in diesem Test · Zelle anklicken für die volle Ausgabe.",
+    "clearResults": "Ergebnisse löschen",
+    "copied": "Kopiert!"
   }
 }

@@ -16,6 +16,7 @@
         var raw = localStorage.getItem('promptdeck-settings');
         var theme = raw ? (JSON.parse(raw).state || {}).theme : null;
         if (theme !== 'light') document.documentElement.classList.add('dark');
+        if (theme === 'amoled') document.documentElement.classList.add('amoled');
       } catch (e) {
         document.documentElement.classList.add('dark');
       }

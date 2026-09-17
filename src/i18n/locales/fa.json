@@ -5,7 +5,7 @@
     "run": "اجرا (Ctrl+Enter)",
     "runHint": "اجرا با Ctrl+Enter · توقف با Esc",
     "running": "در حال پردازش...",
-    "promptPlaceholder": "پرومپت خود را برای مقایسه بنویسید (مثلاً: یک تابع فاکتوریل به زبان رُست بنویس)...",
+    "promptPlaceholder": "پرومپت خود را برای مقایسه بنویسید (مثلاً: یک تابع فاکتوریل به زبان Rust بنویس)...",
     "ollamaError": "ارتباط با سرویس Ollama برقرار نشد. از فعال بودن آن مطمئن شوید.",
     "modelPlaceholder1": "انتخاب مدل اول",
     "modelPlaceholder2": "انتخاب مدل دوم",
@@ -109,5 +109,54 @@
     "runs": "اجرا",
     "wins": "برد",
     "hint": "مرتب‌سازی بر اساس نرخ برد، بعد میانگین سرعت. اجراهای ناموفق در میانگین حساب نمی‌شوند."
+  },
+  "nav": {
+    "bench": "بنچ",
+    "history": "تاریخچه",
+    "leaderboard": "رتبه",
+    "settings": "تنظیم",
+    "cloud": "ابری",
+    "tests": "تست",
+    "soon": "به‌زودی",
+    "models": "مدل",
+    "cloudInputSoon": "ورودی ابری — به‌زودی",
+    "testSuiteSoon": "تست‌سوئیت — به‌زودی"
+  },
+  "settings": {
+    "providerTitle": "ارائه‌دهنده و اتصال",
+    "providerHint": "Ollama برای مدل‌های لوکال، OpenAI-compatible برای سرور LM Studio / llama.cpp."
+  },
+  "theme": {
+    "appearance": "ظاهر",
+    "light": "روشن",
+    "dark": "تیره",
+    "amoled": "AMOLED",
+    "switchTo": "تغییر به تم {{theme}}"
+  },
+  "language": {
+    "title": "انتخاب زبان",
+    "hint": "زبان‌های بیشتر به‌زودی — English و Deutsch و فارسی کامل پشتیبانی می‌شوند."
+  },
+  "testsuite": {
+    "title": "تست‌سوئیت",
+    "subtitle": "یک بسته پرامپت را روی چند مدل اجرا کن و جدول امتیاز را مقایسه کن.",
+    "reportTitle": "گزارش تست‌سوئیت",
+    "prompts": "پرامپت‌های تست",
+    "tests": "تست‌ها",
+    "test": "تست",
+    "addPrompt": "افزودن",
+    "removePrompt": "حذف",
+    "promptPlaceholder": "پرامپت تست…",
+    "models": "مدل‌ها",
+    "emptyModels": "مدلی نصب نشده — اول یک مدل نصب کن، بعد اینجا انتخابش کن.",
+    "needPrompt": "برای اجرا حداقل یک پرامپت تست غیرخالی اضافه کن.",
+    "runAll": "اجرای بسته",
+    "stop": "توقف",
+    "stopped": "متوقف شد",
+    "scoreboard": "جدول امتیاز",
+    "average": "میانگین توکن/ثانیه · برد",
+    "scoreHint": "👑 یعنی سریع‌ترین توکن/ثانیه در آن تست · برای خواندن خروجی کامل روی هر خانه کلیک کن.",
+    "clearResults": "پاک کردن نتایج",
+    "copied": "کپی شد!"
   }
 }

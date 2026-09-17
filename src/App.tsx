@@ -6,9 +6,7 @@ import { OllamaModel, BenchmarkMetrics } from './types/ollama';
 import { useSettingsStore } from './store/useSettingsStore';
 import { HistorySidebar } from './components/HistorySidebar';
 import { ModelColumn } from './components/ModelColumn';
-import { ProviderSettings } from './components/ProviderSettings';
 import { generateMarkdownReport, copyHistoryAsJson, exportHistoryAsCsv } from './utils/exportUtils';
-import { AdvancedSettings } from './components/AdvancedSettings';
 import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
 import { BenchmarkChart } from './components/BenchmarkChart';
@@ -16,18 +14,15 @@ import { DiffView } from './components/DiffView';
 import { Leaderboard } from './components/Leaderboard';
 import { exportElementAsPdf } from './utils/pdfExport';
 import { ReportPrintView } from './components/ReportPrintView';
-import { APP_VERSION } from './version';
-import { FileDown, Check, GitCompare, Trophy, Download } from 'lucide-react';
+import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
+import { TestSuiteView } from './components/testsuite/TestSuiteView';
+import { TopBar } from './components/layout/TopBar';
+import { ResultToolbar } from './components/layout/ResultToolbar';
+import { SettingsPanel } from './components/layout/SettingsPanel';
 import './i18n/config';
 import {
   Play,
-  RefreshCw,
   Plus,
-  Terminal,
-  Sun,
-  Moon,
-  Languages,
-  History,
 } from 'lucide-react';
 
 const MAX_MODELS = 4;
@@ -53,7 +48,7 @@ const createSlot = (model = ''): Slot => ({
 
 export default function App() {
   const { t } = useTranslation();
-  const { theme, setTheme, language, setLanguage, provider, baseUrl, advancedConfig, setAdvancedConfig } =
+  const { provider, baseUrl, advancedConfig, setAdvancedConfig } =
     useSettingsStore();
 
   const [models, setModels] = useState<OllamaModel[]>([]);
@@ -62,6 +57,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Dynamic list of model comparison slots (2 to MAX_MODELS)
   const [slots, setSlots] = useState<Slot[]>([createSlot(), createSlot()]);
@@ -89,6 +85,29 @@ export default function App() {
 
   const [pdfState, setPdfState] = useState<'idle' | 'exporting' | 'done'>('idle');
   const printRef = useRef<HTMLDivElement>(null);
+
+  // App Shell navigation: 'bench'/'tests' are pages, the rest are overlay panels.
+  const [activePage, setActivePage] = useState<'bench' | 'tests'>('bench');
+  const activeView: SidebarView = isSettingsOpen
+    ? 'settings'
+    : isLeaderboardOpen
+      ? 'leaderboard'
+      : isSidebarOpen
+        ? 'history'
+        : activePage;
+
+  const handleSidebarNavigate = (view: SidebarView) => {
+    if (view === 'bench' || view === 'tests') {
+      setActivePage(view);
+      setIsSidebarOpen(false);
+      setIsLeaderboardOpen(false);
+      setIsSettingsOpen(false);
+      return;
+    }
+    setIsSidebarOpen(view === 'history');
+    setIsLeaderboardOpen(view === 'leaderboard');
+    setIsSettingsOpen(view === 'settings');
+  };
 
   const handleStopGeneration = useCallback(() => {
     if (abortControllerRef.current) {
@@ -418,262 +437,183 @@ export default function App() {
   const gridColsClass =
     slots.length === 2 ? 'grid-cols-2' : slots.length === 3 ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4';
 
+  const hasOutput = slots.some((s) => s.output);
+
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased overflow-hidden">
+      <AppSidebar activeView={activeView} onNavigate={handleSidebarNavigate} />
+
       <HistorySidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onSelectRecord={handleSelectHistoryRecord}
       />
       <Leaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        advancedConfig={advancedConfig}
+        onAdvancedChange={setAdvancedConfig}
+      />
 
-      <header className="flex items-center justify-between px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-1.5 rounded-md bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition mr-1"
-            title="Open History"
-          >
-            <History className="w-4 h-4" />
-          </button>
+      {/* Main column */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <TopBar
+          modelsCount={models.length}
+          loadingModels={loadingModels}
+          onRefresh={loadModels}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
 
-          <button
-            onClick={() => setIsLeaderboardOpen(true)}
-            className="p-1.5 rounded-md bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
-            title={t('leaderboard.openTitle')}
-          >
-            <Trophy className="w-4 h-4" />
-          </button>
+        {activePage === 'bench' && (
+        <ResultToolbar
+          hasOutput={hasOutput}
+          canShowDiff={canShowDiff}
+          diffActive={diffPair !== null}
+          onToggleDiff={() => {
+            setDiffPair(diffPair ? null : [comparableSlots[0].id, comparableSlots[1].id]);
+          }}
+          copied={copied}
+          onCopyReport={handleCopyReport}
+          pdfState={pdfState}
+          onExportPdf={handleExportPdf}
+          jsonCopied={jsonCopied}
+          onCopyJson={handleCopyJson}
+          csvState={csvState}
+          onExportCsv={handleExportCsv}
+          slotsLabel={`${slots.length}/${MAX_MODELS} models`}
+        />
+        )}
 
-          <Terminal className="w-6 h-6 text-indigo-500" />
-          <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-500 to-cyan-500 bg-clip-text text-transparent">
-            {t('app.title')}
-          </h1>
-          <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 font-mono">
-            v{APP_VERSION}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <ProviderSettings />
-
-          <button
-            onClick={() => setLanguage(language === 'en' ? 'de' : language === 'de' ? 'fa' : 'en')}
-            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
-            title={t('app.switchLanguage')}
-          >
-            <Languages className="w-3.5 h-3.5" />
-            <span className="font-semibold uppercase">{language}</span>
-          </button>
-
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-md bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
-            title={t('app.toggleTheme')}
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          <button
-            onClick={loadModels}
-            disabled={loadingModels}
-            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loadingModels ? 'animate-spin' : ''}`} />
-            <span>{t('app.refreshModels')}</span>
-          </button>
-
-          {slots.some((s) => s.output) && (
-            <button
-              onClick={handleCopyReport}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition-all shadow-sm"
-              title={t('app.copyReportTitle')}
-            >
-              <span>{copied ? t('app.copyReportDone') : t('app.copyReport')}</span>
-            </button>
-          )}
-
-          {slots.some((s) => s.output) && (
-            <button
-              onClick={handleExportPdf}
-              disabled={pdfState === 'exporting'}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-60"
-              title="Export as PDF"
-            >
-              {pdfState === 'exporting' ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>در حال ساخت PDF...</span>
-                </>
-              ) : pdfState === 'done' ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400">دانلود شد!</span>
-                </>
-              ) : (
-                <>
-                  <FileDown className="w-3.5 h-3.5" />
-                  <span>Export PDF</span>
-                </>
-              )}
-            </button>
-          )}
-
-          {canShowDiff && (
-            <button
-              onClick={() => {
-                setDiffPair(diffPair ? null : [comparableSlots[0].id, comparableSlots[1].id]);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all shadow-sm"
-              title={t('diff.toggleTitle')}
-            >
-              <GitCompare className="w-3.5 h-3.5" />
-              <span>{t('diff.toggle')}</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleCopyJson}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm"
-            title={t('app.copyJsonTitle')}
-          >
-            <span>{jsonCopied ? t('app.copyJsonDone') : t('app.copyJson')}</span>
-          </button>
-
-          <button
-            onClick={handleExportCsv}
-            disabled={csvState === 'exporting'}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm disabled:opacity-60"
-            title={t('app.exportCsvTitle')}
-          >
-            <Download className="w-3.5 h-3.5" />
+        {error && (
+          <div className="bg-rose-500/10 border-b border-rose-500/20 px-4 py-2 text-xs text-rose-500 flex justify-between items-center shrink-0">
             <span>
-              {csvState === 'exporting'
-                ? t('app.exportCsvWorking')
-                : csvState === 'done'
-                  ? t('app.exportCsvDone')
-                  : csvState === 'empty'
-                    ? t('app.exportCsvEmpty')
-                    : t('app.exportCsv')}
-            </span>
-          </button>
-        </div>
-      </header>
-
-      {error && (
-        <div className="bg-rose-500/10 border-b border-rose-500/20 px-6 py-2 text-xs text-rose-500 flex justify-between items-center">
-          <span>
-            {error}
-            {error === t('app.noModelsFound') && (
-              <span className="ms-2 font-mono opacity-90">
-                ({provider === 'openai-compatible' ? t('app.noModelsHintLMStudio') : t('app.noModelsHintOllama')})
-              </span>
-            )}
-          </span>
-        </div>
-      )}
-
-      <main className={`flex-1 grid ${gridColsClass} gap-4 p-4 overflow-hidden`}>
-        {slots.map((slot, index) => (
-          <ModelColumn
-            key={slot.id}
-            index={index}
-            models={models}
-            selectedModel={slot.model}
-            output={slot.output}
-            metrics={slot.metrics}
-            error={slot.error}
-            canRemove={slots.length > MIN_MODELS}
-            isWinner={winnerModel !== null && winnerModel === slot.model && slot.model !== ''}
-            onModelChange={(name) =>
-              setSlots((prev) => prev.map((s) => (s.id === slot.id ? { ...s, model: name } : s)))
-            }
-            onRemove={() => handleRemoveSlot(slot.id)}
-            onRetry={() => handleRetrySlot(slot.id)}
-            onVote={() => handleVote(slot.model)}
-          />
-        ))}
-      </main>
-
-      {diffPair && diffSlots.length === 2 && (
-        <div className="px-4 pb-2">
-          <DiffView
-            leftName={diffSlots[0].model}
-            rightName={diffSlots[1].model}
-            leftText={diffSlots[0].output}
-            rightText={diffSlots[1].output}
-            onClose={() => setDiffPair(null)}
-            onPairChange={(a, b) => {
-              const left = comparableSlots[a] ?? comparableSlots[0];
-              const right = comparableSlots[b] ?? comparableSlots[1];
-              if (left && right) setDiffPair([left.id, right.id]);
-            }}
-            pairIndex={[
-              comparableSlots.findIndex((s) => s.id === diffSlots[0].id),
-              comparableSlots.findIndex((s) => s.id === diffSlots[1].id),
-            ]}
-            pairCount={comparableSlots.length}
-          />
-        </div>
-      )}
-
-      {slots.every((s) => s.metrics) && (
-        <div className="px-4 pb-2">
-          <BenchmarkChart
-            entries={slots.map((s) => ({ name: s.model, metrics: s.metrics! }))}
-          />
-        </div>
-      )}
-
-      <div className="px-4 pb-2 flex justify-center">
-        <button
-          onClick={handleAddModel}
-          disabled={slots.length >= MAX_MODELS || models.length === 0}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40 disabled:hover:border-slate-300 disabled:hover:text-slate-500"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add model ({slots.length}/{MAX_MODELS})</span>
-        </button>
-      </div>
-
-      <AdvancedSettings config={advancedConfig} onChange={setAdvancedConfig} />
-
-      <PromptPresets currentPrompt={prompt} onSelect={(p) => setPrompt(p)} disabled={isLoading} />
-
-      <footer className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
-        <div className="flex gap-3 max-w-5xl mx-auto">
-          <div className="flex-1 flex flex-col gap-1">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              disabled={isLoading}
-              placeholder={t('app.promptPlaceholder')}
-              className="flex-1 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-              {t('app.runHint')}
+              {error}
+              {error === t('app.noModelsFound') && (
+                <span className="ms-2 font-mono opacity-90">
+                  ({provider === 'openai-compatible' ? t('app.noModelsHintLMStudio') : t('app.noModelsHintOllama')})
+                </span>
+              )}
             </span>
           </div>
-          {isLoading ? (
-            <button
-              onClick={handleStopGeneration}
-              className="px-5 py-3 rounded-lg bg-rose-600 text-white font-medium text-sm hover:bg-rose-700 transition-colors flex items-center gap-2 shadow-sm"
-            >
-              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-              {t('app.stop')}
-            </button>
-          ) : (
-            <button
-              onClick={handleRunComparison}
-              disabled={slots.some((s) => s.loading) || !prompt.trim()}
-              className="flex flex-col items-center justify-center gap-1 px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition disabled:opacity-50 font-medium text-xs shrink-0"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>{slots.some((s) => s.loading) ? t('app.running') : t('app.run')}</span>
-            </button>
+        )}
+
+        {activePage === 'tests' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <TestSuiteView models={models} />
+          </div>
+        ) : (
+        <>
+        {/* Scrollable workspace — model outputs get max height now */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <main className={`grid ${gridColsClass} gap-3 p-3 min-h-[320px]`}>
+            {slots.map((slot, index) => (
+              <ModelColumn
+                key={slot.id}
+                index={index}
+                models={models}
+                selectedModel={slot.model}
+                output={slot.output}
+                metrics={slot.metrics}
+                error={slot.error}
+                canRemove={slots.length > MIN_MODELS}
+                isWinner={winnerModel !== null && winnerModel === slot.model && slot.model !== ''}
+                onModelChange={(name) =>
+                  setSlots((prev) => prev.map((s) => (s.id === slot.id ? { ...s, model: name } : s)))
+                }
+                onRemove={() => handleRemoveSlot(slot.id)}
+                onRetry={() => handleRetrySlot(slot.id)}
+                onVote={() => handleVote(slot.model)}
+              />
+            ))}
+          </main>
+
+          {diffPair && diffSlots.length === 2 && (
+            <div className="px-3 pb-2">
+              <DiffView
+                leftName={diffSlots[0].model}
+                rightName={diffSlots[1].model}
+                leftText={diffSlots[0].output}
+                rightText={diffSlots[1].output}
+                onClose={() => setDiffPair(null)}
+                onPairChange={(a, b) => {
+                  const left = comparableSlots[a] ?? comparableSlots[0];
+                  const right = comparableSlots[b] ?? comparableSlots[1];
+                  if (left && right) setDiffPair([left.id, right.id]);
+                }}
+                pairIndex={[
+                  comparableSlots.findIndex((s) => s.id === diffSlots[0].id),
+                  comparableSlots.findIndex((s) => s.id === diffSlots[1].id),
+                ]}
+                pairCount={comparableSlots.length}
+              />
+            </div>
           )}
+
+          {slots.every((s) => s.metrics) && slots[0]?.metrics && (
+            <div className="px-3 pb-2">
+              <BenchmarkChart
+                entries={slots.map((s) => ({ name: s.model, metrics: s.metrics! }))}
+              />
+            </div>
+          )}
+
+          <div className="px-3 pb-3 flex justify-center">
+            <button
+              onClick={handleAddModel}
+              disabled={slots.length >= MAX_MODELS || models.length === 0}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add model ({slots.length}/{MAX_MODELS})</span>
+            </button>
+          </div>
         </div>
-      </footer>
+
+        {/* Prompt dock */}
+        <div className="shrink-0 px-3 pt-1">
+          <PromptPresets currentPrompt={prompt} onSelect={(p) => setPrompt(p)} disabled={isLoading} />
+        </div>
+
+        <footer className="shrink-0 p-3 border-t border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
+          <div className="flex gap-2.5 max-w-5xl mx-auto items-stretch">
+            <div className="flex-1 flex flex-col gap-1 min-w-0 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-400 transition px-3 py-2">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={isLoading}
+                rows={2}
+                placeholder={t('app.promptPlaceholder')}
+                className="w-full bg-transparent resize-none text-sm focus:outline-none placeholder:text-slate-400"
+              />
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                {t('app.runHint')}
+              </span>
+            </div>
+            {isLoading ? (
+              <button
+                onClick={handleStopGeneration}
+                className="px-5 rounded-xl bg-rose-600 text-white font-medium text-sm hover:bg-rose-700 transition-colors flex items-center gap-2 shadow-sm shrink-0"
+              >
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                {t('app.stop')}
+              </button>
+            ) : (
+              <button
+                onClick={handleRunComparison}
+                disabled={slots.some((s) => s.loading) || !prompt.trim()}
+                className="flex flex-col items-center justify-center gap-1 px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition disabled:opacity-50 font-medium text-xs shrink-0 shadow-sm"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>{slots.some((s) => s.loading) ? t('app.running') : t('app.run')}</span>
+              </button>
+            )}
+          </div>
+        </footer>
+        </>
+        )}
+      </div>
+
       {/* Hidden report source for PDF export (html2canvas captures this) */}
       <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
         <ReportPrintView

@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-09-17
+
+First stable release. The headline changes are a full **App Shell redesign** that frees up space for new workflows, a brand-new **Test Suite** page for batch benchmarking, an **AMOLED Dark** theme, and a proper **language picker** — plus German locale coverage and CI updates.
+
+### ✨ Added
+- **Test Suite (batch execution)**: run a list of 1–10 test prompts across all selected models sequentially, with a live progress bar and Stop support. Results land in a **scoreboard matrix** (one row per test, one column per model) showing TPS per cell, a 👑 crown for the fastest model on each test, an average-TPS + wins summary row, click-to-read full-output detail modal, Markdown report copy, and CSV download. The suite definition persists in `localStorage`
+- **AMOLED Dark theme**: pure-black (`#000000`) canvas with neon glows on primary actions, status dots, and focus rings. Builds on top of dark mode, so every `dark:` style keeps working; persisted in settings (store migrated to v2, old `dark`/`light` values carry over untouched)
+- **Language picker modal**: grid-style popup (region code + native name tiles, e.g. US/English, DE/Deutsch, IR/فارسی) with selected-state highlight, `Esc`/backdrop close, and support for future locales — opened from both the header and the settings panel
+- **Appearance section in settings**: explicit Light / Dark / AMOLED picker alongside the header's three-state theme cycle button
+- **German (Deutsch) locale**: full UI coverage in English, Persian (Farsi, RTL), and German
+- **App Shell navigation**: icon-rail sidebar (Bench, Tests, History, Board, Config) with a reserved "Cloud — Soon" slot for the upcoming cloud-input feature; History, Leaderboard, and Settings now open as sidebar-driven overlay panels instead of crowding the header
+
+### 🔄 Changed
+- **Header decluttered**: the old 10+-button wrapping header is now a slim 48px `TopBar` (title + version, provider connection pill with status dot and model count, language, theme, refresh, settings). All result actions (Copy Report, PDF, Diff, Copy JSON, Export CSV) moved to a contextual `ResultToolbar` that only appears when there are results
+- **Settings live in a slide-over panel**: provider/connection, appearance, language, and advanced model controls (system prompt, temperature, top-p, context length) moved out of the stacked inline layout, giving model outputs the maximum vertical space
+- **Prompt dock restyled**: floating-card prompt box with `Ctrl+Enter` hint and a dedicated Run/Stop button
+- **Test Suite owns its page**: the sidebar `Tests` entry is now a real page (bench prompt dock and result toolbar are hidden while it is active)
+- CI and release workflows now build with **Node.js 24** (was 20)
+- Version centralized as before (`src/version.ts` ↔ `package.json` ↔ `tauri.conf.json` ↔ `Cargo.toml`), now at `1.0.0`
+
+### 🐛 Fixed
+- Language modal opened from the header rendered clipped inside the header bar (missing backdrop and title). Root cause: the header's `backdrop-blur` creates a containing block for `fixed` descendants — the modal now renders via a React portal to `document.body`, so it always covers the viewport
+- Test Suite worker cell updates could target the wrong cell under concurrent callbacks — cell execution now carries its test index explicitly instead of a shared mutable ref
+
+---
+
 ## [0.3.0] - 2026-09-15
 
 ### ✨ Added

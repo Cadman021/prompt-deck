@@ -4,8 +4,8 @@ import { persist } from 'zustand/middleware';
 import i18n from '../i18n/config';
 import type { AdvancedConfig } from '../components/AdvancedSettings';
 
-type Theme = 'dark' | 'light';
-type Language = 'en' | 'fa' | 'de';
+export type Theme = 'dark' | 'light' | 'amoled';
+export type Language = 'en' | 'fa' | 'de';
 export type Provider = 'ollama' | 'openai-compatible';
 
 const DEFAULT_BASE_URLS: Record<Provider, string> = {
@@ -62,7 +62,9 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'promptdeck-settings',
-      version: 1,
+      version: 2,
+      // v1 -> v2: 'amoled' theme added; old 'dark'/'light' values stay valid as-is.
+      migrate: (persisted: unknown) => (persisted ?? {}) as PersistedSettings,
       partialize: (s): PersistedSettings => ({
         theme: s.theme,
         language: s.language,
@@ -80,7 +82,9 @@ export const useSettingsStore = create<SettingsState>()(
  * so setters stay pure and StrictMode-safe.
  */
 export function applySettingsSideEffects(s: Pick<SettingsState, 'theme' | 'language'>): void {
-  document.documentElement.classList.toggle('dark', s.theme === 'dark');
+  // AMOLED builds on top of dark mode (keeps all `dark:` styles) + `.amoled` overrides for pure black + neon.
+  document.documentElement.classList.toggle('dark', s.theme !== 'light');
+  document.documentElement.classList.toggle('amoled', s.theme === 'amoled');
   document.documentElement.dir = s.language === 'fa' ? 'rtl' : 'ltr';
   document.documentElement.lang = s.language;
   if (i18n.language !== s.language) {

@@ -109,5 +109,54 @@
     "runs": "runs",
     "wins": "wins",
     "hint": "Sorted by win rate, then average speed. Averages ignore failed runs."
+  },
+  "nav": {
+    "bench": "Bench",
+    "history": "History",
+    "leaderboard": "Board",
+    "settings": "Config",
+    "cloud": "Cloud",
+    "tests": "Tests",
+    "soon": "Soon",
+    "models": "models",
+    "cloudInputSoon": "Cloud input — soon",
+    "testSuiteSoon": "Test Suite — soon"
+  },
+  "settings": {
+    "providerTitle": "Provider & Connection",
+    "providerHint": "Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server."
+  },
+  "theme": {
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "amoled": "AMOLED",
+    "switchTo": "Switch to {{theme}} theme"
+  },
+  "language": {
+    "title": "Select Language",
+    "hint": "More languages coming soon — English, Deutsch and فارسی are fully supported."
+  },
+  "testsuite": {
+    "title": "Test Suite",
+    "subtitle": "Run a batch of prompts across models and compare the scoreboard.",
+    "reportTitle": "Test Suite Report",
+    "prompts": "Test prompts",
+    "tests": "Tests",
+    "test": "Test",
+    "addPrompt": "Add",
+    "removePrompt": "Remove",
+    "promptPlaceholder": "Test prompt…",
+    "models": "Models",
+    "emptyModels": "No models installed — pull a model first, then select it here.",
+    "needPrompt": "Add at least one non-empty test prompt to run.",
+    "runAll": "Run suite",
+    "stop": "Stop",
+    "stopped": "Stopped",
+    "scoreboard": "Scoreboard",
+    "average": "Avg tok/s · wins",
+    "scoreHint": "👑 = fastest tok/s on that test · click any cell to read the full output.",
+    "clearResults": "Clear results",
+    "copied": "Copied!"
   }
 }
