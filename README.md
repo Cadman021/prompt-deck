@@ -15,8 +15,16 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
 ## ✨ Features
 
-- 🧭 **App Shell workspace** — icon-rail sidebar (Bench, Tests, History, Board, Config) plus a slim 48px TopBar with a provider connection pill (status dot, server URL, model count). Result actions live in a contextual toolbar that only appears when there are results, so model outputs always get maximum space
-- ⚡ **Compare 2 to 4 models simultaneously** — run the same prompt across multiple models at once and watch them stream side-by-side
+- 🧭 **App Shell workspace** — icon-rail sidebar (Bench, Tests, Cloud, History, Board, Config) plus a slim 48px TopBar with a provider connection pill (status dot, server URL, model count). Result actions live in a contextual toolbar that only appears when there are results, so model outputs always get maximum space
+- ☁️ **Cloud providers** — manage OpenAI-compatible endpoints 9Router-style: curated catalog (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini) split into Free Tier / API Key sections, custom endpoints, named API keys per provider, and a detail page with connection testing plus model picking (search, per-model 1-token probe, enable toggles)
+
+  ![Cloud Providers](./docs/screenshot-cloud.png)
+  <!-- NEW IMAGE for v1.1.0: open the Cloud page (cloud icon in sidebar), capture the Free Tier + API Key sections with a few connected cards. Save exactly as docs/screenshot-cloud.png -->
+
+  ![Provider Detail](./docs/screenshot-provider-detail.png)
+  <!-- NEW IMAGE for v1.1.0: click a provider card (e.g. OpenRouter), capture the Connections + Available Models sections. Save exactly as docs/screenshot-provider-detail.png -->
+
+- ⚡ **Compare 2 to 4 models simultaneously** — run the same prompt across local and cloud models at once and watch them stream side-by-side
 - 🧪 **Test Suite (batch execution)** — run a list of 1–10 test prompts across all selected models sequentially and compare them in a scoreboard matrix: per-cell TPS, 👑 crown for the fastest model on each test, average-TPS + wins summary, click-to-read full outputs, Markdown copy, and CSV download
 
   ![Test Suite Scoreboard](./docs/screenshot-testsuite.png)
@@ -128,18 +136,20 @@ npm run tauri build
 ## 📸 How it works
 
 1. Launch the app and pick your provider (Ollama, LM Studio, or llama.cpp) from the Config panel — PromptDeck auto-detects available models
-2. On the **Bench** page, add up to 4 model columns, write a prompt (or pick/save a preset)
-3. Hit **Run** (or `Ctrl+Enter`) — all selected models stream their responses live
-4. Compare TPS / TTFT instantly via the chart, crown a winner, open the **Diff** view for any two outputs, or check the **Leaderboard** for long-term stats
-5. Need a deeper comparison? Switch to the **Tests** page, stack up to 10 prompts, hit **Run suite**, and read the scoreboard to see which model wins across the whole batch
-6. Revisit past runs from the history sidebar, or export the whole report as PDF, Markdown, JSON, or CSV
+2. For cloud models, open the **Cloud** page, add an API key on a provider, refresh its models, and enable the ones you want to use
+3. On the **Bench** page, add up to 4 model columns (local and cloud mixable), write a prompt (or pick/save a preset)
+4. Hit **Run** (or `Ctrl+Enter`) — all selected models stream their responses live
+5. Compare TPS / TTFT instantly via the chart, crown a winner, open the **Diff** view for any two outputs, or check the **Leaderboard** for long-term stats
+6. Need a deeper comparison? Switch to the **Tests** page, stack up to 10 prompts, hit **Run suite**, and read the scoreboard to see which model wins across the whole batch
+7. Revisit past runs from the history sidebar, or export the whole report as PDF, Markdown, JSON, or CSV
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Cloud input — run benchmarks against cloud-hosted OpenAI-compatible endpoints (sidebar slot already reserved)
-- [ ] Cost/pricing estimation for cloud-hosted endpoints
+- [x] Cloud providers — catalog, API keys, model picking, and benchmarking in Bench + Test Suite
+- [ ] Cost/pricing estimation for cloud runs (per-run spend, usage totals)
+- [ ] OS-keychain storage for API keys (currently local persisted store)
 - [x] Test Suite — batch execution with scoreboard matrix
 - [x] AMOLED Dark theme (+ Light / Dark)
 - [x] Side-by-side diff view between two model outputs

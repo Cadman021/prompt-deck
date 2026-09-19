@@ -1,9 +1,17 @@
 // src/App.tsx
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LLMService } from './services/llmService';
 import { OllamaModel, BenchmarkMetrics } from './types/ollama';
 import { useSettingsStore } from './store/useSettingsStore';
+import { useCloudStore } from './store/useCloudStore';
+import {
+  ModelSource,
+  buildCloudGroups,
+  parseQualified,
+  qualifiedName,
+  resolveCloudTarget,
+} from './services/modelTarget';
 import { HistorySidebar } from './components/HistorySidebar';
 import { ModelColumn } from './components/ModelColumn';
 import { generateMarkdownReport, copyHistoryAsJson, exportHistoryAsCsv } from './utils/exportUtils';
@@ -16,6 +24,7 @@ import { exportElementAsPdf } from './utils/pdfExport';
 import { ReportPrintView } from './components/ReportPrintView';
 import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
 import { TestSuiteView } from './components/testsuite/TestSuiteView';
+import { CloudProvidersView } from './components/cloud/CloudProvidersView';
 import { TopBar } from './components/layout/TopBar';
 import { ResultToolbar } from './components/layout/ResultToolbar';
 import { SettingsPanel } from './components/layout/SettingsPanel';
@@ -30,21 +39,28 @@ const MIN_MODELS = 2;
 
 interface Slot {
   id: string;
+  /** Raw model id (without cloud prefix). */
   model: string;
+  source: ModelSource;
   output: string;
   metrics: BenchmarkMetrics | null;
   loading: boolean;
   error: string | null;
 }
 
-const createSlot = (model = ''): Slot => ({
+const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot => ({
   id: Math.random().toString(36).slice(2),
   model,
+  source,
   output: '',
   metrics: null,
   loading: false,
   error: null,
 });
+
+/** Storage/display name: `providerId/model` for cloud, plain id for local. */
+const slotQualified = (s: Pick<Slot, 'source' | 'model'>): string =>
+  qualifiedName(s.source, s.model);
 
 export default function App() {
   const { t } = useTranslation();
@@ -61,6 +77,14 @@ export default function App() {
 
   // Dynamic list of model comparison slots (2 to MAX_MODELS)
   const [slots, setSlots] = useState<Slot[]>([createSlot(), createSlot()]);
+
+  // Cloud models the user enabled on the Cloud page, grouped per provider.
+  const cloudEnabledModels = useCloudStore((s) => s.enabledModels);
+  const cloudCustom = useCloudStore((s) => s.customProviders);
+  const cloudGroups = useMemo(
+    () => buildCloudGroups(cloudCustom, cloudEnabledModels),
+    [cloudCustom, cloudEnabledModels]
+  );
   const outputRefs = useRef<Record<string, string>>({});
   const metricsRefs = useRef<Record<string, BenchmarkMetrics | null>>({});
   const finishedRefs = useRef<Record<string, boolean>>({});
@@ -86,8 +110,8 @@ export default function App() {
   const [pdfState, setPdfState] = useState<'idle' | 'exporting' | 'done'>('idle');
   const printRef = useRef<HTMLDivElement>(null);
 
-  // App Shell navigation: 'bench'/'tests' are pages, the rest are overlay panels.
-  const [activePage, setActivePage] = useState<'bench' | 'tests'>('bench');
+  // App Shell navigation: 'bench'/'tests'/'cloud' are pages, the rest are overlay panels.
+  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud'>('bench');
   const activeView: SidebarView = isSettingsOpen
     ? 'settings'
     : isLeaderboardOpen
@@ -97,7 +121,7 @@ export default function App() {
         : activePage;
 
   const handleSidebarNavigate = (view: SidebarView) => {
-    if (view === 'bench' || view === 'tests') {
+    if (view === 'bench' || view === 'tests' || view === 'cloud') {
       setActivePage(view);
       setIsSidebarOpen(false);
       setIsLeaderboardOpen(false);
@@ -160,7 +184,7 @@ export default function App() {
   const handleCopyReport = async () => {
     if (!slots.some((s) => s.output)) return;
     const results: BenchmarkResult[] = slots.map((s) => ({
-      model: s.model,
+      model: slotQualified(s),
       output: s.output,
       tps: s.metrics?.tps || 0,
       ttft: s.metrics?.ttftMs || 0,
@@ -198,11 +222,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, baseUrl]);
 
+  const hasAnySource = models.length > 0 || cloudGroups.length > 0;
+
   const handleAddModel = () => {
     if (slotsRef.current.length >= MAX_MODELS) return;
-    const count = slotsRef.current.length;
-    const nextModel = models[count % models.length]?.name || models[0]?.name || '';
-    setSlots((prev) => [...prev, createSlot(nextModel)]);
+    // Prefer local models; fall back to the first enabled cloud model so the
+    // button also works when only cloud sources are selected.
+    if (models.length > 0) {
+      const count = slotsRef.current.length;
+      const nextModel = models[count % models.length]?.name || models[0]?.name || '';
+      setSlots((prev) => [...prev, createSlot(nextModel)]);
+      return;
+    }
+    const group = cloudGroups[0];
+    const cloudModel = group?.models[0] || '';
+    if (!group || !cloudModel) return;
+    setSlots((prev) => [...prev, createSlot(cloudModel, { kind: 'cloud', providerId: group.providerId })]);
   };
 
   const handleRemoveSlot = (id: string) => {
@@ -235,18 +270,22 @@ export default function App() {
     setDiffPair(null);
     savedRunIdRef.current = record.id ?? null;
     setSlots(
-      record.results.map((r) => ({
-        ...createSlot(models.some((m) => m.name === r.model) ? r.model : ''),
-        output: r.output,
-        metrics: {
-          tps: r.tps,
-          ttftMs: r.ttft,
-          totalDurationMs: 0,
-          totalTokens: 0,
-          tpsEstimated: r.tpsEstimated ?? false,
-          tokenSource: r.tokenSource === 'heuristic' ? 'heuristic' : 'server',
-        },
-      }))
+      record.results.map((r) => {
+        const parsed = parseQualified(r.model, cloudCustom);
+        const knownLocal = models.some((m) => m.name === parsed.model);
+        return {
+          ...createSlot(knownLocal || parsed.source.kind === 'cloud' ? parsed.model : '', parsed.source),
+          output: r.output,
+          metrics: {
+            tps: r.tps,
+            ttftMs: r.ttft,
+            totalDurationMs: 0,
+            totalTokens: 0,
+            tpsEstimated: r.tpsEstimated ?? false,
+            tokenSource: r.tokenSource === 'heuristic' ? 'heuristic' : 'server',
+          },
+        };
+      })
     );
   };
 
@@ -263,6 +302,32 @@ export default function App() {
         return;
       }
 
+      // Resolve the endpoint: local settings or a stored cloud API key.
+      let target: { provider: typeof provider; baseUrl: string; apiKey?: string } = {
+        provider,
+        baseUrl,
+      };
+      if (slot.source.kind === 'cloud') {
+        const cloud = useCloudStore.getState();
+        const resolved = resolveCloudTarget(slot.source.providerId, cloud.customProviders, cloud.keys);
+        if ('error' in resolved) {
+          const msg =
+            resolved.error === 'noCloudKey'
+              ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
+              : t('bench.unknownProvider', 'Unknown cloud provider.');
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.id === slot.id
+                ? { ...s, output: `Error: ${msg}`, loading: false, error: msg }
+                : s
+            )
+          );
+          onSlotFinished(slot.id);
+          return;
+        }
+        target = resolved.config;
+      }
+
       const options = {
         model: slot.model,
         prompt: currentPrompt,
@@ -273,7 +338,7 @@ export default function App() {
       };
 
       LLMService.generateStream(
-        { provider, baseUrl },
+        target,
         options,
         {
           onChunk: (_, fullText) => {
@@ -339,7 +404,7 @@ export default function App() {
     const finalizeRun = (): void => {
       const snapshot = slotsRef.current;
       const results: BenchmarkResult[] = snapshot.map((s) => ({
-        model: s.model,
+        model: slotQualified(s),
         output: outputRefs.current[s.id] || s.output || '',
         tps: metricsRefs.current[s.id]?.tps || 0,
         ttft: metricsRefs.current[s.id]?.ttftMs || 0,
@@ -502,6 +567,10 @@ export default function App() {
           <div className="flex-1 min-h-0 overflow-y-auto">
             <TestSuiteView models={models} />
           </div>
+        ) : activePage === 'cloud' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <CloudProvidersView />
+          </div>
         ) : (
         <>
         {/* Scrollable workspace — model outputs get max height now */}
@@ -512,18 +581,22 @@ export default function App() {
                 key={slot.id}
                 index={index}
                 models={models}
+                source={slot.source}
                 selectedModel={slot.model}
+                cloudGroups={cloudGroups}
                 output={slot.output}
                 metrics={slot.metrics}
                 error={slot.error}
                 canRemove={slots.length > MIN_MODELS}
-                isWinner={winnerModel !== null && winnerModel === slot.model && slot.model !== ''}
-                onModelChange={(name) =>
-                  setSlots((prev) => prev.map((s) => (s.id === slot.id ? { ...s, model: name } : s)))
+                isWinner={winnerModel !== null && winnerModel === slotQualified(slot) && slot.model !== ''}
+                onSourceChange={(source, name) =>
+                  setSlots((prev) =>
+                    prev.map((s) => (s.id === slot.id ? { ...s, source, model: name } : s))
+                  )
                 }
                 onRemove={() => handleRemoveSlot(slot.id)}
                 onRetry={() => handleRetrySlot(slot.id)}
-                onVote={() => handleVote(slot.model)}
+                onVote={() => handleVote(slotQualified(slot))}
               />
             ))}
           </main>
@@ -531,8 +604,8 @@ export default function App() {
           {diffPair && diffSlots.length === 2 && (
             <div className="px-3 pb-2">
               <DiffView
-                leftName={diffSlots[0].model}
-                rightName={diffSlots[1].model}
+                leftName={slotQualified(diffSlots[0])}
+                rightName={slotQualified(diffSlots[1])}
                 leftText={diffSlots[0].output}
                 rightText={diffSlots[1].output}
                 onClose={() => setDiffPair(null)}
@@ -553,7 +626,7 @@ export default function App() {
           {slots.every((s) => s.metrics) && slots[0]?.metrics && (
             <div className="px-3 pb-2">
               <BenchmarkChart
-                entries={slots.map((s) => ({ name: s.model, metrics: s.metrics! }))}
+                entries={slots.map((s) => ({ name: slotQualified(s), metrics: s.metrics! }))}
               />
             </div>
           )}
@@ -561,7 +634,7 @@ export default function App() {
           <div className="px-3 pb-3 flex justify-center">
             <button
               onClick={handleAddModel}
-              disabled={slots.length >= MAX_MODELS || models.length === 0}
+              disabled={slots.length >= MAX_MODELS || !hasAnySource}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -620,7 +693,7 @@ export default function App() {
           ref={printRef}
           prompt={prompt}
           results={slots.map((s) => ({
-            model: s.model,
+            model: slotQualified(s),
             output: s.output,
             tps: s.metrics?.tps || 0,
             ttft: s.metrics?.ttftMs || 0,

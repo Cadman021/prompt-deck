@@ -19,6 +19,12 @@ import {
 } from 'lucide-react';
 import { LLMService } from '../../services/llmService';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { useCloudStore } from '../../store/useCloudStore';
+import {
+  buildCloudGroups,
+  parseQualified,
+  resolveCloudTarget,
+} from '../../services/modelTarget';
 import { OllamaModel, BenchmarkMetrics } from '../../types/ollama';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 
@@ -56,6 +62,18 @@ function loadStoredTests(): string[] | null {
 export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) => {
   const { t } = useTranslation();
   const { provider, baseUrl, advancedConfig } = useSettingsStore();
+  const cloudEnabledModels = useCloudStore((s) => s.enabledModels);
+  const cloudCustom = useCloudStore((s) => s.customProviders);
+  const cloudGroups = useMemo(
+    () => buildCloudGroups(cloudCustom, cloudEnabledModels),
+    [cloudCustom, cloudEnabledModels]
+  );
+
+  // Display name: cloud targets drop the `providerId/` prefix.
+  const displayName = (qualified: string): string => {
+    const parsed = parseQualified(qualified, cloudCustom);
+    return parsed.source.kind === 'cloud' ? parsed.model : qualified;
+  };
 
   const [tests, setTests] = useState<string[]>(() => {
     const stored = loadStoredTests();
@@ -111,10 +129,30 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     }));
   };
 
-  const runCell = (ti: number, model: string, promptText: string, signal: AbortSignal): Promise<void> => {
+  const runCell = (ti: number, target: string, promptText: string, signal: AbortSignal): Promise<void> => {
+    const parsed = parseQualified(target, cloudCustom);
+    const model = parsed.model;
+    // Resolve the endpoint: local settings or a stored cloud API key.
+    let endpoint: { provider: typeof provider; baseUrl: string; apiKey?: string } = {
+      provider,
+      baseUrl,
+    };
+    if (parsed.source.kind === 'cloud') {
+      const cloud = useCloudStore.getState();
+      const resolved = resolveCloudTarget(parsed.source.providerId, cloud.customProviders, cloud.keys);
+      if ('error' in resolved) {
+        const msg =
+          resolved.error === 'noCloudKey'
+            ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
+            : t('bench.unknownProvider', 'Unknown cloud provider.');
+        updateCell(ti, target, { status: 'error', error: msg });
+        return Promise.resolve();
+      }
+      endpoint = resolved.config;
+    }
     return new Promise((resolve) => {
       LLMService.generateStream(
-        { provider, baseUrl },
+        endpoint,
         {
           model,
           prompt: promptText,
@@ -125,20 +163,20 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         },
         {
           onChunk: (_, fullText) => {
-            updateCell(ti, model, { status: 'running', output: fullText });
+            updateCell(ti, target, { status: 'running', output: fullText });
           },
           onComplete: (fullText, metrics) => {
-            updateCell(ti, model, { status: 'done', output: fullText, metrics, error: null });
+            updateCell(ti, target, { status: 'done', output: fullText, metrics, error: null });
             resolve();
           },
           onError: (err) => {
             if (signal.aborted) {
-              updateCell(ti, model, {
+              updateCell(ti, target, {
                 status: 'error',
                 error: t('testsuite.stopped', 'Stopped'),
               });
             } else {
-              updateCell(ti, model, { status: 'error', error: err.message });
+              updateCell(ti, target, { status: 'error', error: err.message });
             }
             resolve();
           },
@@ -235,7 +273,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
   }, [activeTests, selectedModels, results, winners]);
 
   const hasAnyResult = Object.keys(results).length > 0;
-  const canRun = !running && activeTests.length > 0 && selectedModels.length > 0 && models.length > 0;
+  const canRun = !running && activeTests.length > 0 && selectedModels.length > 0;
 
   const buildMarkdown = (): string => {
     const lines: string[] = [];
@@ -444,7 +482,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             </h3>
           </div>
           <div className="p-3 space-y-1.5 max-h-[420px] overflow-y-auto">
-            {models.length === 0 && (
+            {models.length === 0 && cloudGroups.length === 0 && (
               <p className="text-xs text-slate-500 italic p-2">
                 {t('testsuite.emptyModels', 'No models installed — pull a model first, then select it here.')}
               </p>
@@ -474,6 +512,37 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                 </label>
               );
             })}
+            {cloudGroups.map((g) => (
+              <div key={g.providerId}>
+                <p className="px-1 pt-1.5 pb-1 text-[11px] font-bold text-cyan-600 dark:text-cyan-300">
+                  ☁ {g.name}
+                </p>
+                {g.models.map((m) => {
+                  const qualified = `${g.providerId}/${m}`;
+                  const checked = selectedModels.includes(qualified);
+                  return (
+                    <label
+                      key={qualified}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs cursor-pointer transition mb-1.5 ${
+                        checked
+                          ? 'border-cyan-400 dark:border-cyan-500/60 bg-cyan-50/60 dark:bg-cyan-950/30'
+                          : 'border-slate-200 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      } ${running ? 'opacity-60 pointer-events-none' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleModel(qualified)}
+                        className="w-3.5 h-3.5 accent-cyan-500"
+                      />
+                      <span className="font-mono font-medium truncate" title={qualified}>
+                        {m}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ))}
             {activeTests.length === 0 && (
               <p className="text-[11px] text-amber-600 dark:text-amber-300 p-1">
                 {t('testsuite.needPrompt', 'Add at least one non-empty test prompt to run.')}
@@ -504,7 +573,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                           style={{ background: MODEL_COLORS[i % MODEL_COLORS.length] }}
                         />
                         <span className="truncate max-w-[140px]" title={m}>
-                          {m.split(':')[0]}
+                          {displayName(m).split(':')[0]}
                         </span>
                       </span>
                     </th>
@@ -592,7 +661,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             <div className="relative w-[720px] max-w-full max-h-[80vh] flex flex-col rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-slate-200 dark:border-white/10">
                 <div className="min-w-0">
-                  <div className="text-sm font-bold font-mono truncate">{detail.model}</div>
+                  <div className="text-sm font-bold font-mono truncate" title={detail.model}>
+                    {displayName(detail.model)}
+                  </div>
                   <div className="text-[11px] text-slate-500 truncate" dir="auto">
                     {tests[detail.ti]?.split('\n')[0]}
                   </div>

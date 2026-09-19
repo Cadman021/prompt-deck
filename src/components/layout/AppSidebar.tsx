@@ -11,7 +11,7 @@ import {
   Terminal,
 } from 'lucide-react';
 
-export type SidebarView = 'bench' | 'tests' | 'history' | 'leaderboard' | 'settings';
+export type SidebarView = 'bench' | 'tests' | 'cloud' | 'history' | 'leaderboard' | 'settings';
 
 interface AppSidebarProps {
   activeView: SidebarView;
@@ -62,23 +62,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onNavigate }
 
       {navItem('bench', <LayoutGrid className="w-5 h-5" />, t('nav.bench', 'Bench'))}
       {navItem('tests', <FlaskConical className="w-5 h-5" />, t('nav.tests', 'Tests'))}
+      {navItem('cloud', <Cloud className="w-5 h-5" />, t('nav.cloud', 'Cloud'))}
       {navItem('history', <History className="w-5 h-5" />, t('nav.history', 'History'))}
       {navItem('leaderboard', <Trophy className="w-5 h-5" />, t('nav.leaderboard', 'Board'))}
 
-      <div className="w-8 h-px bg-slate-200 dark:bg-slate-800 my-1" />
-
-      {/* Future placeholders — reserved space for next features */}
-      <button
-        disabled
-        title={t('nav.cloudInputSoon', 'Cloud input — soon')}
-        className="relative flex flex-col items-center gap-1 w-full py-2.5 rounded-xl text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-70"
-      >
-        <Cloud className="w-5 h-5" />
-        <span className="text-[10px] font-medium leading-none">{t('nav.cloud', 'Cloud')}</span>
-        <span className="absolute top-1 end-1 text-[8px] font-bold px-1 py-px rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20">
-          {t('nav.soon', 'Soon')}
-        </span>
-      </button>
       <div className="flex-1" />
 
       {navItem('settings', <Settings className="w-5 h-5" />, t('nav.settings', 'Config'))}

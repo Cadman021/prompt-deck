@@ -25,18 +25,18 @@
     background-color: #000 !important;
   }
   .amoled [class*="dark:bg-slate-900"] {
-    background-color: #050505 !important;
+    background-color: #111111 !important;
   }
   .amoled [class*="dark:bg-slate-800"] {
-    background-color: #0a0a0a !important;
+    background-color: #1e1e1e !important;
   }
   .amoled [class*="dark:border-slate-800"],
   .amoled [class*="dark:border-slate-700"] {
-    border-color: #1c1c1e !important;
+    border-color: #212123 !important;
   }
   .amoled [class*="dark:text-slate-100"],
   .amoled [class*="dark:text-slate-200"] {
-    color: #f5f5f7 !important;
+    color: #ffffff !important;
   }
 
   /* Neon glow on the primary actions + status dots. */

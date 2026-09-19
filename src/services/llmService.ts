@@ -6,6 +6,8 @@ import { OllamaModel, PromptOptions, StreamCallbacks, BenchmarkMetrics } from '.
 interface ProviderConfig {
   provider: Provider;
   baseUrl: string;
+  /** Optional Bearer token for cloud (OpenAI-compatible) endpoints. Never logged. */
+  apiKey?: string;
 }
 
 /**
@@ -19,7 +21,9 @@ async function getInstalledModels(config: ProviderConfig): Promise<OllamaModel[]
   }
 
   try {
-    const response = await fetch(`${config.baseUrl}/models`);
+    const headers: Record<string, string> = {};
+    if (config.apiKey?.trim()) headers['Authorization'] = `Bearer ${config.apiKey.trim()}`;
+    const response = await fetch(`${config.baseUrl}/models`, { headers });
     if (!response.ok) {
       throw new Error(`Server error: ${response.statusText}`);
     }
@@ -52,7 +56,8 @@ async function generateOpenAICompatibleStream(
   baseUrl: string,
   options: PromptOptions,
   callbacks: StreamCallbacks,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  apiKey?: string
 ): Promise<void> {
   const startTime = performance.now();
   let firstTokenTime: number | null = null;
@@ -66,9 +71,12 @@ async function generateOpenAICompatibleStream(
     }
     messages.push({ role: 'user', content: options.prompt });
 
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (apiKey?.trim()) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       signal,
       body: JSON.stringify({
         model: options.model,
@@ -156,6 +164,98 @@ async function generateOpenAICompatibleStream(
   }
 }
 
+export interface CloudTestResult {
+  ok: boolean;
+  modelCount?: number;
+  /** Model ids reported by `GET /models` (capped). */
+  models?: string[];
+  error?: string;
+}
+
+/**
+ * Tests a cloud (OpenAI-compatible) endpoint: `GET {baseUrl}/models` with an
+ * optional `Authorization: Bearer` header. Used by the Cloud providers page.
+ * The key itself is never logged.
+ */
+async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<CloudTestResult> {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  try {
+    const headers: Record<string, string> = {};
+    if (apiKey?.trim()) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+    const response = await fetch(`${normalized}/models`, { headers });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return { ok: false, error: 'Unauthorized — check the API key.' };
+      }
+      return { ok: false, error: `Server error: ${response.status} ${response.statusText}` };
+    }
+    const data = await response.json();
+    const models = Array.isArray(data?.data) ? data.data : [];
+    const ids = models
+      .map((m: { id?: unknown }) => (typeof m?.id === 'string' ? m.id : null))
+      .filter((id: string | null): id is string => Boolean(id))
+      .slice(0, 300);
+    return { ok: true, modelCount: models.length, models: ids };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Connection failed.',
+    };
+  }
+}
+
+export interface ModelProbeResult {
+  ok: boolean;
+  latencyMs?: number;
+  error?: string;
+}
+
+/**
+ * Probes a single cloud model with a minimal 1-token completion.
+ * Used for per-model Test buttons (a model can be listed but unreachable
+ * for a given key). Never logs the key.
+ */
+async function probeCloudModel(
+  baseUrl: string,
+  apiKey: string,
+  model: string
+): Promise<ModelProbeResult> {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  const started = performance.now();
+  try {
+    const response = await fetch(`${normalized}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey.trim()}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: 'Hi' }],
+        max_tokens: 1,
+        stream: false,
+      }),
+    });
+    if (!response.ok) {
+      let detail = `${response.status} ${response.statusText}`;
+      try {
+        const data = await response.json();
+        const msg = data?.error?.message;
+        if (typeof msg === 'string' && msg) detail = msg.slice(0, 160);
+      } catch {
+        // keep HTTP status text
+      }
+      return { ok: false, error: detail };
+    }
+    return { ok: true, latencyMs: Math.round(performance.now() - started) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Connection failed.',
+    };
+  }
+}
+
 async function generateStream(
   config: ProviderConfig,
   options: PromptOptions,
@@ -165,10 +265,12 @@ async function generateStream(
   if (config.provider === 'ollama') {
     return OllamaService.generateStream(options, callbacks, signal, config.baseUrl);
   }
-  return generateOpenAICompatibleStream(config.baseUrl, options, callbacks, signal);
+  return generateOpenAICompatibleStream(config.baseUrl, options, callbacks, signal, config.apiKey);
 }
 
 export const LLMService = {
   getInstalledModels,
   generateStream,
+  testCloudConnection,
+  probeCloudModel,
 };

@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-09-19
+
+Cloud release: manage cloud LLM providers 9Router-style and benchmark their models side-by-side with local ones — in both Bench and Test Suite.
+
+### ✨ Added
+- **Cloud Providers page** (new sidebar entry): Custom Providers section (user-added OpenAI-compatible endpoints) plus a curated catalog split into **Free Tier Providers** and **API Key Providers**, with search, per-section Test All, and per-card connection status
+- **10 providers in the catalog**: OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI (Grok), Kimi (Moonshot), NVIDIA NIM, Ollama Cloud, and Gemini (via Google's OpenAI-compatibility endpoint) — each with docs link, info banner, suggested models, and a 128px brand icon (`public/providers/`, graceful initials-tile fallback)
+- **Provider detail page**: named API-key connections (add / test / edit / delete / enable-toggle), an **Available Models** section that fetches the real `/models` list, model search, per-model enable toggles, **per-model 1-token probe test** (green check / red X with latency or error), copy-id, remove, manual add, suggested-model chips, and enable/disable-all
+- **Cloud models in Bench**: grouped model picker (Local + ☁ per-provider groups) with a cloud badge on cloud columns; runs use the stored key via `Authorization: Bearer` header. Cloud models are stored as qualified names (`providerId/model`), so history, leaderboard, votes, charts, diff, and all exports work with **no database migration**
+- **Cloud models in Test Suite**: per-provider cloud checkboxes (mixable with local models in one suite); suites run without any local model installed
+- `LLMService.testCloudConnection` now also returns the model id list; new `probeCloudModel` for single-model reachability checks
+
+### 🔄 Changed
+- Cloud store migrated to v2 (multiple named keys per provider, `enabledModels`, `knownModels`) with automatic non-destructive migration of v1 connections
+- Add-model button no longer depends on local models — with cloud-only sources it adds the first enabled cloud model instead of staying disabled
+- Removed obsolete `nav.soon` / `*Soon` i18n keys (Cloud and Tests are real pages now); full EN + FA + DE coverage for all new UI
+
+### 🐛 Fixed
+- Missing `X` icon import in `ProviderDetailPage` that broke `tsc` (probe-error state)
+- Test Suite Run stayed disabled when only cloud models were selected (leftover local-models guard)
+
+---
+
 ## [1.0.0] - 2026-09-17
 
 First stable release. The headline changes are a full **App Shell redesign** that frees up space for new workflows, a brand-new **Test Suite** page for batch benchmarking, an **AMOLED Dark** theme, and a proper **language picker** — plus German locale coverage and CI updates.

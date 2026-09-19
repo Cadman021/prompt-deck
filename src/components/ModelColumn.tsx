@@ -1,8 +1,9 @@
 // src/components/ModelColumn.tsx
 import React from 'react';
-import { Cpu, Zap, Clock, X, RotateCcw, ThumbsUp, Crown, Copy, Check } from 'lucide-react';
+import { Cpu, Zap, Clock, Cloud, X, RotateCcw, ThumbsUp, Crown, Copy, Check } from 'lucide-react';
 import { OllamaModel, BenchmarkMetrics } from '../types/ollama';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { ModelSource, CloudGroup } from '../services/modelTarget';
 import { useTranslation } from 'react-i18next';
 
 const COLUMN_COLORS = [
@@ -17,17 +18,37 @@ const COLUMN_COLORS = [
 interface ModelColumnProps {
   index: number;
   models: OllamaModel[];
+  source: ModelSource;
   selectedModel: string;
+  cloudGroups: CloudGroup[];
   output: string;
   metrics: BenchmarkMetrics | null;
   error: string | null;
   canRemove: boolean;
   isWinner: boolean;
-  onModelChange: (name: string) => void;
+  onSourceChange: (source: ModelSource, name: string) => void;
   onRemove?: () => void;
   onRetry?: () => void;
   onVote?: () => void;
 }
+
+const encodeValue = (source: ModelSource, model: string): string =>
+  JSON.stringify({ kind: source.kind, providerId: source.kind === 'cloud' ? source.providerId : undefined, model });
+
+const decodeValue = (value: string): { source: ModelSource; model: string } => {
+  try {
+    const parsed = JSON.parse(value) as { kind?: string; providerId?: string; model?: string };
+    if (parsed && typeof parsed.model === 'string') {
+      if (parsed.kind === 'cloud' && parsed.providerId) {
+        return { source: { kind: 'cloud', providerId: parsed.providerId }, model: parsed.model };
+      }
+      return { source: { kind: 'local' }, model: parsed.model };
+    }
+  } catch {
+    // legacy plain model name
+  }
+  return { source: { kind: 'local' }, model: value };
+};
 
 function formatTps(metrics: BenchmarkMetrics): string {
   const value = metrics.tpsEstimated ? `~${metrics.tps}` : `${metrics.tps}`;
@@ -37,11 +58,13 @@ function formatTps(metrics: BenchmarkMetrics): string {
 export const ModelColumn: React.FC<ModelColumnProps> = ({
   index,
   models,
+  source,
   selectedModel,
+  cloudGroups,
   output,
   metrics,
   error,
-  onModelChange,
+  onSourceChange,
   onRemove,
   canRemove,
   isWinner,
@@ -74,15 +97,41 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           ) : (
             <Cpu className={`w-4 h-4 ${color} shrink-0`} />
           )}
+          {source.kind === 'cloud' && (
+            <span
+              className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30"
+              title={cloudGroups.find((g) => g.providerId === source.providerId)?.name}
+            >
+              <Cloud className="w-3 h-3" />
+              {cloudGroups.find((g) => g.providerId === source.providerId)?.name.split(' ')[0] ?? '☁'}
+            </span>
+          )}
           <select
-            value={selectedModel}
-            onChange={(e) => onModelChange(e.target.value)}
+            value={encodeValue(source, selectedModel)}
+            onChange={(e) => {
+              const next = decodeValue(e.target.value);
+              onSourceChange(next.source, next.model);
+            }}
             className="bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none w-full min-w-0"
           >
-            {models.map((m) => (
-              <option key={m.name} value={m.name}>
-                {m.name}
-              </option>
+            <optgroup label={t('bench.localModels', 'Local models')}>
+              {models.map((m) => (
+                <option key={`local:${m.name}`} value={encodeValue({ kind: 'local' }, m.name)}>
+                  {m.name}
+                </option>
+              ))}
+            </optgroup>
+            {cloudGroups.map((g) => (
+              <optgroup key={g.providerId} label={`☁ ${g.name}`}>
+                {g.models.map((m) => (
+                  <option
+                    key={`cloud:${g.providerId}:${m}`}
+                    value={encodeValue({ kind: 'cloud', providerId: g.providerId }, m)}
+                  >
+                    {m}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
