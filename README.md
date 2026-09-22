@@ -1,5 +1,5 @@
 
-![PromptDeck Git](./docs/demo.gif)
+<!--![PromptDeck Git](./docs/demo.gif) -->
 <!-- Retake recommended for v1.0.0: new App Shell + a Test Suite run. Keep filename docs/demo.gif -->
 
 # 🚀 PromptDeck
