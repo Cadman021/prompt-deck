@@ -6,6 +6,7 @@ import { ProviderSettings } from '../ProviderSettings';
 import type { AdvancedConfig } from '../AdvancedSettings';
 import { useSettingsStore, Theme } from '../../store/useSettingsStore';
 import { LanguageModal, SUPPORTED_LANGUAGES } from './LanguageModal';
+import { openExternal } from '../../utils/openExternal';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -31,11 +32,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <button
         key={id}
         onClick={() => setTheme(id)}
-        className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-3 border text-[11px] font-medium transition-all ${
-          selected
-            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 shadow-[0_0_14px_rgba(99,102,241,0.3)]'
-            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-        }`}
+        className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-3 border text-[11px] font-medium transition-all ${selected
+          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 shadow-[0_0_14px_rgba(99,102,241,0.3)]'
+          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
       >
         {icon}
         <span>{t(labelKey, fallback)}</span>
@@ -166,6 +166,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
           </section>
+          <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800 flex justify-center">
+            <button
+              onClick={() => void openExternal('https://github.com/Cadman021')}
+              title="Sina Cadman on GitHub"
+              className="group flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors py-1.5 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60"
+            >
+              <span>Powered by</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">
+                Sina Cadman
+              </span>
+            </button>
+          </div>
         </div>
       </div>
       <LanguageModal isOpen={isLangOpen} onClose={() => setIsLangOpen(false)} />

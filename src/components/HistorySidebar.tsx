@@ -58,7 +58,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl flex flex-col border-r border-slate-200 dark:border-slate-800 transition-all duration-300">
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+      <div className="fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl flex flex-col border-r border-slate-200 dark:border-slate-800 transition-all duration-300">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -178,6 +183,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           ))
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };

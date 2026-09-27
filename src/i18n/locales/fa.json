@@ -132,7 +132,7 @@
   },
   "language": {
     "title": "انتخاب زبان",
-    "hint": "زبان‌های بیشتر به‌زودی — English و Deutsch و فارسی کامل پشتیبانی می‌شوند."
+    "hint": "۶ زبان کامل پشتیبانی می‌شوند — زبان‌های بیشتر به‌زودی."
   },
   "cloud": {
     "title": "ارائه‌دهنده‌ها",
@@ -183,6 +183,7 @@
     "refresh": "به‌روزرسانی",
     "refreshModels": "دریافت لیست مدل‌ها از ارائه‌دهنده",
     "fetchHint": "اول یک کلید API فعال اضافه کن",
+    "noListEndpoint": "کلید سالم است، ولی این ارائه‌دهنده لیست مدل نمی‌دهد — شناسه مدل‌ها را دستی پایین اضافه کن.",
     "enableAll": "فعال‌سازی همه",
     "disableAll": "غیرفعال‌سازی همه",
     "addModel": "افزودن مدل",
@@ -201,7 +202,16 @@
       "kimi": "پلتفرم Moonshot AI: مدل‌های Kimi K2 و Moonshot v1 با اعتبار آزمایشی رایگان.",
       "nvidia": "دسترسی رایگان برای اعضای برنامه توسعه‌دهنده NVIDIA (پروتوتایپ و تست).",
       "ollama-cloud": "اجرای مدل‌های باز بزرگ در فضای ابری با حساب Ollama.",
-      "gemini": "کلید Google AI Studio از مسیر سازگار با OpenAI. سطح رایگان سخاوتمندانه."
+      "gemini": "کلید Google AI Studio از مسیر سازگار با OpenAI. سطح رایگان سخاوتمندانه.",
+      "kilo-gateway": "Kilo Gateway: صدها مدل بدون کارمزد با حساب Kilo (app.kilo.ai).",
+      "bazaarlink": "یک رابط. همه مدل‌های هوش مصنوعی.",
+      "modelark": "BytePlus ModelArk (ریجن پکن): مدل‌های Doubao و DeepSeek با API سازگار با OpenAI.",
+      "poolside": "Poolside AI: مدل‌های Laguna برای توسعه سازمانی. لیست عمومی ندارد — شناسه‌ها را دستی اضافه کن.",
+      "agnes": "درگاه Agnes AI با اعتبار API رایگان هنگام ثبت‌نام.",
+      "xiaomi-mimo": "درگاه Xiaomi MiMo: مدل‌های mimo-v2.6-pro و flash و 2.5 با API سازگار با OpenAI.",
+      "mistral": "API رسمی Mistral (La Plateforme): مدل‌های Large و Medium و Codestral، سازگار با OpenAI.",
+      "bai": "درگاه B.AI با کاتالوگ بزرگ مدل‌ها. شناسه مدل‌ها به‌صورت زنده از ارائه‌دهنده گرفته می‌شود.",
+      "anthropic": "API رسمی Anthropic با سازگاری OpenAI SDK: مدل‌های Claude Opus و Sonnet و Haiku با احراز Bearer."
     }
   },
   "bench": {

@@ -2,6 +2,10 @@
 
 Thanks for your interest in contributing! 🎉
 
+Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) — by participating you
+agree to uphold it. For security issues, see [SECURITY.md](./SECURITY.md)
+instead of opening a public issue.
+
 ## Getting Started
 
 1. Fork the repository and clone it locally
@@ -31,7 +35,7 @@ Open an issue describing the use case before submitting a large PR — this help
 ## Code Style
 
 - TypeScript/React: follow the existing patterns in the codebase (functional components, hooks)
-- Keep UI strings in the i18n JSON files (`src/i18n/locales/en.json` and `fa.json`) — avoid hardcoding text in components
+- Keep UI strings in the i18n JSON files (`src/i18n/locales/`, all six locales) — avoid hardcoding text in components
 - Rust: standard `rustfmt` formatting
 
 Thanks again for helping improve PromptDeck! ⭐

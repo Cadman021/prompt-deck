@@ -1,5 +1,5 @@
 
-![PromptDeck Git](./docs/demo.gif)
+<!-- ![PromptDeck Git](./docs/demo.gif) -->
 <!-- Retake recommended for v1.0.0: new App Shell + a Test Suite run. Keep filename docs/demo.gif -->
 
 # 🚀 PromptDeck
@@ -16,7 +16,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 ## ✨ Features
 
 - 🧭 **App Shell workspace** — icon-rail sidebar (Bench, Tests, Cloud, History, Board, Config) plus a slim 48px TopBar with a provider connection pill (status dot, server URL, model count). Result actions live in a contextual toolbar that only appears when there are results, so model outputs always get maximum space
-- ☁️ **Cloud providers** — manage OpenAI-compatible endpoints 9Router-style: curated catalog (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini) split into Free Tier / API Key sections, custom endpoints, named API keys per provider, and a detail page with connection testing plus model picking (search, per-model 1-token probe, enable toggles)
+- ☁️ **Cloud providers** — manage OpenAI-compatible endpoints 9Router-style: curated catalog of 19 providers (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini, Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, Anthropic) split into Free Tier / API Key sections, custom endpoints, named API keys per provider with direct key-creation links, and a detail page with connection testing plus model picking (search, per-model 1-token probe, enable toggles)
 
   ![Cloud Providers](./docs/screenshot-cloud.png)
   <!-- NEW IMAGE for v1.1.0: open the Cloud page (cloud icon in sidebar), capture the Free Tier + API Key sections with a few connected cards. Save exactly as docs/screenshot-cloud.png -->
@@ -69,7 +69,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   ![AMOLED Dark Theme](./docs/screenshot-amoled.png)
   <!-- NEW IMAGE for v1.0.0: same bench view as screenshot-main but with AMOLED theme active. Save exactly as docs/screenshot-amoled.png -->
 
-- 🌍 **Language picker** — English, Deutsch, and فارسی (full RTL support) in a grid-style popup, opened from the header or settings
+- 🌍 **Language picker** — English, Deutsch, Français, 中文, Русский, and فارسی (full RTL support for Persian) in a grid-style popup, opened from the header or settings
 
   ![Language Picker](./docs/screenshot-language.png)
   <!-- NEW IMAGE for v1.0.0: click the language button in the TopBar, capture the centered Select Language modal. Save exactly as docs/screenshot-language.png -->
@@ -174,7 +174,7 @@ Please open an issue first for larger changes so we can discuss the approach. Se
 
 ## 📄 License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [GNU General Public License v3.0](./LICENSE).
 
 ---
 

@@ -17,6 +17,9 @@ export interface SupportedLanguage {
 export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
   { id: 'en', code: 'US', native: 'English' },
   { id: 'de', code: 'DE', native: 'Deutsch' },
+  { id: 'fr', code: 'FR', native: 'Français' },
+  { id: 'zh', code: 'CN', native: '中文' },
+  { id: 'ru', code: 'RU', native: 'Русский' },
   { id: 'fa', code: 'IR', native: 'فارسی' },
 ];
 

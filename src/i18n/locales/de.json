@@ -129,7 +129,7 @@
   },
   "language": {
     "title": "Sprache wählen",
-    "hint": "Weitere Sprachen folgen — English, Deutsch und فارسی werden vollständig unterstützt."
+    "hint": "6 Sprachen werden vollständig unterstützt — weitere folgen."
   },
   "cloud": {
     "title": "Anbieter",
@@ -180,6 +180,7 @@
     "refresh": "Aktualisieren",
     "refreshModels": "Modellliste vom Anbieter abrufen",
     "fetchHint": "Zuerst einen aktivierten API-Key hinzufügen",
+    "noListEndpoint": "Key funktioniert, aber dieser Anbieter hat keine Modellliste — IDs unten manuell hinzufügen.",
     "enableAll": "Alle aktivieren",
     "disableAll": "Alle deaktivieren",
     "addModel": "Modell hinzufügen",
@@ -198,7 +199,16 @@
       "kimi": "Moonshot-AI-Plattform: Kimi K2 und Moonshot-v1-Modelle mit Startguthaben.",
       "nvidia": "Kostenloser Zugang für NVIDIA-Developer-Program-Mitglieder (Prototyping & Tests).",
       "ollama-cloud": "Große offene Modelle in der Cloud mit Ollama-Konto ausführen.",
-      "gemini": "Google-AI-Studio-Key über den OpenAI-Kompatibilitäts-Endpunkt. Großzügige Free-Stufe."
+      "gemini": "Google-AI-Studio-Key über den OpenAI-Kompatibilitäts-Endpunkt. Großzügige Free-Stufe.",
+      "kilo-gateway": "Kilo Gateway: Hunderte Modelle zum Selbstkostenpreis über dein Kilo-Konto (app.kilo.ai).",
+      "bazaarlink": "One Interface. Every AI Model.",
+      "modelark": "BytePlus ModelArk (Region Peking): Doubao- und DeepSeek-Modelle über OpenAI-kompatible API.",
+      "poolside": "Poolside AI: Laguna-Modelle für Enterprise-Entwicklung. Keine öffentliche Liste — IDs manuell hinzufügen.",
+      "agnes": "Agnes-AI-Gateway mit gratis API-Credits bei Anmeldung.",
+      "xiaomi-mimo": "Xiaomi-MiMo-Gateway: mimo-v2.6-pro-, flash- und 2.5-Modelle über OpenAI-kompatible API.",
+      "mistral": "Offizielle Mistral-API (La Plateforme): Large-, Medium- und Codestral-Modelle, OpenAI-kompatibel.",
+      "bai": "B.AI-Gateway mit großem Modellkatalog. Modell-IDs werden live vom Anbieter geladen.",
+      "anthropic": "Offizielle Anthropic-API via OpenAI-SDK-Kompatibilität: Claude Opus, Sonnet und Haiku mit Bearer-Auth."
     }
   },
   "bench": {

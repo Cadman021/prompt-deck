@@ -33,6 +33,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
   const maxTps = Math.max(0, ...stats.map((s) => s.avgTps));
 
   return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
     <div className="fixed inset-y-0 right-0 z-50 w-96 max-w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -101,5 +106,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
         {t('leaderboard.hint')}
       </div>
     </div>
+    </>
   );
 };

@@ -164,11 +164,29 @@ async function generateOpenAICompatibleStream(
   }
 }
 
+/**
+ * Network-level failures (DNS, reset connection, regional blocking, VPN/proxy
+ * issues) surface as a bare TypeError ("Failed to fetch") with no status.
+ * Translate that into something actionable instead of showing the raw text.
+ */
+function fetchFailedMessage(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    error instanceof TypeError ||
+    /failed to fetch|networkerror|load failed|network request failed/i.test(msg)
+  ) {
+    return 'Network unreachable — the host cannot be reached. Check your connection/VPN: some providers block certain regions or IPs.';
+  }
+  return msg || 'Connection failed.';
+}
+
 export interface CloudTestResult {
   ok: boolean;
   modelCount?: number;
   /** Model ids reported by `GET /models` (capped). */
   models?: string[];
+  /** False when the provider has no `/models` endpoint (key verified via probe instead). */
+  modelsListed: boolean;
   error?: string;
 }
 
@@ -176,18 +194,27 @@ export interface CloudTestResult {
  * Tests a cloud (OpenAI-compatible) endpoint: `GET {baseUrl}/models` with an
  * optional `Authorization: Bearer` header. Used by the Cloud providers page.
  * The key itself is never logged.
+ *
+ * Some providers (e.g. Poolside) don't implement `/models` but serve
+ * `/chat/completions` fine. In that case (404/405/501) we fall back to a
+ * key-only probe: a 401/403 means a bad key, anything else means the key
+ * was accepted — reported as ok with `modelsListed: false` so the UI can
+ * suggest adding model ids manually.
  */
 async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<CloudTestResult> {
   const normalized = baseUrl.replace(/\/+$/, '');
+  const auth: Record<string, string> = {};
+  if (apiKey?.trim()) auth['Authorization'] = `Bearer ${apiKey.trim()}`;
   try {
-    const headers: Record<string, string> = {};
-    if (apiKey?.trim()) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
-    const response = await fetch(`${normalized}/models`, { headers });
+    const response = await fetch(`${normalized}/models`, { headers: auth });
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        return { ok: false, error: 'Unauthorized — check the API key.' };
+        return { ok: false, modelsListed: true, error: 'Unauthorized — check the API key.' };
       }
-      return { ok: false, error: `Server error: ${response.status} ${response.statusText}` };
+      if ((response.status === 404 || response.status === 405 || response.status === 501) && apiKey?.trim()) {
+        return await probeKeyOnly(normalized, apiKey.trim());
+      }
+      return { ok: false, modelsListed: true, error: `Server error: ${response.status} ${response.statusText}` };
     }
     const data = await response.json();
     const models = Array.isArray(data?.data) ? data.data : [];
@@ -195,11 +222,43 @@ async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<Cl
       .map((m: { id?: unknown }) => (typeof m?.id === 'string' ? m.id : null))
       .filter((id: string | null): id is string => Boolean(id))
       .slice(0, 300);
-    return { ok: true, modelCount: models.length, models: ids };
+    return { ok: true, modelCount: models.length, models: ids, modelsListed: true };
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : 'Connection failed.',
+      modelsListed: true,
+      error: fetchFailedMessage(error),
+    };
+  }
+}
+
+/** Key-only check for providers without a `/models` endpoint. */
+async function probeKeyOnly(baseUrl: string, apiKey: string): Promise<CloudTestResult> {
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: '__promptdeck_key_check__',
+        messages: [{ role: 'user', content: 'Hi' }],
+        max_tokens: 1,
+        stream: false,
+      }),
+    });
+    if (response.status === 401 || response.status === 403) {
+      return { ok: false, modelsListed: false, error: 'Unauthorized — check the API key.' };
+    }
+    // Any other status (unknown-model 404, quota 402/429, bad request 400…)
+    // proves the key itself was accepted.
+    return { ok: true, modelCount: 0, models: [], modelsListed: false };
+  } catch (error) {
+    return {
+      ok: false,
+      modelsListed: false,
+      error: fetchFailedMessage(error),
     };
   }
 }
@@ -251,7 +310,7 @@ async function probeCloudModel(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : 'Connection failed.',
+      error: fetchFailedMessage(error),
     };
   }
 }

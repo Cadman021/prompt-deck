@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-09-27
+
+Nine new cloud providers (19 total), three new locales, GPL-3.0, and community
+files — plus robustness fixes for providers with non-standard APIs.
+
+### ✨ Added
+- **9 new cloud providers**: Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, and Anthropic (via its official OpenAI SDK compatibility layer, Bearer auth) — each with brand icon, info banner, suggested models, and a direct API-key link
+- **Real API-key links everywhere**: the "Where to get an API key" button now points at each provider's actual key-creation page and opens it in the system browser via the Tauri opener plugin (new `openExternal` helper; plugin registered in `lib.rs`)
+- **Support for providers without a `/models` endpoint** (e.g. Poolside): key test falls back to a key-only probe, reports `modelsListed: false`, and the detail page shows a hint to add model ids manually instead of an error
+- **Actionable network errors**: DNS/reset/region-blocked failures now explain themselves ("check connection/VPN — some providers block certain regions") instead of a bare `Failed to fetch`
+- **3 new locales**: French, Simplified Chinese, and Russian — 6 languages total (EN, FA, DE, FR, ZH, RU) with a 6-tile language picker
+- **Community files**: `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (supported versions, private reporting, scope, key-storage limitation), CONTRIBUTING links to both
+- **Credits**: "Powered by Sina Cadman" footer in the sidebar and settings panel, linking to GitHub
+- **Backdrop dim** for History and Leaderboard panels (same as Settings), click-to-close
+
+### 🔄 Changed
+- **License: MIT → GPL-3.0-only** (`LICENSE`, `package.json`, README)
+- Settings provider form restacked vertically for the panel layout
+
+### 🐛 Fixed
+- Local model picker stuck on the first model: `decodeValue` returned the raw JSON option value instead of the parsed model name for local sources (cloud sources were unaffected)
+- Provider icon fallback tile rendered white-on-white (invisible initials) after a styling change — brand color restored, white backdrop kept only behind raster icons
+
+---
+
 ## [1.1.0] - 2026-09-19
 
 Cloud release: manage cloud LLM providers 9Router-style and benchmark their models side-by-side with local ones — in both Bench and Test Suite.

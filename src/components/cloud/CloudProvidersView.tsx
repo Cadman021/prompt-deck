@@ -59,7 +59,7 @@ export const CloudProvidersView: React.FC = () => {
       name,
       defaultBaseUrl: url,
       protocol: 'openai-compatible',
-      docsUrl: url,
+      keyUrl: url,
       color: '#6366f1',
       initials: name.slice(0, 2).toUpperCase(),
       custom: true,
@@ -85,7 +85,9 @@ export const CloudProvidersView: React.FC = () => {
         lastTested: new Date().toISOString(),
         error: result.error,
       });
-      if (result.ok && result.models) setKnownModels(d.id, result.models);
+      if (result.ok && result.models && result.models.length > 0) {
+        setKnownModels(d.id, result.models);
+      }
     }
     setTestingAll(false);
   };

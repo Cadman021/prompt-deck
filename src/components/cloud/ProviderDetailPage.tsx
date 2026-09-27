@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { LLMService } from '../../services/llmService';
+import { openExternal } from '../../utils/openExternal';
 import { createKeyId, useCloudStore } from '../../store/useCloudStore';
 import type { CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
 import { ProviderIcon } from './ProviderIcon';
@@ -56,6 +57,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const [testingKey, setTestingKey] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshInfo, setRefreshInfo] = useState<string | null>(null);
   const [newModel, setNewModel] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
   const [modelQuery, setModelQuery] = useState('');
@@ -81,7 +83,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
       lastTested: new Date().toISOString(),
       error: result.error,
     });
-    if (result.ok && result.models) setKnownModels(def.id, result.models);
+    if (result.ok && result.models && result.models.length > 0) {
+      setKnownModels(def.id, result.models);
+    }
     setTestingKey(null);
   };
 
@@ -89,9 +93,14 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     if (refreshing || !activeKey) return;
     setRefreshing(true);
     setRefreshError(null);
+    setRefreshInfo(null);
     const result = await LLMService.testCloudConnection(baseUrl, activeKey.apiKey);
-    if (result.ok && result.models) {
+    if (result.ok && result.models && result.models.length > 0) {
       setKnownModels(def.id, result.models);
+    } else if (result.ok) {
+      // Key is valid but the provider exposes no model list — the user
+      // adds model ids manually (or via suggestions) below.
+      setRefreshInfo(t('cloud.noListEndpoint', 'Key works, but this provider exposes no model list — add model ids manually below.'));
     } else {
       setRefreshError(result.error || t('cloud.failed', 'Connection failed'));
     }
@@ -137,15 +146,13 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold">{def.name}</h2>
-            <a
-              href={def.docsUrl}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => void openExternal(def.keyUrl)}
               className="inline-flex items-center gap-1 text-[11px] text-indigo-500 hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
               {t('cloud.getKey', 'Where to get an API key')}
-            </a>
+            </button>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
             {providerKeys.length} {t('cloud.connections', 'connections')} · {enabled.length}{' '}
@@ -304,6 +311,11 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
           {refreshError && (
             <p className="text-[11px] text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
               {refreshError}
+            </p>
+          )}
+          {refreshInfo && (
+            <p className="text-[11px] text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/25 rounded-lg px-3 py-2">
+              {refreshInfo}
             </p>
           )}
           {!activeKey && known.length === 0 && (

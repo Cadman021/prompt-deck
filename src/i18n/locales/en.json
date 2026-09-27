@@ -132,7 +132,7 @@
   },
   "language": {
     "title": "Select Language",
-    "hint": "More languages coming soon — English, Deutsch and فارسی are fully supported."
+    "hint": "6 languages fully supported — more coming soon."
   },
   "cloud": {
     "title": "Providers",
@@ -183,6 +183,7 @@
     "refresh": "Refresh",
     "refreshModels": "Fetch model list from the provider",
     "fetchHint": "Add an enabled API key first",
+    "noListEndpoint": "Key works, but this provider exposes no model list — add model ids manually below.",
     "enableAll": "Enable all",
     "disableAll": "Disable all",
     "addModel": "Add Model",
@@ -201,7 +202,16 @@
       "kimi": "Moonshot AI platform: Kimi K2 and Moonshot v1 models with free trial credit.",
       "nvidia": "Free access for NVIDIA Developer Program members (prototyping & testing).",
       "ollama-cloud": "Run big open models in the cloud with your Ollama account.",
-      "gemini": "Google AI Studio key via the OpenAI-compatibility endpoint. Generous free tier."
+      "gemini": "Google AI Studio key via the OpenAI-compatibility endpoint. Generous free tier.",
+      "kilo-gateway": "Kilo Gateway: hundreds of models at cost via your Kilo account (app.kilo.ai).",
+      "bazaarlink": "One Interface. Every AI Model.",
+      "modelark": "BytePlus ModelArk (Beijing region): Doubao and DeepSeek models via OpenAI-compatible API.",
+      "poolside": "Poolside AI: Laguna foundation models for enterprise development. No public model list — add ids manually.",
+      "agnes": "Agnes AI gateway with free API credits on sign-up.",
+      "xiaomi-mimo": "Xiaomi MiMo gateway: mimo-v2.6-pro, flash and 2.5 models via OpenAI-compatible API.",
+      "mistral": "Official Mistral API (La Plateforme): Large, Medium and Codestral models, OpenAI-compatible.",
+      "bai": "B.AI gateway with a large model catalogue. Model ids are fetched live from the provider.",
+      "anthropic": "Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth."
     }
   },
   "bench": {

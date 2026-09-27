@@ -22,12 +22,14 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ def, size = 'md' }) 
         height={size === 'lg' ? 44 : 36}
         onError={() => setMissing(true)}
         className={`${cls} rounded-lg object-cover shrink-0 bg-white dark:bg-white/10`}
+        style={{background: "#ffffff"}}
       />
     );
   }
   return (
     <span
       className={`${cls} rounded-lg flex items-center justify-center font-bold text-white shrink-0`}
+      style={{ background: def.color }}
     >
       {def.initials}
     </span>
