@@ -50,7 +50,11 @@
     "resultsCount": "{{count}} результатов",
     "empty": "Бенчмарков пока нет. Запустите первое сравнение — оно появится здесь.",
     "deleteRecordTitle": "Удалить эту запись",
-    "vs": "vs"
+    "vs": "vs",
+    "timeNow": "только что",
+    "timeMinutes": "{{count}} мин. назад",
+    "timeHours": "{{count}} ч. назад",
+    "timeDays": "{{count}} дн. назад"
   },
   "export": {
     "noHistoryToExport": "Нет записей истории для экспорта.",

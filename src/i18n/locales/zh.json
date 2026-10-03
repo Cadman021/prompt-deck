@@ -50,7 +50,11 @@
     "resultsCount": "{{count}} 条结果",
     "empty": "还没有基准测试记录。运行第一次对比后会显示在这里。",
     "deleteRecordTitle": "删除这条记录",
-    "vs": "vs"
+    "vs": "vs",
+    "timeNow": "刚刚",
+    "timeMinutes": "{{count}}分钟前",
+    "timeHours": "{{count}}小时前",
+    "timeDays": "{{count}}天前"
   },
   "export": {
     "noHistoryToExport": "没有可导出的历史记录。",
