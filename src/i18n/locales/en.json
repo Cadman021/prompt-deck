@@ -50,7 +50,8 @@
     "resultsCount": "{{count}} results",
     "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "deleteRecordTitle": "Delete this record",
-    "vs": "vs"
+    "vs": "vs",
+    "winnersOnly": "Winners only"
   },
   "export": {
     "noHistoryToExport": "No history records to export.",

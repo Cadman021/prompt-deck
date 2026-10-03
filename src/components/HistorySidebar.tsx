@@ -19,6 +19,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showWinnersOnly, setShowWinnersOnly] = useState(false);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -31,6 +32,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     if (isOpen) {
       fetchRecords();
       setSearchQuery('');
+      setShowWinnersOnly(false);
     }
   }, [isOpen]);
 
@@ -48,6 +50,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   };
 
   const filteredRecords = records.filter((record) => {
+    if (showWinnersOnly && !record.winnerModel) return false;
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
     const promptMatch = record.prompt.toLowerCase().includes(q);
@@ -98,14 +101,29 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       {/* Search Bar */}
       {records.length > 0 && (
         <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('history.searchPlaceholder')}
-            className="w-full bg-slate-100 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-          {searchQuery.trim() && (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('history.searchPlaceholder')}
+              className="w-full min-w-0 bg-slate-100 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+            <button
+              onClick={() => setShowWinnersOnly((v) => !v)}
+              title={t('history.winnersOnly')}
+              aria-pressed={showWinnersOnly}
+              className={`shrink-0 flex items-center gap-1 text-xs px-2 py-1.5 rounded-md border transition-colors ${
+                showWinnersOnly
+                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-600 font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5" />
+              {t('history.winnersOnly')}
+            </button>
+          </div>
+          {(searchQuery.trim() || showWinnersOnly) && (
             <div className="text-[11px] text-slate-500 dark:text-slate-400">
               {t('history.resultsCount', { count: filteredRecords.length })}
             </div>

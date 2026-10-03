@@ -47,7 +47,8 @@
     "loading": "Verlauf wird geladen...",
     "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
     "deleteRecordTitle": "Diesen Eintrag löschen",
-    "vs": "vs"
+    "vs": "vs",
+    "winnersOnly": "Nur Gewinner"
   },
   "export": {
     "noHistoryToExport": "Keine Verlaufsdaten zum Exportieren vorhanden.",

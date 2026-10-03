@@ -50,7 +50,8 @@
     "resultsCount": "{{count}} résultats",
     "empty": "Aucun benchmark enregistré. Lancez votre première comparaison pour la voir ici.",
     "deleteRecordTitle": "Supprimer cet enregistrement",
-    "vs": "vs"
+    "vs": "vs",
+    "winnersOnly": "Gagnants uniquement"
   },
   "export": {
     "noHistoryToExport": "Aucun enregistrement à exporter.",
