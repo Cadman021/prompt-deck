@@ -50,7 +50,8 @@
     "resultsCount": "{{count}} 条结果",
     "empty": "还没有基准测试记录。运行第一次对比后会显示在这里。",
     "deleteRecordTitle": "删除这条记录",
-    "vs": "vs"
+    "vs": "vs",
+    "winnersOnly": "仅显示胜者"
   },
   "export": {
     "noHistoryToExport": "没有可导出的历史记录。",
