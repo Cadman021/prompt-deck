@@ -121,7 +121,10 @@
   },
   "settings": {
     "providerTitle": "ارائه‌دهنده و اتصال",
-    "providerHint": "Ollama برای مدل‌های لوکال، OpenAI-compatible برای سرور LM Studio / llama.cpp."
+    "providerHint": "Ollama برای مدل‌های لوکال، OpenAI-compatible برای سرور LM Studio / llama.cpp.",
+    "resetTitle": "بازنشانی تنظیمات",
+    "resetConfirm": "ارائه‌دهنده، اتصال و گزینه‌های پیشرفته به پیش‌فرض بازگردند؟ زبان و تم حفظ می‌شوند.",
+    "resetButton": "بازنشانی به پیش‌فرض"
   },
   "theme": {
     "appearance": "ظاهر",

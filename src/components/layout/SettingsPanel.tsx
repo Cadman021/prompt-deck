@@ -22,7 +22,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onAdvancedChange,
 }) => {
   const { t } = useTranslation();
-  const { theme, setTheme, language } = useSettingsStore();
+  const { theme, setTheme, language, resetSettings } = useSettingsStore();
   const [isLangOpen, setIsLangOpen] = useState(false);
   if (!isOpen) return null;
 
@@ -165,6 +165,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               </div>
             </div>
+          </section>
+          <section>
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-rose-500 dark:text-red-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{t('settings.resetTitle', 'Reset Settings')}</span>
+            </div>
+            <button
+              onClick={() => {
+                if (window.confirm(t('settings.resetConfirm'))) {
+                  resetSettings();
+                }
+              }}
+              className="w-full p-3 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+            >
+              {t('settings.resetButton', 'Reset to defaults')}
+            </button>
           </section>
           <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800 flex justify-center">
             <button

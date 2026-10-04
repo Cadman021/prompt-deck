@@ -121,7 +121,10 @@
   },
   "settings": {
     "providerTitle": "Провайдер и подключение",
-    "providerHint": "Ollama для локальных моделей, OpenAI-совместимый для сервера LM Studio / llama.cpp."
+    "providerHint": "Ollama для локальных моделей, OpenAI-совместимый для сервера LM Studio / llama.cpp.",
+    "resetTitle": "Сбросить настройки",
+    "resetConfirm": "Сбросить провайдера, подключение и расширенные параметры к значениям по умолчанию? Язык и тема сохраняются.",
+    "resetButton": "Сбросить по умолчанию"
   },
   "theme": {
     "appearance": "Оформление",

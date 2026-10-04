@@ -121,7 +121,10 @@
   },
   "settings": {
     "providerTitle": "Provider & Connection",
-    "providerHint": "Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server."
+    "providerHint": "Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server.",
+    "resetTitle": "Reset Settings",
+    "resetConfirm": "Reset provider, connection and advanced options to their defaults? Language and theme are kept.",
+    "resetButton": "Reset to defaults"
   },
   "theme": {
     "appearance": "Appearance",
