@@ -51,6 +51,10 @@
     "empty": "还没有基准测试记录。运行第一次对比后会显示在这里。",
     "deleteRecordTitle": "删除这条记录",
     "vs": "vs",
+    "timeNow": "刚刚",
+    "timeMinutes": "{{count}}分钟前",
+    "timeHours": "{{count}}小时前",
+    "timeDays": "{{count}}天前",
     "winnersOnly": "仅显示胜者"
   },
   "export": {

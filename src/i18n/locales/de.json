@@ -48,7 +48,12 @@
     "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
     "deleteRecordTitle": "Diesen Eintrag löschen",
     "vs": "vs",
+    "timeNow": "jetzt",
+    "timeMinutes": "vor {{count}} Min.",
+    "timeHours": "vor {{count}} Std.",
+    "timeDays": "vor {{count}} Tagen",
     "winnersOnly": "Nur Gewinner"
+
   },
   "export": {
     "noHistoryToExport": "Keine Verlaufsdaten zum Exportieren vorhanden.",

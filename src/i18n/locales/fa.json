@@ -51,6 +51,10 @@
     "empty": "هیچ بنچمارکی ثبت نشده است. اولین مقایسه را اجرا کن تا اینجا نمایش داده شود.",
     "deleteRecordTitle": "حذف این رکورد",
     "vs": "vs",
+    "timeNow": "اکنون",
+    "timeMinutes": "{{count}} دقیقه پیش",
+    "timeHours": "{{count}} ساعت پیش",
+    "timeDays": "{{count}} روز پیش",
     "winnersOnly": "فقط برنده‌ها"
   },
   "export": {

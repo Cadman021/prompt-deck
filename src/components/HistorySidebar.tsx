@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { DbService, HistoryRecord } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
 import { Crown } from 'lucide-react';
+import { formatRelativeTime } from '../utils/timeUtils';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -20,6 +21,22 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showWinnersOnly, setShowWinnersOnly] = useState(false);
+
+  const getRelativeLabel = (isoString: string): string => {
+    const relative = formatRelativeTime(isoString);
+    switch (relative.kind) {
+      case 'now':
+        return t('history.timeNow');
+      case 'minutes':
+        return t('history.timeMinutes', { count: relative.count });
+      case 'hours':
+        return t('history.timeHours', { count: relative.count });
+      case 'days':
+        return t('history.timeDays', { count: relative.count });
+      case 'date':
+        return relative.date;
+    }
+  };
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -189,6 +206,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                   </span>
                 ))}
               </div>
+
+              {record.created_at && (
+                <div className="mt-1.5 text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                  {getRelativeLabel(record.created_at)}
+                </div>
+              )}
 
               <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
                 {record.results.map((r, i) => (

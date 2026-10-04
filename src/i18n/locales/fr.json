@@ -51,6 +51,10 @@
     "empty": "Aucun benchmark enregistré. Lancez votre première comparaison pour la voir ici.",
     "deleteRecordTitle": "Supprimer cet enregistrement",
     "vs": "vs",
+    "timeNow": "à l'instant",
+    "timeMinutes": "il y a {{count}} min",
+    "timeHours": "il y a {{count}} h",
+    "timeDays": "il y a {{count}} j",
     "winnersOnly": "Gagnants uniquement"
   },
   "export": {

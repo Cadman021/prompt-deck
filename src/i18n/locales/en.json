@@ -51,6 +51,10 @@
     "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "deleteRecordTitle": "Delete this record",
     "vs": "vs",
+    "timeNow": "now",
+    "timeMinutes": "{{count}}m ago",
+    "timeHours": "{{count}}h ago",
+    "timeDays": "{{count}}d ago",
     "winnersOnly": "Winners only"
   },
   "export": {

@@ -51,6 +51,10 @@
     "empty": "Бенчмарков пока нет. Запустите первое сравнение — оно появится здесь.",
     "deleteRecordTitle": "Удалить эту запись",
     "vs": "vs",
+    "timeNow": "только что",
+    "timeMinutes": "{{count}} мин. назад",
+    "timeHours": "{{count}} ч. назад",
+    "timeDays": "{{count}} дн. назад",
     "winnersOnly": "Только победители"
   },
   "export": {
