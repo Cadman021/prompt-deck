@@ -54,7 +54,8 @@
     "timeNow": "now",
     "timeMinutes": "{{count}}m ago",
     "timeHours": "{{count}}h ago",
-    "timeDays": "{{count}}d ago"
+    "timeDays": "{{count}}d ago",
+    "winnersOnly": "Winners only"
   },
   "export": {
     "noHistoryToExport": "No history records to export.",

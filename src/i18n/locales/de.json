@@ -51,7 +51,9 @@
     "timeNow": "jetzt",
     "timeMinutes": "vor {{count}} Min.",
     "timeHours": "vor {{count}} Std.",
-    "timeDays": "vor {{count}} Tagen"
+    "timeDays": "vor {{count}} Tagen",
+    "winnersOnly": "Nur Gewinner"
+
   },
   "export": {
     "noHistoryToExport": "Keine Verlaufsdaten zum Exportieren vorhanden.",

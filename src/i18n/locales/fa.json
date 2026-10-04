@@ -54,7 +54,8 @@
     "timeNow": "اکنون",
     "timeMinutes": "{{count}} دقیقه پیش",
     "timeHours": "{{count}} ساعت پیش",
-    "timeDays": "{{count}} روز پیش"
+    "timeDays": "{{count}} روز پیش",
+    "winnersOnly": "فقط برنده‌ها"
   },
   "export": {
     "noHistoryToExport": "هیچ رکورد تاریخچه‌ای برای خروجی وجود ندارد.",

@@ -54,7 +54,8 @@
     "timeNow": "刚刚",
     "timeMinutes": "{{count}}分钟前",
     "timeHours": "{{count}}小时前",
-    "timeDays": "{{count}}天前"
+    "timeDays": "{{count}}天前",
+    "winnersOnly": "仅显示胜者"
   },
   "export": {
     "noHistoryToExport": "没有可导出的历史记录。",

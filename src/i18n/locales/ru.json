@@ -54,7 +54,8 @@
     "timeNow": "только что",
     "timeMinutes": "{{count}} мин. назад",
     "timeHours": "{{count}} ч. назад",
-    "timeDays": "{{count}} дн. назад"
+    "timeDays": "{{count}} дн. назад",
+    "winnersOnly": "Только победители"
   },
   "export": {
     "noHistoryToExport": "Нет записей истории для экспорта.",

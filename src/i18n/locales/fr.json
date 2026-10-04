@@ -54,7 +54,8 @@
     "timeNow": "à l'instant",
     "timeMinutes": "il y a {{count}} min",
     "timeHours": "il y a {{count}} h",
-    "timeDays": "il y a {{count}} j"
+    "timeDays": "il y a {{count}} j",
+    "winnersOnly": "Gagnants uniquement"
   },
   "export": {
     "noHistoryToExport": "Aucun enregistrement à exporter.",
