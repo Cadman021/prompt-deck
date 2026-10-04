@@ -122,7 +122,10 @@
   },
   "settings": {
     "providerTitle": "服务商与连接",
-    "providerHint": "本地模型用 Ollama，LM Studio / llama.cpp 服务器用 OpenAI 兼容接口。"
+    "providerHint": "本地模型用 Ollama，LM Studio / llama.cpp 服务器用 OpenAI 兼容接口。",
+    "resetTitle": "重置设置",
+    "resetConfirm": "将服务商、连接和高级选项恢复为默认值？语言和主题保持不变。",
+    "resetButton": "恢复默认设置"
   },
   "theme": {
     "appearance": "外观",

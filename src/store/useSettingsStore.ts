@@ -31,6 +31,7 @@ interface SettingsState {
   setProvider: (provider: Provider) => void;
   setBaseUrl: (url: string) => void;
   setAdvancedConfig: (config: AdvancedConfig) => void;
+  resetSettings: () => void;
 }
 
 interface PersistedSettings {
@@ -59,6 +60,12 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setBaseUrl: (baseUrl) => set({ baseUrl }),
       setAdvancedConfig: (advancedConfig) => set({ advancedConfig }),
+      resetSettings: () =>
+        set({
+          provider: 'ollama',
+          baseUrl: DEFAULT_BASE_URLS.ollama,
+          advancedConfig: { ...DEFAULT_ADVANCED },
+        }),
     }),
     {
       name: 'promptdeck-settings',
