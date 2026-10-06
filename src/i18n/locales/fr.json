@@ -3,7 +3,7 @@
     "title": "PromptDeck",
     "refreshModels": "Actualiser les modèles",
     "run": "Exécuter (Ctrl+Entrée)",
-    "runHint": "Ctrl+Entrée pour exécuter · Échap pour arrêter",
+    "runHint": "Ctrl+Entrée pour exécuter · Échap pour arrêter · Ctrl+K pour focaliser",
     "running": "Exécution en cours...",
     "promptPlaceholder": "Saisissez votre prompt à comparer (ex. : écrire une fonction factorielle en Rust)...",
     "ollamaError": "Connexion à Ollama impossible. Vérifiez que le service Ollama est en cours d'exécution.",
