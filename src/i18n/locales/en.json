@@ -3,7 +3,7 @@
     "title": "PromptDeck",
     "refreshModels": "Refresh Models",
     "run": "Run (Ctrl+Enter)",
-    "runHint": "Ctrl+Enter to run · Esc to stop",
+    "runHint": "Ctrl+Enter to run · Esc to stop · Ctrl+K to focus",
     "running": "Running...",
     "promptPlaceholder": "Enter your prompt for comparison (e.g., Write a factorial function in Rust)...",
     "ollamaError": "Failed to connect to Ollama. Make sure Ollama service is running.",
