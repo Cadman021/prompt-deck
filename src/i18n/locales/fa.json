@@ -3,7 +3,7 @@
     "title": "PromptDeck",
     "refreshModels": "به‌روزرسانی مدل‌ها",
     "run": "اجرا (Ctrl+Enter)",
-    "runHint": "اجرا با Ctrl+Enter · توقف با Esc",
+    "runHint": "اجرا با Ctrl+Enter · توقف با Esc · فوکوس با Ctrl+K",
     "running": "در حال پردازش...",
     "promptPlaceholder": "پرومپت خود را برای مقایسه بنویسید (مثلاً: یک تابع فاکتوریل به زبان Rust بنویس)...",
     "ollamaError": "ارتباط با سرویس Ollama برقرار نشد. از فعال بودن آن مطمئن شوید.",
