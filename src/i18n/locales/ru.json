@@ -3,7 +3,7 @@
     "title": "PromptDeck",
     "refreshModels": "Обновить модели",
     "run": "Запустить (Ctrl+Enter)",
-    "runHint": "Ctrl+Enter — запуск · Esc — остановка",
+    "runHint": "Ctrl+Enter — запуск · Esc — остановка · Ctrl+K — фокус",
     "running": "Выполняется...",
     "promptPlaceholder": "Введите промпт для сравнения (например: напиши функцию факториала на Rust)...",
     "ollamaError": "Не удалось подключиться к Ollama. Убедитесь, что служба Ollama запущена.",
