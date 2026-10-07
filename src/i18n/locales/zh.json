@@ -3,7 +3,7 @@
     "title": "PromptDeck",
     "refreshModels": "刷新模型",
     "run": "运行 (Ctrl+Enter)",
-    "runHint": "Ctrl+Enter 运行 · Esc 停止",
+    "runHint": "Ctrl+Enter 运行 · Esc 停止 · Ctrl+K 聚焦",
     "running": "运行中...",
     "promptPlaceholder": "输入要对比的提示词（例如：用 Rust 写一个阶乘函数）...",
     "ollamaError": "无法连接到 Ollama。请确认 Ollama 服务正在运行。",

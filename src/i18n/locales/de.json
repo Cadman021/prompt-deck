@@ -3,7 +3,7 @@
     "title": "PromptDeck",
     "refreshModels": "Modelle aktualisieren",
     "run": "Ausführen (Strg+Enter)",
-    "runHint": "Strg+Enter zum Ausführen · Esc zum Stoppen",
+    "runHint": "Strg+Enter zum Ausführen · Esc zum Stoppen · Strg+K zum Fokussieren",
     "running": "Wird ausgeführt...",
     "promptPlaceholder": "Geben Sie Ihren Prompt zum Vergleich ein (z. B. Schreibe eine Fakultätsfunktion in Rust)...",
     "ollamaError": "Verbindung zu Ollama fehlgeschlagen. Stellen Sie sicher, dass der Ollama-Dienst läuft.",

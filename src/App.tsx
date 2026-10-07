@@ -89,6 +89,7 @@ export default function App() {
   const metricsRefs = useRef<Record<string, BenchmarkMetrics | null>>({});
   const finishedRefs = useRef<Record<string, boolean>>({});
   const slotsRef = useRef<Slot[]>([]);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     slotsRef.current = slots;
   }, [slots]);
@@ -470,6 +471,15 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const modK = (e.ctrlKey || e.metaKey) && e.key === 'k';
+      if (modK) {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+          e.preventDefault();
+          promptRef.current?.focus();
+        }
+        return;
+      }
       const modEnter = (e.ctrlKey || e.metaKey) && e.key === 'Enter';
       if (modEnter) {
         e.preventDefault();
@@ -652,6 +662,7 @@ export default function App() {
           <div className="flex gap-2.5 max-w-5xl mx-auto items-stretch">
             <div className="flex-1 flex flex-col gap-1 min-w-0 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-400 transition px-3 py-2">
               <textarea
+                ref={promptRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={isLoading}
