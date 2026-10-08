@@ -239,6 +239,7 @@
     "emptyModels": "Keine Modelle installiert — erst ein Modell laden, dann hier auswählen.",
     "needPrompt": "Mindestens einen nicht-leeren Test-Prompt hinzufügen.",
     "runAll": "Suite ausführen",
+    "retryFailed": "Fehlgeschlagene wiederholen",
     "stop": "Stoppen",
     "stopped": "Gestoppt",
     "scoreboard": "Scoreboard",

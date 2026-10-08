@@ -241,6 +241,7 @@
     "emptyModels": "未安装模型 — 先安装模型，再回来这里选择。",
     "needPrompt": "至少添加一条非空测试提示词才能运行。",
     "runAll": "运行套件",
+    "retryFailed": "重试失败项",
     "stop": "停止",
     "stopped": "已停止",
     "scoreboard": "记分板",
