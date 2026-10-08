@@ -33,6 +33,16 @@ export interface BenchmarkMetrics {
   /** true when TPS is estimated (server did not report usage) — render with `~`. */
   tpsEstimated: boolean;
   tokenSource: TokenSource;
+  /** Exact completion tokens, when reported by the server. */
+  completionTokens?: number;
+  /** Exact prompt tokens, when reported by the server. */
+  promptTokens?: number;
+}
+
+/** Per-token USD prices, as reported by OpenRouter-style `/models` pricing. */
+export interface ModelPricing {
+  prompt: number;
+  completion: number;
 }
 
 export interface StreamCallbacks {

@@ -8,6 +8,8 @@ import { useCloudStore } from './store/useCloudStore';
 import {
   ModelSource,
   buildCloudGroups,
+  calcCost,
+  formatCost,
   parseQualified,
   qualifiedName,
   resolveCloudTarget,
@@ -81,6 +83,18 @@ export default function App() {
   // Cloud models the user enabled on the Cloud page, grouped per provider.
   const cloudEnabledModels = useCloudStore((s) => s.enabledModels);
   const cloudCustom = useCloudStore((s) => s.customProviders);
+  const cloudPricing = useCloudStore((s) => s.modelPricing);
+
+  /** Formatted run cost for priced cloud slots, else null. */
+  const slotCost = (s: Pick<Slot, 'source' | 'model'>, m: BenchmarkMetrics | null): string | null => {
+    if (s.source.kind !== 'cloud' || !m || m.tokenSource !== 'server') return null;
+    const cost = calcCost(
+      m.promptTokens,
+      m.completionTokens,
+      (cloudPricing[s.source.providerId] ?? {})[s.model]
+    );
+    return cost == null ? null : formatCost(cost);
+  };
   const cloudGroups = useMemo(
     () => buildCloudGroups(cloudCustom, cloudEnabledModels),
     [cloudCustom, cloudEnabledModels]
@@ -599,6 +613,7 @@ export default function App() {
                 error={slot.error}
                 canRemove={slots.length > MIN_MODELS}
                 isWinner={winnerModel !== null && winnerModel === slotQualified(slot) && slot.model !== ''}
+                costLabel={slotCost(slot, slot.metrics)}
                 onSourceChange={(source, name) =>
                   setSlots((prev) =>
                     prev.map((s) => (s.id === slot.id ? { ...s, source, model: name } : s))

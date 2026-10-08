@@ -38,7 +38,8 @@
     "tps": "tok/s",
     "ttft": "TTFT",
     "estimatedTooltip": "估算值 — 服务器未报告 token 用量",
-    "estimatedShort": "估算"
+    "estimatedShort": "估算",
+    "costTitle": "预估运行费用"
   },
   "history": {
     "title": "基准测试历史",
@@ -247,6 +248,8 @@
     "average": "平均 tok/s · 获胜",
     "scoreHint": "👑 = 该测试中最快的 tok/s · 点击任意格查看完整输出。",
     "clearResults": "清空结果",
-    "copied": "已复制！"
+    "copied": "已复制！",
+    "totalCost": "总费用",
+    "totalCostTitle": "该模型本套件总费用"
   }
 }

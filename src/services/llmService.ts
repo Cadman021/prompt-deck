@@ -63,6 +63,7 @@ async function generateOpenAICompatibleStream(
   let firstTokenTime: number | null = null;
   let fullText = '';
   let usageTokens: number | null = null;
+  let usagePromptTokens: number | null = null;
 
   try {
     const messages = [];
@@ -131,6 +132,8 @@ async function generateOpenAICompatibleStream(
             evalDurationMs: evalMs,
             tpsEstimated: tokenSource === 'heuristic',
             tokenSource,
+            completionTokens: usageTokens ?? undefined,
+            promptTokens: usagePromptTokens ?? undefined,
           };
 
           callbacks.onComplete(fullText, metrics);
@@ -142,6 +145,9 @@ async function generateOpenAICompatibleStream(
 
           if (json.usage?.completion_tokens) {
             usageTokens = json.usage.completion_tokens;
+          }
+          if (json.usage?.prompt_tokens) {
+            usagePromptTokens = json.usage.prompt_tokens;
           }
 
           const delta = json.choices?.[0]?.delta?.content;
@@ -185,9 +191,23 @@ export interface CloudTestResult {
   modelCount?: number;
   /** Model ids reported by `GET /models` (capped). */
   models?: string[];
+  /**
+   * Per-token USD prices for models whose `/models` entry carries an
+   * OpenRouter-style `pricing: { prompt, completion }` object.
+   */
+  pricing?: Record<string, { prompt: number; completion: number }>;
   /** False when the provider has no `/models` endpoint (key verified via probe instead). */
   modelsListed: boolean;
   error?: string;
+}
+
+/** Parse OpenRouter-style pricing (per-token USD as string or number). */
+function parsePricing(raw: unknown): { prompt: number; completion: number } | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const p = Number((raw as { prompt?: unknown }).prompt);
+  const c = Number((raw as { completion?: unknown }).completion);
+  if (!Number.isFinite(p) || !Number.isFinite(c) || p < 0 || c < 0) return null;
+  return { prompt: p, completion: c };
 }
 
 /**
@@ -222,7 +242,20 @@ async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<Cl
       .map((m: { id?: unknown }) => (typeof m?.id === 'string' ? m.id : null))
       .filter((id: string | null): id is string => Boolean(id))
       .slice(0, 300);
-    return { ok: true, modelCount: models.length, models: ids, modelsListed: true };
+    const pricing: Record<string, { prompt: number; completion: number }> = {};
+    for (const m of models) {
+      if (m && typeof m.id === 'string') {
+        const parsed = parsePricing((m as { pricing?: unknown }).pricing);
+        if (parsed) pricing[m.id] = parsed;
+      }
+    }
+    return {
+      ok: true,
+      modelCount: models.length,
+      models: ids,
+      pricing: Object.keys(pricing).length > 0 ? pricing : undefined,
+      modelsListed: true,
+    };
   } catch (error) {
     return {
       ok: false,

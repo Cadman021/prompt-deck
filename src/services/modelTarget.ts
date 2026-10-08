@@ -8,6 +8,7 @@
 
 import { CLOUD_CATALOG, CustomProviderDef } from '../data/cloudProviders';
 import type { Provider } from '../store/useSettingsStore';
+import type { ModelPricing } from '../types/ollama';
 
 export type ModelSource = { kind: 'local' } | { kind: 'cloud'; providerId: string };
 
@@ -73,6 +74,27 @@ export function findCloudBaseUrl(providerId: string, custom: CustomProviderDef[]
   const def =
     CLOUD_CATALOG.find((d) => d.id === providerId) ?? custom.find((d) => d.id === providerId);
   return def ? def.defaultBaseUrl : null;
+}
+
+/**
+ * Estimated USD cost of one run. Returns null unless exact server-reported
+ * token counts AND per-token pricing are both available — never guess.
+ */
+export function calcCost(
+  promptTokens: number | undefined,
+  completionTokens: number | undefined,
+  pricing: ModelPricing | undefined
+): number | null {
+  if (promptTokens == null || completionTokens == null || !pricing) return null;
+  return promptTokens * pricing.prompt + completionTokens * pricing.completion;
+}
+
+/** Compact USD formatting: $0.00234, $1.24, $12.5K (never scientific). */
+export function formatCost(usd: number): string {
+  if (usd < 0.01) return `$${usd.toFixed(5)}`;
+  if (usd < 1) return `$${usd.toFixed(4)}`;
+  if (usd < 1000) return `$${usd.toFixed(2)}`;
+  return `$${(usd / 1000).toFixed(2)}K`;
 }
 
 export type ResolveError = 'noCloudKey' | 'unknownProvider';

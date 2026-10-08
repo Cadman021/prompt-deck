@@ -26,6 +26,8 @@ interface ModelColumnProps {
   error: string | null;
   canRemove: boolean;
   isWinner: boolean;
+  /** Pre-formatted run cost (e.g. "$0.00234"), shown only for priced cloud runs. */
+  costLabel?: string | null;
   onSourceChange: (source: ModelSource, name: string) => void;
   onRemove?: () => void;
   onRetry?: () => void;
@@ -68,6 +70,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   onRemove,
   canRemove,
   isWinner,
+  costLabel,
   onRetry,
   onVote,
 }) => {
@@ -182,7 +185,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
       )}
 
       {metrics && (
-        <div className="grid grid-cols-3 gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono">
+        <div className={`grid ${costLabel ? 'grid-cols-4' : 'grid-cols-3'} gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono`}>
           <div
             className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
             title={metrics.tpsEstimated ? t('metrics.estimatedTooltip') : undefined}
@@ -199,6 +202,14 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           <div className="text-slate-500 dark:text-slate-400 text-end">
             {(metrics.totalDurationMs / 1000).toFixed(2)}s
           </div>
+          {costLabel && (
+            <div
+              className="text-amber-600 dark:text-amber-300 text-end"
+              title={t('metrics.costTitle', 'Estimated run cost')}
+            >
+              {costLabel}
+            </div>
+          )}
         </div>
       )}
 

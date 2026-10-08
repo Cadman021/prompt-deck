@@ -38,7 +38,8 @@
     "tps": "tok/s",
     "ttft": "TTFT",
     "estimatedTooltip": "Estimated — server did not report token usage",
-    "estimatedShort": "estimated"
+    "estimatedShort": "estimated",
+    "costTitle": "Estimated run cost"
   },
   "history": {
     "title": "Benchmark History",
@@ -247,6 +248,8 @@
     "average": "Avg tok/s · wins",
     "scoreHint": "👑 = fastest tok/s on that test · click any cell to read the full output.",
     "clearResults": "Clear results",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "totalCost": "Total cost",
+    "totalCostTitle": "Total suite cost for this model"
   }
 }

@@ -78,6 +78,7 @@ export class OllamaService {
             done?: boolean;
             eval_count?: number;
             eval_duration?: number;
+            prompt_eval_count?: number;
           };
           try {
             json = JSON.parse(line);
@@ -119,6 +120,8 @@ export class OllamaService {
               evalDurationMs: Math.round(evalDurationNs / 1e6),
               tpsEstimated: false,
               tokenSource: 'server',
+              completionTokens: evalCount,
+              promptTokens: typeof json.prompt_eval_count === 'number' ? json.prompt_eval_count : undefined,
             };
 
             callbacks.onComplete(fullText, metrics);

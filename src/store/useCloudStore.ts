@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CustomProviderDef } from '../data/cloudProviders';
+import type { ModelPricing } from '../types/ollama';
 
 /**
  * SECURITY NOTE (v1): API keys are kept in the persisted zustand store
@@ -31,10 +32,13 @@ interface CloudState {
   enabledModels: Record<string, string[]>;
   /** providerId -> model ids discovered via /models or added manually. */
   knownModels: Record<string, string[]>;
+  /** providerId -> model id -> per-token USD prices (when the /models entry carries pricing). */
+  modelPricing: Record<string, Record<string, ModelPricing>>;
   addKey: (key: CloudApiKey) => void;
   updateKey: (id: string, patch: Partial<CloudApiKey>) => void;
   removeKey: (id: string) => void;
   setKnownModels: (providerId: string, models: string[]) => void;
+  setModelPricing: (providerId: string, pricing: Record<string, ModelPricing>) => void;
   addKnownModel: (providerId: string, model: string) => void;
   removeKnownModel: (providerId: string, model: string) => void;
   toggleModel: (providerId: string, model: string) => void;
@@ -55,6 +59,7 @@ export const useCloudStore = create<CloudState>()(
       customProviders: [],
       enabledModels: {},
       knownModels: {},
+      modelPricing: {},
       addKey: (key) => set((s) => ({ keys: [...s.keys, key] })),
       updateKey: (id, patch) =>
         set((s) => ({ keys: s.keys.map((k) => (k.id === id ? { ...k, ...patch } : k)) })),
@@ -74,6 +79,13 @@ export const useCloudStore = create<CloudState>()(
             enabledModels: { ...s.enabledModels, [providerId]: nextEnabled },
           };
         }),
+      setModelPricing: (providerId, pricing) =>
+        set((s) => ({
+          modelPricing: {
+            ...s.modelPricing,
+            [providerId]: { ...(s.modelPricing[providerId] ?? {}), ...pricing },
+          },
+        })),
       addKnownModel: (providerId, model) =>
         set((s) => {
           const m = model.trim();
@@ -175,6 +187,7 @@ export const useCloudStore = create<CloudState>()(
             customProviders: (p['customProviders'] as CustomProviderDef[]) ?? [],
             enabledModels: {},
             knownModels: {},
+            modelPricing: {},
           };
         }
         return (persisted ?? {}) as object;
@@ -184,6 +197,7 @@ export const useCloudStore = create<CloudState>()(
         customProviders: s.customProviders,
         enabledModels: s.enabledModels,
         knownModels: s.knownModels,
+        modelPricing: s.modelPricing,
       }),
     }
   )

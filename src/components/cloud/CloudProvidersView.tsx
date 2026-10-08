@@ -17,7 +17,7 @@ const slugify = (name: string): string =>
 
 export const CloudProvidersView: React.FC = () => {
   const { t } = useTranslation();
-  const { keys, customProviders, addCustomProvider, removeCustomProvider, updateKey, setKnownModels } =
+  const { keys, customProviders, addCustomProvider, removeCustomProvider, updateKey, setKnownModels, setModelPricing } =
     useCloudStore();
 
   const [search, setSearch] = useState('');
@@ -87,6 +87,9 @@ export const CloudProvidersView: React.FC = () => {
       });
       if (result.ok && result.models && result.models.length > 0) {
         setKnownModels(d.id, result.models);
+      }
+      if (result.ok && result.pricing) {
+        setModelPricing(d.id, result.pricing);
       }
     }
     setTestingAll(false);

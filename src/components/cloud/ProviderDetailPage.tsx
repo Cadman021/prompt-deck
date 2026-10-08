@@ -47,6 +47,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     updateKey,
     removeKey,
     setKnownModels,
+    setModelPricing,
     addKnownModel,
     removeKnownModel,
     toggleModel,
@@ -86,6 +87,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     if (result.ok && result.models && result.models.length > 0) {
       setKnownModels(def.id, result.models);
     }
+    if (result.ok && result.pricing) {
+      setModelPricing(def.id, result.pricing);
+    }
     setTestingKey(null);
   };
 
@@ -95,6 +99,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     setRefreshError(null);
     setRefreshInfo(null);
     const result = await LLMService.testCloudConnection(baseUrl, activeKey.apiKey);
+    if (result.ok && result.pricing) {
+      setModelPricing(def.id, result.pricing);
+    }
     if (result.ok && result.models && result.models.length > 0) {
       setKnownModels(def.id, result.models);
     } else if (result.ok) {

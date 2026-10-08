@@ -22,6 +22,8 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCloudStore } from '../../store/useCloudStore';
 import {
   buildCloudGroups,
+  calcCost,
+  formatCost,
   parseQualified,
   resolveCloudTarget,
 } from '../../services/modelTarget';
@@ -64,6 +66,19 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
   const { provider, baseUrl, advancedConfig } = useSettingsStore();
   const cloudEnabledModels = useCloudStore((s) => s.enabledModels);
   const cloudCustom = useCloudStore((s) => s.customProviders);
+  const cloudPricing = useCloudStore((s) => s.modelPricing);
+
+  /** USD cost of one finished suite cell, or null when unknown. */
+  const cellCost = (qualified: string, metrics: BenchmarkMetrics | null): number | null => {
+    if (!metrics || metrics.tokenSource !== 'server') return null;
+    const parsed = parseQualified(qualified, cloudCustom);
+    if (parsed.source.kind !== 'cloud') return null;
+    return calcCost(
+      metrics.promptTokens,
+      metrics.completionTokens,
+      (cloudPricing[parsed.source.providerId] ?? {})[parsed.model]
+    );
+  };
   const cloudGroups = useMemo(
     () => buildCloudGroups(cloudCustom, cloudEnabledModels),
     [cloudCustom, cloudEnabledModels]
@@ -268,9 +283,15 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
           ? Number((cells.reduce((s, c) => s + (c!.metrics?.tps || 0), 0) / cells.length).toFixed(2))
           : 0;
       const wins = activeTests.filter(({ index }) => winners[index] === m).length;
-      return { model: m, avgTps, wins, finished: cells.length };
+      const totalCost = cells.reduce<number | null>((sum, c) => {
+        const cost = cellCost(m, c!.metrics);
+        if (cost == null) return sum;
+        return (sum ?? 0) + cost;
+      }, null);
+      return { model: m, avgTps, wins, finished: cells.length, totalCost };
     });
-  }, [activeTests, selectedModels, results, winners]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTests, selectedModels, results, winners, cloudPricing, cloudCustom]);
 
   const hasAnyResult = Object.keys(results).length > 0;
   const canRun = !running && activeTests.length > 0 && selectedModels.length > 0;
@@ -281,6 +302,12 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     lines.push('');
     lines.push(`- ${t('testsuite.models', 'Models')}: ${selectedModels.join(', ')}`);
     lines.push(`- ${t('testsuite.tests', 'Tests')}: ${activeTests.length}`);
+    const costParts = summary
+      .filter((s) => s.totalCost != null)
+      .map((s) => `${s.model}: ${formatCost(s.totalCost!)}`);
+    if (costParts.length > 0) {
+      lines.push(`- ${t('testsuite.totalCost', 'Total cost')}: ${costParts.join(' · ')}`);
+    }
     lines.push('');
     lines.push(`| ${t('testsuite.test', 'Test')} | ${selectedModels.join(' (tok/s) | ')} (tok/s) |`);
     lines.push(`| --- | ${selectedModels.map(() => '---').join(' | ')} |`);
@@ -611,7 +638,17 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                                       ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 ring-1 ring-emerald-500/40 hover:bg-emerald-500/20 font-bold'
                                       : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
                             }`}
-                            title={c?.error || c?.output?.slice(0, 200) || ''}
+                            title={[
+                              c?.error || c?.output?.slice(0, 200) || '',
+                              (() => {
+                                const cost = c?.status === 'done' ? cellCost(m, c.metrics) : null;
+                                return cost != null
+                                  ? `${t('metrics.costTitle', 'Estimated run cost')}: ${formatCost(cost)}`
+                                  : '';
+                              })(),
+                            ]
+                              .filter(Boolean)
+                              .join('\n')}
                           >
                             {isWinner && c?.status === 'done' && <Crown className="w-3 h-3" />}
                             <span>
@@ -640,6 +677,14 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                       <div className="text-[10px] text-amber-600 dark:text-amber-300">
                         {s.wins} 👑 / {s.finished}
                       </div>
+                      {s.totalCost != null && (
+                        <div
+                          className="text-[10px] text-slate-500 dark:text-slate-400"
+                          title={t('testsuite.totalCostTitle', 'Total suite cost for this model')}
+                        >
+                          {formatCost(s.totalCost)}
+                        </div>
+                      )}
                     </td>
                   ))}
                 </tr>

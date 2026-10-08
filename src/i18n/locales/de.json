@@ -38,7 +38,8 @@
     "tps": "Tok/s",
     "ttft": "TTFT",
     "estimatedTooltip": "Geschätzt — Server hat keine Token-Nutzung gemeldet",
-    "estimatedShort": "geschätzt"
+    "estimatedShort": "geschätzt",
+    "costTitle": "Geschätzte Laufkosten"
   },
   "history": {
     "title": "Benchmark-Verlauf",
@@ -245,6 +246,8 @@
     "average": "Ø Tok/s · Siege",
     "scoreHint": "👑 = schnellste Tok/s in diesem Test · Zelle anklicken für die volle Ausgabe.",
     "clearResults": "Ergebnisse löschen",
-    "copied": "Kopiert!"
+    "copied": "Kopiert!",
+    "totalCost": "Gesamtkosten",
+    "totalCostTitle": "Gesamtkosten der Suite für dieses Modell"
   }
 }

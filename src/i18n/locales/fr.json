@@ -38,7 +38,8 @@
     "tps": "tok/s",
     "ttft": "TTFT",
     "estimatedTooltip": "Estimé — le serveur n'a pas rapporté l'utilisation de tokens",
-    "estimatedShort": "estimé"
+    "estimatedShort": "estimé",
+    "costTitle": "Coût estimé d'exécution"
   },
   "history": {
     "title": "Historique des benchmarks",
@@ -247,6 +248,8 @@
     "average": "Moy. tok/s · victoires",
     "scoreHint": "👑 = tok/s le plus rapide sur ce test · cliquez une cellule pour lire la sortie complète.",
     "clearResults": "Effacer les résultats",
-    "copied": "Copié !"
+    "copied": "Copié !",
+    "totalCost": "Coût total",
+    "totalCostTitle": "Coût total de la suite pour ce modèle"
   }
 }
