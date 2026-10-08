@@ -242,6 +242,7 @@
     "emptyModels": "No models installed — pull a model first, then select it here.",
     "needPrompt": "Add at least one non-empty test prompt to run.",
     "runAll": "Run suite",
+    "retryFailed": "Retry failed",
     "stop": "Stop",
     "stopped": "Stopped",
     "scoreboard": "Scoreboard",

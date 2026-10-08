@@ -242,6 +242,7 @@
     "emptyModels": "Aucun modèle installé — installez d'abord un modèle, puis sélectionnez-le ici.",
     "needPrompt": "Ajoutez au moins un prompt de test non vide pour exécuter.",
     "runAll": "Exécuter la suite",
+    "retryFailed": "Relancer les échecs",
     "stop": "Arrêter",
     "stopped": "Arrêté",
     "scoreboard": "Tableau des scores",

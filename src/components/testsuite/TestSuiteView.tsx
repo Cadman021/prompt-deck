@@ -16,6 +16,7 @@ import {
   X,
   FlaskConical,
   Eraser,
+  RotateCcw,
 } from 'lucide-react';
 import { LLMService } from '../../services/llmService';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -201,18 +202,20 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     });
   };
 
-  const handleRunAll = async () => {
-    if (running || activeTests.length === 0 || selectedModels.length === 0) return;
+  type QueueItem = { ti: number; model: string; prompt: string };
+
+  // True when at least one visible (test, model) cell finished with an error.
+  const hasErrorCells = activeTests.some(({ index }) =>
+    selectedModels.some((m) => results[index]?.[m]?.status === 'error')
+  );
+
+  // Shared by "Run suite" and "Retry failed": resets the queued cells and runs
+  // them sequentially with the same runCell + progress + abort plumbing.
+  const runQueue = async (queue: QueueItem[]) => {
+    if (running || queue.length === 0) return;
     const controller = new AbortController();
     abortRef.current = controller;
     const signal = controller.signal;
-
-    const queue: { ti: number; model: string; prompt: string }[] = [];
-    for (const { prompt, index } of activeTests) {
-      for (const model of selectedModels) {
-        queue.push({ ti: index, model, prompt });
-      }
-    }
 
     setRunning(true);
     setProgress({ done: 0, total: queue.length, label: '' });
@@ -243,6 +246,31 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     abortRef.current = null;
     setRunning(false);
     setProgress((p) => ({ ...p, label: '' }));
+  };
+
+  const handleRunAll = async () => {
+    if (running || activeTests.length === 0 || selectedModels.length === 0) return;
+    const queue: QueueItem[] = [];
+    for (const { prompt, index } of activeTests) {
+      for (const model of selectedModels) {
+        queue.push({ ti: index, model, prompt });
+      }
+    }
+    await runQueue(queue);
+  };
+
+  // Re-run only the cells whose status is 'error'; successful cells are kept.
+  const handleRetryFailed = async () => {
+    if (running) return;
+    const queue: QueueItem[] = [];
+    for (const { prompt, index } of activeTests) {
+      for (const model of selectedModels) {
+        if (results[index]?.[model]?.status === 'error') {
+          queue.push({ ti: index, model, prompt });
+        }
+      }
+    }
+    await runQueue(queue);
   };
 
   const handleStop = () => {
@@ -429,14 +457,24 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               <span>{t('testsuite.stop', 'Stop')}</span>
             </button>
           ) : (
-            <button
-              onClick={handleRunAll}
-              disabled={!canRun}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition disabled:opacity-50"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{t('testsuite.runAll', 'Run suite')}</span>
-            </button>
+            <>
+              <button
+                onClick={handleRetryFailed}
+                disabled={!hasErrorCells}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium text-xs transition disabled:opacity-50"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t('testsuite.retryFailed', 'Retry failed')}</span>
+              </button>
+              <button
+                onClick={handleRunAll}
+                disabled={!canRun}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition disabled:opacity-50"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>{t('testsuite.runAll', 'Run suite')}</span>
+              </button>
+            </>
           )}
         </div>
       </div>
