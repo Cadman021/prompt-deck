@@ -12,6 +12,18 @@ function formatTpsCell(r: BenchmarkResult): string {
   return r.tpsEstimated ? `~${value} tok/s (estimated)` : `**${value}** tok/s`;
 }
 
+function formatTokensCell(r: BenchmarkResult): string {
+  if (r.promptTokens == null && r.completionTokens == null) return 'N/A';
+  const p = r.promptTokens ?? '?';
+  const c = r.completionTokens ?? '?';
+  return `${p} in / ${c} out`;
+}
+
+function formatCostCell(r: BenchmarkResult): string {
+  if (r.costUsd == null) return 'N/A';
+  return r.costUsd < 0.01 ? `$${r.costUsd.toFixed(5)}` : `$${r.costUsd.toFixed(4)}`;
+}
+
 export const generateMarkdownReport = (data: CurrentBenchmarkData): string => {
   const tableHeader = `| Metric | ${data.results.map((r) => r.model).join(' | ')} |`;
   const tableDivider = `| :--- | ${data.results.map(() => ':---').join(' | ')} |`;
@@ -19,6 +31,14 @@ export const generateMarkdownReport = (data: CurrentBenchmarkData): string => {
   const ttftRow = `| **Time To First Token (TTFT)** | ${data.results
     .map((r) => (r.ttft ? `${r.ttft} ms` : 'N/A'))
     .join(' | ')} |`;
+  const hasTokens = data.results.some((r) => r.promptTokens != null || r.completionTokens != null);
+  const tokensRow = hasTokens
+    ? `| **Tokens (in / out)** | ${data.results.map(formatTokensCell).join(' | ')} |`
+    : '';
+  const hasCost = data.results.some((r) => r.costUsd != null);
+  const costRow = hasCost
+    ? `| **Cost (USD)** | ${data.results.map(formatCostCell).join(' | ')} |`
+    : '';
 
   const outputSections = data.results
     .map(
@@ -34,6 +54,10 @@ ${r.output || '_No output_'}
     ? '\n> ~ = estimated TPS (server did not report token usage).\n'
     : '';
 
+  const summaryRows = [tpsRow, ttftRow];
+  if (tokensRow) summaryRows.push(tokensRow);
+  if (costRow) summaryRows.push(costRow);
+
   return `# 📊 PromptDeck Benchmark Report
 
 **Prompt:**
@@ -42,8 +66,7 @@ ${r.output || '_No output_'}
 ## ⚡ Performance Summary
 ${tableHeader}
 ${tableDivider}
-${tpsRow}
-${ttftRow}
+${summaryRows.join('\n')}
 ${footnote}
 ---
 
@@ -89,7 +112,7 @@ export const exportHistoryAsCsv = async (): Promise<boolean> => {
     const history = await DbService.getHistory();
     if (!history || history.length === 0) return false;
 
-    const header = ['run_id', 'created_at', 'prompt', 'model', 'tps', 'tps_estimated', 'ttft_ms', 'winner_model', 'output'];
+    const header = ['run_id', 'created_at', 'prompt', 'model', 'tps', 'tps_estimated', 'ttft_ms', 'prompt_tokens', 'completion_tokens', 'cost_usd', 'winner_model', 'output'];
     const lines = [header.join(',')];
     for (const record of history) {
       for (const r of record.results) {
@@ -102,6 +125,9 @@ export const exportHistoryAsCsv = async (): Promise<boolean> => {
             csvEscape(r.tps),
             csvEscape(r.tpsEstimated ? 1 : 0),
             csvEscape(r.ttft),
+            csvEscape(r.promptTokens),
+            csvEscape(r.completionTokens),
+            csvEscape(r.costUsd),
             csvEscape(record.winnerModel),
             csvEscape(r.output),
           ].join(',')

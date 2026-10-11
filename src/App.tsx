@@ -198,6 +198,7 @@ export default function App() {
 
   const handleCopyReport = async () => {
     if (!slots.some((s) => s.output)) return;
+    const cloud = useCloudStore.getState();
     const results: BenchmarkResult[] = slots.map((s) => ({
       model: slotQualified(s),
       output: s.output,
@@ -205,6 +206,16 @@ export default function App() {
       ttft: s.metrics?.ttftMs || 0,
       tpsEstimated: s.metrics?.tpsEstimated,
       tokenSource: s.metrics?.tokenSource,
+      promptTokens: s.metrics?.promptTokens ?? null,
+      completionTokens: s.metrics?.completionTokens ?? null,
+      costUsd:
+        s.source.kind === 'cloud' && s.metrics?.tokenSource === 'server'
+          ? calcCost(
+              s.metrics.promptTokens,
+              s.metrics.completionTokens,
+              (cloud.modelPricing[s.source.providerId] ?? {})[s.model]
+            )
+          : null,
     }));
     const report = generateMarkdownReport({ prompt, results });
     await navigator.clipboard.writeText(report);
@@ -295,9 +306,11 @@ export default function App() {
             tps: r.tps,
             ttftMs: r.ttft,
             totalDurationMs: 0,
-            totalTokens: 0,
+            totalTokens: (r.promptTokens ?? 0) + (r.completionTokens ?? 0),
             tpsEstimated: r.tpsEstimated ?? false,
             tokenSource: r.tokenSource === 'heuristic' ? 'heuristic' : 'server',
+            promptTokens: r.promptTokens ?? undefined,
+            completionTokens: r.completionTokens ?? undefined,
           },
         };
       })
@@ -418,14 +431,30 @@ export default function App() {
 
     const finalizeRun = (): void => {
       const snapshot = slotsRef.current;
-      const results: BenchmarkResult[] = snapshot.map((s) => ({
-        model: slotQualified(s),
-        output: outputRefs.current[s.id] || s.output || '',
-        tps: metricsRefs.current[s.id]?.tps || 0,
-        ttft: metricsRefs.current[s.id]?.ttftMs || 0,
-        tpsEstimated: metricsRefs.current[s.id]?.tpsEstimated,
-        tokenSource: metricsRefs.current[s.id]?.tokenSource,
-      }));
+      const cloud = useCloudStore.getState();
+      const results: BenchmarkResult[] = snapshot.map((s) => {
+        const m = metricsRefs.current[s.id];
+        // Freeze the run cost: exact server tokens × current pricing, else null.
+        let costUsd: number | null = null;
+        if (s.source.kind === 'cloud' && m?.tokenSource === 'server') {
+          costUsd = calcCost(
+            m.promptTokens,
+            m.completionTokens,
+            (cloud.modelPricing[s.source.providerId] ?? {})[s.model]
+          );
+        }
+        return {
+          model: slotQualified(s),
+          output: outputRefs.current[s.id] || s.output || '',
+          tps: m?.tps || 0,
+          ttft: m?.ttftMs || 0,
+          tpsEstimated: m?.tpsEstimated,
+          tokenSource: m?.tokenSource,
+          promptTokens: m?.promptTokens ?? null,
+          completionTokens: m?.completionTokens ?? null,
+          costUsd,
+        };
+      });
       void DbService.saveHistory(currentPrompt, results).then(async () => {
         // Remember the new run id so a later vote updates the same row.
         const history = await DbService.getHistory();

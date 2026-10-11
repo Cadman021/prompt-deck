@@ -8,6 +8,11 @@ export interface BenchmarkResult {
   ttft: number;
   tpsEstimated?: boolean;
   tokenSource?: string;
+  /** Exact server-reported token counts (absent for heuristic/failed runs). */
+  promptTokens?: number | null;
+  completionTokens?: number | null;
+  /** USD cost frozen at run time (needs exact tokens + pricing). */
+  costUsd?: number | null;
 }
 
 export interface HistoryRecord {
@@ -40,6 +45,9 @@ interface RawResultRow {
   output: string;
   tps_estimated?: number | null;
   token_source?: string | null;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
+  cost_usd?: number | null;
 }
 
 interface RawRunRow {
@@ -80,6 +88,9 @@ export class DbService {
         position INTEGER,
         tps_estimated INTEGER DEFAULT 0,
         token_source TEXT DEFAULT 'server',
+        prompt_tokens INTEGER,
+        completion_tokens INTEGER,
+        cost_usd REAL,
         FOREIGN KEY (run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE
       );
     `);
@@ -98,6 +109,21 @@ export class DbService {
     }
     try {
       await this.db.execute(`ALTER TABLE benchmark_results ADD COLUMN token_source TEXT DEFAULT 'server'`);
+    } catch (_) {
+      // column already exists
+    }
+    try {
+      await this.db.execute(`ALTER TABLE benchmark_results ADD COLUMN prompt_tokens INTEGER`);
+    } catch (_) {
+      // column already exists
+    }
+    try {
+      await this.db.execute(`ALTER TABLE benchmark_results ADD COLUMN completion_tokens INTEGER`);
+    } catch (_) {
+      // column already exists
+    }
+    try {
+      await this.db.execute(`ALTER TABLE benchmark_results ADD COLUMN cost_usd REAL`);
     } catch (_) {
       // column already exists
     }
@@ -162,7 +188,7 @@ export class DbService {
       for (let i = 0; i < results.length; i++) {
         const r = results[i];
         await db.execute(
-          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             runId,
             r.model,
@@ -172,6 +198,9 @@ export class DbService {
             i,
             r.tpsEstimated ? 1 : 0,
             r.tokenSource || 'server',
+            r.promptTokens ?? null,
+            r.completionTokens ?? null,
+            r.costUsd ?? null,
           ]
         );
       }
@@ -190,7 +219,7 @@ export class DbService {
       const records: HistoryRecord[] = [];
       for (const run of runs) {
         const rows = await db.select<RawResultRow[]>(
-          'SELECT model, tps, ttft, output, tps_estimated, token_source FROM benchmark_results WHERE run_id = ? ORDER BY position ASC',
+          'SELECT model, tps, ttft, output, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd FROM benchmark_results WHERE run_id = ? ORDER BY position ASC',
           [run.id]
         );
         records.push({
@@ -205,6 +234,9 @@ export class DbService {
             output: r.output,
             tpsEstimated: Boolean(r.tps_estimated),
             tokenSource: r.token_source || 'server',
+            promptTokens: r.prompt_tokens ?? null,
+            completionTokens: r.completion_tokens ?? null,
+            costUsd: r.cost_usd ?? null,
           })),
         });
       }

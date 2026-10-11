@@ -4,12 +4,42 @@ import { DbService, HistoryRecord } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
 import { Crown } from 'lucide-react';
 import { formatRelativeTime } from '../utils/timeUtils';
+import { useCloudStore } from '../store/useCloudStore';
+import { formatCost, parseQualified } from '../services/modelTarget';
 
 interface HistorySidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectRecord: (record: HistoryRecord) => void;
 }
+
+/** One compact meta line per card: best TPS · total cost · age. */
+const HistoryMetaLine: React.FC<{
+  record: HistoryRecord;
+  getRelativeLabel: (iso: string) => string;
+}> = ({ record, getRelativeLabel }) => {
+  const scored = record.results.filter((r) => r.tps > 0);
+  const best = scored.length > 0
+    ? scored.reduce((a, b) => (b.tps > a.tps ? b : a))
+    : null;
+  const totalCost = record.results.reduce<number | null>(
+    (sum, r) => (r.costUsd != null ? (sum ?? 0) + r.costUsd : sum),
+    null
+  );
+  const stats = [
+    best ? `best ${best.tpsEstimated ? '~' : ''}${best.tps.toFixed(1)} tok/s` : '',
+    totalCost != null ? formatCost(totalCost) : '',
+  ].filter(Boolean).join(' · ');
+  const age = record.created_at ? getRelativeLabel(record.created_at) : '';
+  if (!stats && !age) return null;
+  return (
+    <div className="text-[10px] font-mono truncate">
+      {stats && <span className="text-emerald-600 dark:text-emerald-400">{stats}</span>}
+      {stats && age ? <span className="text-slate-400 dark:text-slate-500"> · {age}</span>
+        : age ? <span className="text-slate-400 dark:text-slate-500">{age}</span> : null}
+    </div>
+  );
+};
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   isOpen,
@@ -21,6 +51,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showWinnersOnly, setShowWinnersOnly] = useState(false);
+  const cloudCustom = useCloudStore((s) => s.customProviders);
+
+  /** Cloud `providerId/model` → short `model` for tight card rows. */
+  const shortName = (model: string): string => {
+    const parsed = parseQualified(model, cloudCustom);
+    return parsed.source.kind === 'cloud' ? parsed.model : model;
+  };
 
   const getRelativeLabel = (isoString: string): string => {
     const relative = formatRelativeTime(isoString);
@@ -172,8 +209,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               }}
               className="group p-3 rounded-lg bg-white dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:border-indigo-400 dark:hover:border-indigo-500/50 cursor-pointer transition-all relative shadow-sm dark:shadow-none"
             >
-              <div className="flex justify-between items-start mb-2 gap-2">
-                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium line-clamp-2" dir="auto">
+              <div className="flex justify-between items-center gap-2">
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate" dir="auto" title={record.prompt}>
                   {record.prompt}
                 </p>
                 <button
@@ -187,19 +224,21 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 </button>
               </div>
 
-              {/* Model chips — one row of comma-separated names, dynamic count */}
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-1 border-t border-slate-200 dark:border-slate-700/40">
+              {/* Models — single truncated line with short names */}
+              <div
+                className="text-[11px] text-slate-500 dark:text-slate-400 truncate"
+                title={record.results.map((r) => r.model).join(' vs ')}
+              >
                 {record.results.map((r, i) => (
-                  <span key={i} className="flex items-center gap-1">
-                    <span
-                      className={`truncate max-w-[90px] flex items-center gap-0.5 ${record.winnerModel === r.model ? 'text-amber-600 dark:text-amber-300 font-semibold' : ''}`}
-                      title={r.model}
-                    >
-                      {record.winnerModel === r.model && <Crown className="w-3 h-3 shrink-0" />}
-                      {r.model.split(':')[0]}
+                  <span key={i}>
+                    {record.winnerModel === r.model && (
+                      <Crown className="w-3 h-3 inline-block -mt-0.5 me-0.5 text-amber-500" />
+                    )}
+                    <span className={record.winnerModel === r.model ? 'text-amber-600 dark:text-amber-300 font-semibold' : ''}>
+                      {shortName(r.model).split(':')[0]}
                     </span>
                     {i < record.results.length - 1 && (
-                      <span className="text-indigo-500 dark:text-indigo-400 font-mono text-[10px]">
+                      <span className="text-indigo-500 dark:text-indigo-400 font-mono text-[10px] mx-1">
                         {t('history.vs')}
                       </span>
                     )}
@@ -207,19 +246,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 ))}
               </div>
 
-              {record.created_at && (
-                <div className="mt-1.5 text-[10px] font-mono text-slate-400 dark:text-slate-500">
-                  {getRelativeLabel(record.created_at)}
-                </div>
-              )}
-
-              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
-                {record.results.map((r, i) => (
-                  <span key={i}>
-                    {r.tpsEstimated ? '~' : ''}{r.tps ? r.tps.toFixed(1) : '0'} tok/s
-                  </span>
-                ))}
-              </div>
+              <HistoryMetaLine record={record} getRelativeLabel={getRelativeLabel} />
             </div>
           ))
         )}
