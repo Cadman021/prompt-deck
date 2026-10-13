@@ -19,7 +19,7 @@
     "@tauri-apps/plugin-sql": "^2.4.1",
     "@tauri-apps/plugin-updater": "^2.13.3",
     "html2canvas": "^1.4.1",
-    "i18next": "^26.4.1",
+    "i18next": "^26.4.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.39.0",
