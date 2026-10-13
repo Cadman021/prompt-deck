@@ -7,6 +7,8 @@ import type { AdvancedConfig } from '../components/AdvancedSettings';
 export type Theme = 'dark' | 'light' | 'amoled';
 export type Language = 'en' | 'fa' | 'de' | 'fr' | 'zh' | 'ru';
 export type Provider = 'ollama' | 'openai-compatible';
+/** Parallel streams all slots at once; sequential runs them one by one for uncontaminated local numbers. */
+export type RunMode = 'parallel' | 'sequential';
 
 const DEFAULT_BASE_URLS: Record<Provider, string> = {
   ollama: 'http://localhost:11434',
@@ -18,6 +20,9 @@ const DEFAULT_ADVANCED: AdvancedConfig = {
   temperature: 0.7,
   top_p: 0.9,
   num_ctx: 4096,
+  serverDefaults: false,
+  seed: null,
+  maxTokens: null,
 };
 
 interface SettingsState {
@@ -26,11 +31,13 @@ interface SettingsState {
   provider: Provider;
   baseUrl: string;
   advancedConfig: AdvancedConfig;
+  runMode: RunMode;
   setTheme: (theme: Theme) => void;
   setLanguage: (lang: Language) => void;
   setProvider: (provider: Provider) => void;
   setBaseUrl: (url: string) => void;
   setAdvancedConfig: (config: AdvancedConfig) => void;
+  setRunMode: (mode: RunMode) => void;
   resetSettings: () => void;
 }
 
@@ -40,6 +47,7 @@ interface PersistedSettings {
   provider: Provider;
   baseUrl: string;
   advancedConfig: AdvancedConfig;
+  runMode: RunMode;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -50,6 +58,7 @@ export const useSettingsStore = create<SettingsState>()(
       provider: 'ollama',
       baseUrl: DEFAULT_BASE_URLS.ollama,
       advancedConfig: DEFAULT_ADVANCED,
+      runMode: 'sequential',
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => set({ language }),
       setProvider: (provider) => {
@@ -60,6 +69,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setBaseUrl: (baseUrl) => set({ baseUrl }),
       setAdvancedConfig: (advancedConfig) => set({ advancedConfig }),
+      setRunMode: (runMode) => set({ runMode }),
       resetSettings: () =>
         set({
           provider: 'ollama',
@@ -69,8 +79,9 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'promptdeck-settings',
-      version: 2,
-      // v1 -> v2: 'amoled' theme added; old 'dark'/'light' values stay valid as-is.
+      version: 3,
+      // v2 -> v3: 'runMode' added (defaults to 'sequential' via initial state
+      // when absent — zustand merges persisted state over it).
       migrate: (persisted: unknown) => (persisted ?? {}) as PersistedSettings,
       partialize: (s): PersistedSettings => ({
         theme: s.theme,
@@ -78,6 +89,7 @@ export const useSettingsStore = create<SettingsState>()(
         provider: s.provider,
         baseUrl: s.baseUrl,
         advancedConfig: s.advancedConfig,
+        runMode: s.runMode,
       }),
     }
   )

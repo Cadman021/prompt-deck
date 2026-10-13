@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { DbService, HistoryRecord } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
-import { Crown } from 'lucide-react';
+import { Crown, Download, Upload } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useCloudStore } from '../store/useCloudStore';
 import { formatCost, parseQualified } from '../services/modelTarget';
@@ -12,6 +13,41 @@ interface HistorySidebarProps {
   onClose: () => void;
   onSelectRecord: (record: HistoryRecord) => void;
 }
+
+/** Human-readable run-config summary for the card tooltip (technical values, no i18n). */
+const configSummary = (runConfig?: string | null): string => {
+  if (!runConfig) return '';
+  try {
+    const c = JSON.parse(runConfig) as {
+      provider?: string;
+      host?: string;
+      runMode?: string;
+      temperature?: number;
+      top_p?: number;
+      num_ctx?: number;
+      serverDefaults?: boolean;
+      seed?: number;
+      maxTokens?: number;
+      appVersion?: string;
+    };
+    const parts: string[] = [];
+    if (c.provider) parts.push(c.host ? `${c.provider} @ ${c.host}` : c.provider);
+    if (c.runMode) parts.push(c.runMode);
+    if (c.serverDefaults) {
+      parts.push('server defaults');
+    } else {
+      if (c.temperature != null) parts.push(`temp ${c.temperature}`);
+      if (c.top_p != null) parts.push(`top-p ${c.top_p}`);
+      if (c.num_ctx != null) parts.push(`ctx ${c.num_ctx}`);
+    }
+    if (c.seed != null) parts.push(`seed ${c.seed}`);
+    if (c.maxTokens != null) parts.push(`max ${c.maxTokens} tok`);
+    if (c.appVersion) parts.push(`v${c.appVersion}`);
+    return parts.join(' · ');
+  } catch {
+    return '';
+  }
+};
 
 /** One compact meta line per card: best TPS · total cost · age. */
 const HistoryMetaLine: React.FC<{
@@ -75,20 +111,51 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     }
   };
 
-  const fetchRecords = async () => {
-    setLoading(true);
-    const data = await DbService.getHistory();
-    setRecords(data);
+  const PAGE_SIZE = 50;
+  const [totalCount, setTotalCount] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // Debounced search text actually sent to SQL (LIKE %..% server-side, so
+  // filtering works across the whole history, not just the loaded page).
+  const [appliedQuery, setAppliedQuery] = useState('');
+
+  const loadPage = async (offset: number, query: string, winners: boolean, append: boolean) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    const [data, total] = await Promise.all([
+      DbService.getHistory(PAGE_SIZE, offset, query, winners),
+      DbService.countHistory(query, winners),
+    ]);
+    setRecords((prev) => (append ? [...prev, ...data] : data));
+    setTotalCount(total);
     setLoading(false);
+    setLoadingMore(false);
   };
 
+  const wasOpen = React.useRef(false);
   useEffect(() => {
-    if (isOpen) {
-      fetchRecords();
+    if (!isOpen) {
+      wasOpen.current = false;
+      return;
+    }
+    if (!wasOpen.current) {
+      // Freshly opened: reset filters and load the first page immediately.
+      wasOpen.current = true;
       setSearchQuery('');
       setShowWinnersOnly(false);
+      setAppliedQuery('');
+      void loadPage(0, '', false, false);
+      return;
     }
-  }, [isOpen]);
+    const timer = setTimeout(() => {
+      setAppliedQuery(searchQuery);
+      void loadPage(0, searchQuery, showWinnersOnly, false);
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, searchQuery, showWinnersOnly]);
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -96,21 +163,59 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     setRecords((prev) => prev.filter((r) => r.id !== id));
   };
 
+  const [confirmClear, setConfirmClear] = useState(false);
+
   const handleClearAll = async () => {
-    if (window.confirm(t('history.clearAllConfirm'))) {
-      await DbService.clearHistory();
-      setRecords([]);
+    await DbService.clearHistory();
+    setRecords([]);
+    setTotalCount(0);
+  };
+
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const flashNotice = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 3000);
+  };
+
+  const handleExportDb = async () => {
+    try {
+      const json = await DbService.exportDatabase();
+      const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `promptdeck-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Backup export failed:', error);
+      flashNotice(t('history.importError', 'Backup failed.'));
     }
   };
 
-  const filteredRecords = records.filter((record) => {
-    if (showWinnersOnly && !record.winnerModel) return false;
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    const promptMatch = record.prompt.toLowerCase().includes(q);
-    const modelMatch = record.results.some((r) => r.model.toLowerCase().includes(q));
-    return promptMatch || modelMatch;
-  });
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const runs = await DbService.importDatabase(text);
+      flashNotice(t('history.imported', 'Imported {{count}} runs.', { count: runs }));
+      const q = appliedQuery;
+      await loadPage(0, q, showWinnersOnly, false);
+    } catch (error) {
+      console.error('Backup import failed:', error);
+      flashNotice(t('history.importError', 'Backup failed.'));
+    }
+  };
+
+  // Filtering already happened in SQL (search text + winners toggle), so
+  // `records` is exactly the current result set — no client-side pass.
+  const hasFilter = appliedQuery.trim() !== '' || showWinnersOnly;
 
   if (!isOpen) return null;
 
@@ -130,9 +235,30 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           <h2 className="font-bold text-lg">{t('history.title')}</h2>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportDb}
+            title={t('history.exportDb', 'Export full backup (JSON)')}
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 rounded transition-colors"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            title={t('history.importDb', 'Import backup (JSON)')}
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 rounded transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImportFile}
+          />
           {records.length > 0 && (
             <button
-              onClick={handleClearAll}
+              onClick={() => setConfirmClear(true)}
               title={t('history.clearAllTitle')}
               className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-rose-500 dark:text-red-400 hover:text-rose-600 dark:hover:text-red-300 rounded transition-colors"
             >
@@ -177,13 +303,27 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               {t('history.winnersOnly')}
             </button>
           </div>
-          {(searchQuery.trim() || showWinnersOnly) && (
+          {hasFilter && (
             <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {t('history.resultsCount', { count: filteredRecords.length })}
+              {t('history.resultsCount', { count: totalCount })}
             </div>
           )}
         </div>
       )}
+
+      {notice && (
+        <div className="px-4 py-1.5 text-[11px] text-center bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-b border-indigo-500/20">
+          {notice}
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={confirmClear}
+        title={t('history.clearAllTitle')}
+        message={t('history.clearAllConfirm')}
+        onConfirm={() => void handleClearAll()}
+        onClose={() => setConfirmClear(false)}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50 dark:bg-slate-900">
@@ -193,20 +333,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           </div>
         ) : records.length === 0 ? (
           <div className="text-center text-slate-400 dark:text-slate-500 py-8 px-4 text-sm leading-relaxed">
-            {t('history.empty')}
-          </div>
-        ) : filteredRecords.length === 0 ? (
-          <div className="text-center text-slate-400 dark:text-slate-500 py-8 text-sm">
-            {t('history.noResults')}
+            {hasFilter ? t('history.noResults') : t('history.empty')}
           </div>
         ) : (
-          filteredRecords.map((record) => (
-            <div
-              key={record.id}
-              onClick={() => {
-                onSelectRecord(record);
-                onClose();
-              }}
+          records.map((record) => (
+              <div
+                key={record.id}
+                onClick={() => {
+                  onSelectRecord(record);
+                  onClose();
+                }}
+                title={[record.prompt, configSummary(record.runConfig)].filter(Boolean).join('\n')}
               className="group p-3 rounded-lg bg-white dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:border-indigo-400 dark:hover:border-indigo-500/50 cursor-pointer transition-all relative shadow-sm dark:shadow-none"
             >
               <div className="flex justify-between items-center gap-2">
@@ -249,6 +386,20 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <HistoryMetaLine record={record} getRelativeLabel={getRelativeLabel} />
             </div>
           ))
+        )}
+        {!loading && records.length < totalCount && (
+          <button
+            onClick={() => void loadPage(records.length, appliedQuery, showWinnersOnly, true)}
+            disabled={loadingMore}
+            className="w-full py-2 text-xs font-medium rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-50"
+          >
+            {loadingMore
+              ? t('history.loading')
+              : t('history.showMore', 'Show more ({{shown}} of {{total}})', {
+                  shown: records.length,
+                  total: totalCount,
+                })}
+          </button>
         )}
       </div>
       </div>

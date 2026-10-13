@@ -12,7 +12,7 @@ interface ResultToolbarProps {
   onCopyReport: () => void;
   pdfState: 'idle' | 'exporting' | 'done';
   onExportPdf: () => void;
-  jsonCopied: boolean;
+  jsonState: 'idle' | 'copied' | 'empty';
   onCopyJson: () => void;
   csvState: 'idle' | 'exporting' | 'done' | 'empty';
   onExportCsv: () => void;
@@ -28,7 +28,7 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
   onCopyReport,
   pdfState,
   onExportPdf,
-  jsonCopied,
+  jsonState,
   onCopyJson,
   csvState,
   onExportCsv,
@@ -97,7 +97,13 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
         className={`${btn} bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700`}
         title={t('app.copyJsonTitle')}
       >
-        <span>{jsonCopied ? t('app.copyJsonDone') : t('app.copyJson')}</span>
+        <span>
+          {jsonState === 'copied'
+            ? t('app.copyJsonDone')
+            : jsonState === 'empty'
+              ? t('app.exportCsvEmpty')
+              : t('app.copyJson')}
+        </span>
       </button>
 
       <button

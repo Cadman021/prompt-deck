@@ -7,6 +7,14 @@ export interface AdvancedConfig {
   temperature?: number;
   top_p?: number;
   num_ctx?: number;
+  /** When true, temperature/top_p/num_ctx are omitted so the server's own defaults apply. */
+  serverDefaults?: boolean;
+  /** Optional fixed seed (omitted = random). */
+  seed?: number | null;
+  /** Optional max output tokens (Ollama: num_predict). Omitted = unlimited. */
+  maxTokens?: number | null;
+  /** Repeat each run N times (1–5); medians are reported. Default 1. */
+  repeats?: number;
 }
 
 interface AdvancedSettingsProps {

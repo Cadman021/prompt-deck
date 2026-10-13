@@ -7,6 +7,7 @@ import { Server, Search, Plus } from 'lucide-react';
 import { CLOUD_CATALOG, CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
 import { useCloudStore } from '../../store/useCloudStore';
 import { LLMService } from '../../services/llmService';
+import { secretFor } from '../../services/secrets';
 import { ProviderIcon } from './ProviderIcon';
 import { ProviderDetailPage } from './ProviderDetailPage';
 
@@ -72,14 +73,14 @@ export const CloudProvidersView: React.FC = () => {
 
   const handleTestAll = async (defs: AnyDef[]) => {
     if (testingAll) return;
-    const targets = defs.filter((d) => keys.some((k) => k.providerId === d.id && k.apiKey));
+    const targets = defs.filter((d) => keys.some((k) => k.providerId === d.id && secretFor(k)));
     if (targets.length === 0) return;
     setTestingAll(true);
     for (const d of targets) {
-      const key = keys.find((k) => k.providerId === d.id && k.apiKey);
+      const key = keys.find((k) => k.providerId === d.id && secretFor(k));
       if (!key) continue;
       // eslint-disable-next-line no-await-in-loop
-      const result = await LLMService.testCloudConnection(d.defaultBaseUrl, key.apiKey);
+      const result = await LLMService.testCloudConnection(d.defaultBaseUrl, secretFor(key));
       updateKey(key.id, {
         status: result.ok ? 'ok' : 'error',
         lastTested: new Date().toISOString(),
@@ -98,7 +99,7 @@ export const CloudProvidersView: React.FC = () => {
   const renderTestAll = (defs: AnyDef[]) => (
     <button
       onClick={() => void handleTestAll(defs)}
-      disabled={testingAll || !defs.some((d) => keys.some((k) => k.providerId === d.id && k.apiKey))}
+      disabled={testingAll || !defs.some((d) => keys.some((k) => k.providerId === d.id && secretFor(k)))}
       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition disabled:opacity-50"
     >
       {testingAll ? (

@@ -13,6 +13,7 @@ dist-ssr
 *.local
 
 src-tauri/target
+src-tauri/gen
 
 # Editor directories and files
 .vscode/*
@@ -24,3 +25,18 @@ src-tauri/target
 *.njsproj
 *.sln
 *.sw?
+
+# OS
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# SQLite local db (if generated in dev)
+*.db
+*.db-journal
+
+# Tauri updater signing keys must NEVER be committed
+*.key
+*.key.pub

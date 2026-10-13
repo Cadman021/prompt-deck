@@ -4,6 +4,8 @@
 
 # 🚀 PromptDeck
 
+**English** | [中文](./README.zh.md) | [Русский](./README.ru.md)
+
 **PromptDeck** is a local, open-source desktop studio for prompting and benchmarking LLMs side-by-side — fully offline, with no data ever leaving your machine.
 
 Run the same prompt against multiple local models — via [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or a `llama.cpp` server — watch them stream in real time, and compare **Tokens/sec (TPS)**, **Time-To-First-Token (TTFT)**, and total duration, with results saved locally in SQLite for later review.
@@ -24,7 +26,15 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   ![Provider Detail](./docs/screenshot-provider-detail.png)
   <!-- NEW IMAGE for v1.1.0: click a provider card (e.g. OpenRouter), capture the Connections + Available Models sections. Save exactly as docs/screenshot-provider-detail.png -->
 
-- ⚡ **Compare 2 to 4 models simultaneously** — run the same prompt across local and cloud models at once and watch them stream side-by-side
+- ⚡ **Compare 2 to 4 models simultaneously** — run the same prompt across local and cloud models at once and watch them stream side-by-side, in Parallel or Sequential mode (sequential avoids GPU contention for cleaner local numbers)
+- 🔁 **Repeat runs (1–5)** — medians reported with mean±stdev tooltips, so jitter doesn't decide the winner
+- 💰 **Cost tracking** — per-run cost in Bench columns, per-model totals in Test Suite, frozen into history and exports (shown only when exact server tokens + provider pricing are known — never guessed)
+- 🧠 **Thinking traces** — reasoning models show a collapsible Thinking block above the answer
+- 🏆 **Winner votes & leaderboard** — crown the best answer per run and track win rate plus average speed per model over time, Wilson-ranked so small samples can't dominate
+
+  ![Model Leaderboard](./docs/screenshot-leaderboard.png)
+  <!-- Retake recommended: leaderboard panel now opens from the sidebar; capture with 2-3 models visible showing runs / avg TPS / wins. Keep filename docs/screenshot-leaderboard.png -->
+
 - 🧪 **Test Suite (batch execution)** — run a list of 1–10 test prompts across all selected models sequentially and compare them in a scoreboard matrix: per-cell TPS, 👑 crown for the fastest model on each test, average-TPS + wins summary, click-to-read full outputs, Markdown copy, and CSV download
 
   ![Test Suite Scoreboard](./docs/screenshot-testsuite.png)
@@ -35,11 +45,6 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
   ![Benchmark Chart](./docs/screenshot-chart.png)
   <!-- Optional retake: TPS/TTFT comparison bar charts (estimated bars render slightly faded) -->
-
-- 🏆 **Winner votes & leaderboard** — crown the best answer per run and track win rate plus average speed per model over time
-
-  ![Model Leaderboard](./docs/screenshot-leaderboard.png)
-  <!-- Retake recommended: leaderboard panel now opens from the sidebar; capture with 2-3 models visible showing runs / avg TPS / wins. Keep filename docs/screenshot-leaderboard.png -->
 
 - 🔍 **Side-by-side diff view** — compare any two outputs line-by-line with similarity percentage and added/removed counts
 
@@ -75,7 +80,9 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   <!-- NEW IMAGE for v1.0.0: click the language button in the TopBar, capture the centered Select Language modal. Save exactly as docs/screenshot-language.png -->
 
 - 📋 **One-click export** — copy a Markdown report or full JSON history to clipboard, or download history as CSV
-- 🔒 **100% local & private** — built with [Tauri](https://tauri.app), no telemetry, no cloud calls
+- 💾 **Backup & restore** — export/import the whole database (runs + presets) as JSON from the history sidebar
+- 🔄 **Auto-update** — signed in-app updates from GitHub releases, with your consent — no manual downloads
+- 🔒 **Local by default, private always** — built with [Tauri](https://tauri.app), no telemetry; cloud calls happen only to providers you explicitly configure with your own API key
 
 ---
 
@@ -89,7 +96,8 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 | State | Zustand (persisted) |
 | Database | SQLite (via `tauri-plugin-sql`) |
 | Charts | Recharts |
-| PDF Export | jsPDF + html2canvas |
+| PDF Export | jsPDF + autotable (text) / html2canvas (fallback) |
+| Tests | Vitest (`npm test`) |
 | i18n | react-i18next |
 | Markdown | react-markdown + remark-gfm |
 
@@ -148,7 +156,8 @@ npm run tauri build
 ## 🗺️ Roadmap
 
 - [x] Cloud providers — catalog, API keys, model picking, and benchmarking in Bench + Test Suite
-- [ ] Cost/pricing estimation for cloud runs (per-run spend, usage totals)
+- [x] Cost estimation for cloud runs (per-run cost in Bench, totals in Test Suite; frozen into history)
+- [x] Signed in-app auto-updates from GitHub releases
 - [ ] OS-keychain storage for API keys (currently local persisted store)
 - [x] Test Suite — batch execution with scoreboard matrix
 - [x] AMOLED Dark theme (+ Light / Dark)
@@ -169,6 +178,18 @@ Issues and PRs are welcome! If you'd like to add a feature or fix a bug:
 4. Open a Pull Request
 
 Please open an issue first for larger changes so we can discuss the approach. See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
+
+---
+
+## 🙏 Contributors
+
+Thanks to everyone who helps make PromptDeck better:
+
+- [@AyanJaved](https://github.com/AyanJaved) — relative timestamps on history cards
+- [@lb1192176991-lab](https://github.com/lb1192176991-lab) — winners-only filter, reset-to-defaults, Ctrl+K prompt focus
+- [@afifm561](https://github.com/afifm561) — Test Suite retry-failed button
+
+Want to join them? Look for [`good first issue`](https://github.com/Cadman021/prompt-deck/labels/good%20first%20issue) — newcomers welcome!
 
 ---
 

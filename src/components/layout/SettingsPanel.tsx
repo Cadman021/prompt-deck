@@ -6,6 +6,7 @@ import { ProviderSettings } from '../ProviderSettings';
 import type { AdvancedConfig } from '../AdvancedSettings';
 import { useSettingsStore, Theme } from '../../store/useSettingsStore';
 import { LanguageModal, SUPPORTED_LANGUAGES } from './LanguageModal';
+import { ConfirmModal } from '../ConfirmModal';
 import { openExternal } from '../../utils/openExternal';
 
 interface SettingsPanelProps {
@@ -24,6 +25,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const { t } = useTranslation();
   const { theme, setTheme, language, resetSettings } = useSettingsStore();
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   if (!isOpen) return null;
 
   const themeOption = (id: Theme, icon: React.ReactNode, labelKey: string, fallback: string) => {
@@ -130,8 +132,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <input
                       type="range" min="0" max="1.5" step="0.05"
                       value={advancedConfig.temperature ?? 0.7}
+                      disabled={advancedConfig.serverDefaults}
                       onChange={(e) => onAdvancedChange({ ...advancedConfig, temperature: parseFloat(e.target.value) })}
-                      className="w-full accent-indigo-500 cursor-pointer"
+                      className="w-full accent-indigo-500 cursor-pointer disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -142,8 +145,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <input
                       type="range" min="0.1" max="1" step="0.05"
                       value={advancedConfig.top_p ?? 0.9}
+                      disabled={advancedConfig.serverDefaults}
                       onChange={(e) => onAdvancedChange({ ...advancedConfig, top_p: parseFloat(e.target.value) })}
-                      className="w-full accent-indigo-500 cursor-pointer"
+                      className="w-full accent-indigo-500 cursor-pointer disabled:opacity-50"
                     />
                   </div>
                   <div>
@@ -153,7 +157,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <select
                       value={advancedConfig.num_ctx ?? 4096}
                       onChange={(e) => onAdvancedChange({ ...advancedConfig, num_ctx: parseInt(e.target.value) })}
-                      className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono"
+                      disabled={advancedConfig.serverDefaults}
+                      className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono disabled:opacity-50"
                     >
                       <option value={2048}>2048 (2K)</option>
                       <option value={4096}>4096 (4K)</option>
@@ -161,6 +166,67 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <option value={16384}>16384 (16K)</option>
                       <option value={32768}>32768 (32K)</option>
                     </select>
+                  </div>
+                  <label className={`flex items-center justify-between gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 cursor-pointer ${advancedConfig.serverDefaults ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700' : ''}`}>
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">
+                      {t('advanced.serverDefaults')}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={advancedConfig.serverDefaults ?? false}
+                      onChange={(e) => onAdvancedChange({ ...advancedConfig, serverDefaults: e.target.checked })}
+                      className="w-3.5 h-3.5 accent-indigo-500"
+                    />
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-slate-600 dark:text-slate-400 mb-1">
+                        {t('advanced.seed')}:
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={advancedConfig.seed ?? ''}
+                        placeholder="—"
+                        onChange={(e) => onAdvancedChange({
+                          ...advancedConfig,
+                          seed: e.target.value === '' ? null : Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                        })}
+                        className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 dark:text-slate-400 mb-1">
+                        {t('advanced.maxTokens')}:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={advancedConfig.maxTokens ?? ''}
+                        placeholder="—"
+                        onChange={(e) => onAdvancedChange({
+                          ...advancedConfig,
+                          maxTokens: e.target.value === '' ? null : Math.max(1, Math.floor(Number(e.target.value) || 0)),
+                        })}
+                        className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 dark:text-slate-400 mb-1">
+                        {t('advanced.repeats')}:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={advancedConfig.repeats ?? 1}
+                        onChange={(e) => onAdvancedChange({
+                          ...advancedConfig,
+                          repeats: Math.min(5, Math.max(1, Math.floor(Number(e.target.value) || 1))),
+                        })}
+                        className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -174,11 +240,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <span>{t('settings.resetTitle', 'Reset Settings')}</span>
             </div>
             <button
-              onClick={() => {
-                if (window.confirm(t('settings.resetConfirm'))) {
-                  resetSettings();
-                }
-              }}
+              onClick={() => setConfirmReset(true)}
               className="w-full p-3 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
             >
               {t('settings.resetButton', 'Reset to defaults')}
@@ -199,6 +261,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
       </div>
       <LanguageModal isOpen={isLangOpen} onClose={() => setIsLangOpen(false)} />
+      <ConfirmModal
+        isOpen={confirmReset}
+        title={t('settings.resetTitle', 'Reset Settings')}
+        message={t('settings.resetConfirm')}
+        confirmLabel={t('settings.resetButton', 'Reset to defaults')}
+        onConfirm={resetSettings}
+        onClose={() => setConfirmReset(false)}
+      />
     </div>
   );
 };

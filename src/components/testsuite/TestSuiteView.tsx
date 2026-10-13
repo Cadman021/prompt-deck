@@ -18,16 +18,19 @@ import {
   Eraser,
   RotateCcw,
 } from 'lucide-react';
-import { LLMService } from '../../services/llmService';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCloudStore } from '../../store/useCloudStore';
+import { useTestSuiteStore, type SuiteCell } from '../../store/useTestSuiteStore';
 import {
   buildCloudGroups,
   calcCost,
   formatCost,
   parseQualified,
-  resolveCloudTarget,
 } from '../../services/modelTarget';
+import { resolveRunEndpoint, runRepeatedStream } from '../../services/runTarget';
+import { DbService, type BenchmarkResult } from '../../services/dbService';
+import { rafBatch } from '../../utils/rafBatch';
+import { APP_VERSION } from '../../version';
 import { OllamaModel, BenchmarkMetrics } from '../../types/ollama';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 
@@ -35,19 +38,7 @@ const MAX_TESTS = 10;
 const STORAGE_KEY = 'promptdeck-test-suite';
 const MODEL_COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
 
-type CellStatus = 'idle' | 'running' | 'done' | 'error';
-
-interface CellResult {
-  status: CellStatus;
-  output: string;
-  metrics: BenchmarkMetrics | null;
-  error: string | null;
-}
-
-type ResultsMap = Record<number, Record<string, CellResult>>;
-
-const emptyCell = (): CellResult => ({ status: 'idle', output: '', metrics: null, error: null });
-
+/** One-time import of the pre-store plain-array format. */
 function loadStoredTests(): string[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -91,38 +82,50 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     return parsed.source.kind === 'cloud' ? parsed.model : qualified;
   };
 
-  const [tests, setTests] = useState<string[]>(() => {
-    const stored = loadStoredTests();
-    if (stored && stored.length > 0) return stored;
-    return [
-      t('presets.codePrompt'),
-      t('presets.logicPrompt'),
-      t('presets.summaryPrompt'),
-      '',
-      '',
-    ];
-  });
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
-  const [results, setResults] = useState<ResultsMap>({});
-  const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0, label: '' });
+  // Suite state lives in the store so page switches don't lose results,
+  // progress, or the run's AbortController. Definition is persisted.
+  const tests = useTestSuiteStore((s) => s.tests);
+  const setTests = useTestSuiteStore((s) => s.setTests);
+  const selectedModels = useTestSuiteStore((s) => s.selectedModels);
+  const toggleModel = useTestSuiteStore((s) => s.toggleModel);
+  const results = useTestSuiteStore((s) => s.results);
+  const patchCell = useTestSuiteStore((s) => s.patchCell);
+  const resetCells = useTestSuiteStore((s) => s.resetCells);
+  const clearResults = useTestSuiteStore((s) => s.clearResults);
+  const running = useTestSuiteStore((s) => s.running);
+  const setRunning = useTestSuiteStore((s) => s.setRunning);
+  const progress = useTestSuiteStore((s) => s.progress);
+  const setProgress = useTestSuiteStore((s) => s.setProgress);
   const [detail, setDetail] = useState<{ ti: number; model: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
 
-  // Persist suite definition.
+  // One-time seed: default prompts (+ legacy plain-array import), then the
+  // first two installed models when nothing is selected yet.
+  const seededRef = useRef(false);
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tests));
-    } catch {
-      // storage full / unavailable — non-fatal
+    if (seededRef.current) return;
+    seededRef.current = true;
+    const s = useTestSuiteStore.getState();
+    if (s.tests.length === 0) {
+      const legacy = loadStoredTests();
+      s.setTests(
+        legacy && legacy.length > 0
+          ? legacy
+          : [t('presets.codePrompt'), t('presets.logicPrompt'), t('presets.summaryPrompt'), '', '']
+      );
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
     }
-  }, [tests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Default to the first two installed models.
   useEffect(() => {
-    if (selectedModels.length === 0 && models.length > 0) {
-      setSelectedModels(models.slice(0, 2).map((m) => m.name));
+    const s = useTestSuiteStore.getState();
+    if (s.selectedModels.length === 0 && models.length > 0) {
+      s.setSelectedModels(models.slice(0, 2).map((m) => m.name));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [models]);
@@ -132,72 +135,58 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     [tests]
   );
 
-  const toggleModel = (name: string) => {
-    setSelectedModels((prev) =>
-      prev.includes(name) ? prev.filter((m) => m !== name) : [...prev, name]
-    );
-  };
-
-  const updateCell = (ti: number, model: string, patch: Partial<CellResult>) => {
-    setResults((prev) => ({
-      ...prev,
-      [ti]: { ...(prev[ti] || {}), [model]: { ...(prev[ti]?.[model] || emptyCell()), ...patch } },
-    }));
+  const updateCell = (ti: number, model: string, patch: Partial<SuiteCell>) => {
+    patchCell(ti, model, patch);
   };
 
   const runCell = (ti: number, target: string, promptText: string, signal: AbortSignal): Promise<void> => {
     const parsed = parseQualified(target, cloudCustom);
-    const model = parsed.model;
     // Resolve the endpoint: local settings or a stored cloud API key.
-    let endpoint: { provider: typeof provider; baseUrl: string; apiKey?: string } = {
-      provider,
-      baseUrl,
-    };
-    if (parsed.source.kind === 'cloud') {
-      const cloud = useCloudStore.getState();
-      const resolved = resolveCloudTarget(parsed.source.providerId, cloud.customProviders, cloud.keys);
-      if ('error' in resolved) {
-        const msg =
-          resolved.error === 'noCloudKey'
-            ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
-            : t('bench.unknownProvider', 'Unknown cloud provider.');
-        updateCell(ti, target, { status: 'error', error: msg });
-        return Promise.resolve();
-      }
-      endpoint = resolved.config;
+    const resolved = resolveRunEndpoint(parsed.source, parsed.model, { provider, baseUrl });
+    if ('error' in resolved) {
+      const msg =
+        resolved.error === 'noCloudKey'
+          ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
+          : t('bench.unknownProvider', 'Unknown cloud provider.');
+      updateCell(ti, target, { status: 'error', error: msg });
+      return Promise.resolve();
     }
     return new Promise((resolve) => {
-      LLMService.generateStream(
-        endpoint,
+      runRepeatedStream(
+        resolved.run.config,
         {
-          model,
+          model: resolved.run.model,
           prompt: promptText,
           system: advancedConfig.system,
           temperature: advancedConfig.temperature,
           top_p: advancedConfig.top_p,
           num_ctx: advancedConfig.num_ctx,
+          serverDefaults: advancedConfig.serverDefaults,
+          seed: advancedConfig.seed,
+          maxTokens: advancedConfig.maxTokens,
         },
+        signal,
+        advancedConfig.repeats ?? 1,
         {
-          onChunk: (_, fullText) => {
-            updateCell(ti, target, { status: 'running', output: fullText });
+          onChunk: (fullText) => {
+            rafBatch(`${ti}:${target}`, () => {
+              updateCell(ti, target, { status: 'running', output: fullText });
+            });
           },
-          onComplete: (fullText, metrics) => {
-            updateCell(ti, target, { status: 'done', output: fullText, metrics, error: null });
-            resolve();
-          },
-          onError: (err) => {
-            if (signal.aborted) {
+          onDone: (output, metrics, error, aborted) => {
+            if (aborted) {
               updateCell(ti, target, {
                 status: 'error',
                 error: t('testsuite.stopped', 'Stopped'),
               });
+            } else if (error || !metrics) {
+              updateCell(ti, target, { status: 'error', error: error ?? 'Empty response.' });
             } else {
-              updateCell(ti, target, { status: 'error', error: err.message });
+              updateCell(ti, target, { status: 'done', output, metrics, error: null });
             }
             resolve();
           },
-        },
-        signal
+        }
       );
     });
   };
@@ -211,22 +200,19 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
 
   // Shared by "Run suite" and "Retry failed": resets the queued cells and runs
   // them sequentially with the same runCell + progress + abort plumbing.
-  const runQueue = async (queue: QueueItem[]) => {
+  // Full runs (not retries, not stopped runs) are saved to SQLite afterwards —
+  // one history row per test prompt, so suite runs show up in History and
+  // feed the leaderboard. No winner vote is stored (speed ≠ quality).
+  const runQueue = async (queue: QueueItem[], saveToHistory: boolean) => {
     if (running || queue.length === 0) return;
     const controller = new AbortController();
-    abortRef.current = controller;
+    useTestSuiteStore.getState().setAbortController(controller);
     const signal = controller.signal;
 
     setRunning(true);
     setProgress({ done: 0, total: queue.length, label: '' });
     // Reset queued cells, keep the rest.
-    setResults((prev) => {
-      const next: ResultsMap = { ...prev };
-      for (const q of queue) {
-        next[q.ti] = { ...(next[q.ti] || {}), [q.model]: emptyCell() };
-      }
-      return next;
-    });
+    resetCells(queue);
 
     let done = 0;
     for (const q of queue) {
@@ -240,12 +226,84 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
       // eslint-disable-next-line no-await-in-loop
       await runCell(q.ti, q.model, q.prompt, signal);
       done += 1;
-      setProgress((p) => ({ ...p, done }));
+      setProgress({
+        done,
+        total: queue.length,
+        label: `${q.model} · ${t('testsuite.test', 'Test')} ${activeTests.findIndex((x) => x.index === q.ti) + 1}/${activeTests.length}`,
+      });
     }
 
-    abortRef.current = null;
+    useTestSuiteStore.getState().setAbortController(null);
     setRunning(false);
-    setProgress((p) => ({ ...p, label: '' }));
+    setProgress({ done, total: queue.length, label: '' });
+
+    if (saveToHistory && !signal.aborted) {
+      await saveSuiteToHistory(queue);
+    }
+  };
+
+  /** Persist one history row per finished test prompt (done + error cells). */
+  const saveSuiteToHistory = async (queue: QueueItem[]) => {
+    const st = useTestSuiteStore.getState();
+    const settings = useSettingsStore.getState();
+    const cloud = useCloudStore.getState();
+    let host = '';
+    try {
+      host = new URL(settings.baseUrl).host;
+    } catch {
+      host = settings.baseUrl;
+    }
+    const runConfig = JSON.stringify({
+      suite: true,
+      provider: settings.provider,
+      host,
+      temperature: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.temperature,
+      top_p: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.top_p,
+      num_ctx: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.num_ctx,
+      serverDefaults: settings.advancedConfig.serverDefaults || undefined,
+      appVersion: APP_VERSION,
+    });
+    const byTest = new Map<number, QueueItem[]>();
+    for (const q of queue) {
+      const list = byTest.get(q.ti) ?? [];
+      list.push(q);
+      byTest.set(q.ti, list);
+    }
+    for (const [ti, items] of byTest) {
+      const finished = items.filter((q) => {
+        const c = st.results[ti]?.[q.model];
+        return c && (c.status === 'done' || c.status === 'error');
+      });
+      if (finished.length === 0) continue;
+      const results: BenchmarkResult[] = finished.map((q) => {
+        const c = st.results[ti]?.[q.model];
+        const m = c?.metrics ?? null;
+        const parsed = parseQualified(q.model, cloud.customProviders);
+        let costUsd: number | null = null;
+        if (parsed.source.kind === 'cloud' && m?.tokenSource === 'server') {
+          costUsd = calcCost(
+            m.promptTokens,
+            m.completionTokens,
+            (cloud.modelPricing[parsed.source.providerId] ?? {})[parsed.model]
+          );
+        }
+        return {
+          model: q.model,
+          output: c?.output || (c?.error ? `Error: ${c.error}` : ''),
+          tps: m?.tps || 0,
+          ttft: m?.ttftMs || 0,
+          tpsEstimated: m?.tpsEstimated,
+          tokenSource: m?.tokenSource,
+          promptTokens: m?.promptTokens ?? null,
+          completionTokens: m?.completionTokens ?? null,
+          costUsd,
+          source: parsed.source.kind,
+          providerId: parsed.source.kind === 'cloud' ? parsed.source.providerId : null,
+        };
+      });
+      // eslint-disable-next-line no-await-in-loop
+      await DbService.saveHistory(items[0].prompt, results, null, runConfig);
+    }
   };
 
   const handleRunAll = async () => {
@@ -256,7 +314,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         queue.push({ ti: index, model, prompt });
       }
     }
-    await runQueue(queue);
+    await runQueue(queue, true);
   };
 
   // Re-run only the cells whose status is 'error'; successful cells are kept.
@@ -270,17 +328,16 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         }
       }
     }
-    await runQueue(queue);
+    await runQueue(queue, false);
   };
 
   const handleStop = () => {
-    abortRef.current?.abort();
+    useTestSuiteStore.getState().abortController?.abort();
   };
 
   const handleClearResults = () => {
     if (running) return;
-    setResults({});
-    setProgress({ done: 0, total: 0, label: '' });
+    clearResults();
   };
 
   // Winner (fastest TPS) per test row.
@@ -505,7 +562,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               {t('testsuite.prompts', 'Test prompts')} ({activeTests.length}/{MAX_TESTS})
             </h3>
             <button
-              onClick={() => tests.length < MAX_TESTS && setTests((p) => [...p, ''])}
+              onClick={() => tests.length < MAX_TESTS && setTests([...tests, ''])}
               disabled={tests.length >= MAX_TESTS}
               className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
             >
@@ -519,7 +576,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                 <span className="mt-2 text-[11px] font-mono text-slate-400 w-5 shrink-0">#{i + 1}</span>
                 <textarea
                   value={tp}
-                  onChange={(e) => setTests((p) => p.map((x, j) => (j === i ? e.target.value : x)))}
+                  onChange={(e) => setTests(tests.map((x, j) => (j === i ? e.target.value : x)))}
                   disabled={running}
                   rows={2}
                   placeholder={t('testsuite.promptPlaceholder', `Test prompt #${i + 1}…`)}
@@ -527,7 +584,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   dir="auto"
                 />
                 <button
-                  onClick={() => setTests((p) => (p.length <= 1 ? [''] : p.filter((_, j) => j !== i)))}
+                  onClick={() => setTests(tests.length <= 1 ? [''] : tests.filter((_, j) => j !== i))}
                   disabled={running}
                   className="mt-2 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition disabled:opacity-40"
                   title={t('testsuite.removePrompt', 'Remove')}
@@ -583,7 +640,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   ☁ {g.name}
                 </p>
                 {g.models.map((m) => {
-                  const qualified = `${g.providerId}/${m}`;
+                  const qualified = `cloud:${g.providerId}/${m}`;
                   const checked = selectedModels.includes(qualified);
                   return (
                     <label

@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { LLMService } from '../../services/llmService';
+import { cacheSecret, fingerprint, secretFor } from '../../services/secrets';
 import { openExternal } from '../../utils/openExternal';
 import { createKeyId, useCloudStore } from '../../store/useCloudStore';
 import type { CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
@@ -72,13 +73,13 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const baseUrl = def.defaultBaseUrl;
   const info = def.infoKey ? t(def.infoKey, def.infoDefault || '') : def.infoDefault || '';
 
-  const activeKey = providerKeys.find((k) => k.enabled && k.apiKey);
+  const activeKey = providerKeys.find((k) => k.enabled && secretFor(k));
 
   const testOneKey = async (id: string) => {
     const key = providerKeys.find((k) => k.id === id);
     if (!key || testingKey) return;
     setTestingKey(id);
-    const result = await LLMService.testCloudConnection(baseUrl, key.apiKey);
+    const result = await LLMService.testCloudConnection(baseUrl, secretFor(key));
     updateKey(id, {
       status: result.ok ? 'ok' : 'error',
       lastTested: new Date().toISOString(),
@@ -98,7 +99,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     setRefreshing(true);
     setRefreshError(null);
     setRefreshInfo(null);
-    const result = await LLMService.testCloudConnection(baseUrl, activeKey.apiKey);
+    const result = await LLMService.testCloudConnection(baseUrl, secretFor(activeKey));
     if (result.ok && result.pricing) {
       setModelPricing(def.id, result.pricing);
     }
@@ -123,7 +124,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const handleProbeModel = async (model: string) => {
     if (!activeKey || probes[model]?.phase === 'testing') return;
     setProbes((p) => ({ ...p, [model]: { phase: 'testing' } }));
-    const result = await LLMService.probeCloudModel(baseUrl, activeKey.apiKey, model);
+    const result = await LLMService.probeCloudModel(baseUrl, secretFor(activeKey), model);
     setProbes((p) => ({
       ...p,
       [model]: result.ok
@@ -217,7 +218,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold truncate">{k.label}</div>
                   <div className="text-[11px] font-mono text-slate-400 truncate" dir="ltr">
-                    ••••{k.apiKey.slice(-4)}
+                    {fingerprint(secretFor(k)) || '••••'}
                     {k.status === 'error' && k.error && (
                       <span className="ms-2 font-sans text-rose-500">{k.error}</span>
                     )}
@@ -243,7 +244,10 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => removeKey(k.id)}
+                  onClick={() => {
+                    cacheSecret(k.id, null);
+                    removeKey(k.id);
+                  }}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                   title={t('cloud.disconnect', 'Disconnect')}
                 >
@@ -468,10 +472,13 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
           onClose={() => setKeyModal(null)}
           onSave={(label, apiKey) => {
             if (keyModal.mode === 'edit' && editingKey) {
+              cacheSecret(editingKey.id, apiKey);
               updateKey(editingKey.id, { label, apiKey, status: 'unknown', error: undefined });
             } else {
+              const id = createKeyId();
+              cacheSecret(id, apiKey);
               addKey({
-                id: createKeyId(),
+                id,
                 providerId: def.id,
                 label,
                 apiKey,

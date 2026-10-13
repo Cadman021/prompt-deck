@@ -1,9 +1,16 @@
 {
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
   "app": {
     "title": "PromptDeck",
     "refreshModels": "Refresh Models",
     "run": "Run (Ctrl+Enter)",
     "runHint": "Ctrl+Enter to run · Esc to stop · Ctrl+K to focus",
+    "runModeParallel": "Parallel",
+    "runModeSequential": "Sequential",
+    "runModeHint": "Sequential runs one model at a time (cleaner local numbers)",
     "running": "Running...",
     "promptPlaceholder": "Enter your prompt for comparison (e.g., Write a factorial function in Rust)...",
     "ollamaError": "Failed to connect to Ollama. Make sure Ollama service is running.",
@@ -15,7 +22,11 @@
     "noModelsHintOllama": "Try: ollama pull llama3",
     "noModelsHintLMStudio": "Start Server in LM Studio → Developer tab",
     "stop": "Stop",
+    "stoppedByUser": "Stopped by user",
+    "addModel": "Add model",
+    "pdfError": "Failed to build the PDF file. Please try again.",
     "waitingOutput": "Waiting for output...",
+    "thinking": "Thinking",
     "historyTitle": "Open History",
     "toggleTheme": "Toggle Theme",
     "switchLanguage": "Switch Language",
@@ -39,7 +50,10 @@
     "ttft": "TTFT",
     "estimatedTooltip": "Estimated — server did not report token usage",
     "estimatedShort": "estimated",
-    "costTitle": "Estimated run cost"
+    "costTitle": "Estimated run cost",
+    "medianOf": "median of {{n}} runs",
+    "loadShare": "incl. {{ms}}ms model load",
+    "promptSpeed": "prompt {{v}} tok/s"
   },
   "history": {
     "title": "Benchmark History",
@@ -49,9 +63,14 @@
     "noResults": "No matching benchmarks found.",
     "searchPlaceholder": "Search prompts or models…",
     "resultsCount": "{{count}} results",
+    "showMore": "Show more ({{shown}} of {{total}})",
     "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "deleteRecordTitle": "Delete this record",
     "vs": "vs",
+    "exportDb": "Export full backup (JSON)",
+    "importDb": "Import backup (JSON)",
+    "imported": "Imported {{count}} runs.",
+    "importError": "Backup failed.",
     "timeNow": "now",
     "timeMinutes": "{{count}}m ago",
     "timeHours": "{{count}}h ago",
@@ -68,7 +87,11 @@
     "systemPromptPlaceholder": "e.g., You are a senior engineer. Keep answers short and technical...",
     "temperature": "Temperature (creativity):",
     "topP": "Top-P:",
-    "contextLength": "Context Length (max memory):"
+    "contextLength": "Context Length (max memory):",
+    "serverDefaults": "Use server defaults (skip temperature/top-p/context)",
+    "seed": "Seed (empty = random)",
+    "maxTokens": "Max output tokens (empty = unlimited)",
+    "repeats": "Repeats (median reported)"
   },
   "presets": {
     "quickPrompts": "Quick Prompts:",
@@ -114,7 +137,7 @@
     "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "runs": "runs",
     "wins": "wins",
-    "hint": "Sorted by win rate, then average speed. Averages ignore failed runs."
+    "hint": "Ranked by Wilson win-rate score, then average speed. Failed runs are excluded."
   },
   "nav": {
     "bench": "Bench",
@@ -128,6 +151,7 @@
   "settings": {
     "providerTitle": "Provider & Connection",
     "providerHint": "Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server.",
+    "serverUrl": "Server base URL",
     "resetTitle": "Reset Settings",
     "resetConfirm": "Reset provider, connection and advanced options to their defaults? Language and theme are kept.",
     "resetButton": "Reset to defaults"
@@ -148,6 +172,11 @@
     "subtitle": "Manage your AI provider connections",
     "search": "Search providers…",
     "connected": "Connected",
+    "connections": "connections",
+    "deleteModel": "Remove model from list",
+    "searchModels": "Search models…",
+    "shown": "shown",
+    "testModel": "Test this model (1-token probe)",
     "models": "models",
     "benchHint": "Enable models on each provider's page, then pick them in Bench and Test Suite.",
     "customTitle": "Custom Providers (OpenAI Compatible)",
@@ -223,6 +252,17 @@
       "anthropic": "Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth."
     }
   },
+  "report": {
+    "title": "📊 PromptDeck Benchmark Report",
+    "prompt": "Prompt",
+    "empty": "(empty)",
+    "summary": "⚡ Performance Summary",
+    "model": "Model",
+    "tps": "TPS (tok/s)",
+    "ttft": "TTFT (ms)",
+    "outputs": "📝 Model Outputs",
+    "noOutput": "No output"
+  },
   "bench": {
     "localModels": "Local models",
     "noCloudKey": "No enabled API key for this cloud provider — add one on the Cloud page.",
@@ -246,7 +286,7 @@
     "stop": "Stop",
     "stopped": "Stopped",
     "scoreboard": "Scoreboard",
-    "average": "Avg tok/s · wins",
+    "average": "Avg tok/s · fastest",
     "scoreHint": "👑 = fastest tok/s on that test · click any cell to read the full output.",
     "clearResults": "Clear results",
     "copied": "Copied!",

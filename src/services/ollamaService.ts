@@ -1,5 +1,6 @@
 // src/services/ollamaService.ts
 import { OllamaModel, PromptOptions, StreamCallbacks, BenchmarkMetrics } from '../types/ollama';
+import { httpError } from '../utils/httpError';
 import i18next from 'i18next';
 
 const OLLAMA_BASE_URL = 'http://localhost:11434';
@@ -9,17 +10,18 @@ export class OllamaService {
    * Retrieve a list of all models installed on the user's system.
    */
   static async getInstalledModels(baseUrl = OLLAMA_BASE_URL): Promise<OllamaModel[]> {
+    let response: Response;
     try {
-      const response = await fetch(`${baseUrl}/api/tags`);
-      if (!response.ok) {
-        throw new Error(`${i18next.t("service.errorModels")}: ${response.statusText}`);
-      }
-      const data = await response.json();
-      return data.models || [];
+      response = await fetch(`${baseUrl}/api/tags`);
     } catch (error) {
       console.error('Ollama connection error:', error);
       throw new Error(i18next.t("service.connectOllama"));
     }
+    if (!response.ok) {
+      throw await httpError(i18next.t("service.errorModels"), response);
+    }
+    const data = await response.json();
+    return data.models || [];
   }
 
   /**
@@ -37,6 +39,17 @@ export class OllamaService {
     let tokenCount = 0;
 
     try {
+      // With serverDefaults, sampling params are omitted entirely so the
+      // model's own recommended defaults apply instead of ours.
+      const ollamaOptions: Record<string, number> = {};
+      if (!options.serverDefaults) {
+        ollamaOptions.temperature = options.temperature ?? 0.7;
+        ollamaOptions.top_p = options.top_p ?? 0.9;
+        ollamaOptions.num_ctx = options.num_ctx ?? 4096;
+      }
+      if (options.seed != null) ollamaOptions.seed = options.seed;
+      if (options.maxTokens != null) ollamaOptions.num_predict = options.maxTokens;
+
       const response = await fetch(`${baseUrl}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,21 +59,60 @@ export class OllamaService {
           prompt: options.prompt,
           system: options.system,
           stream: true,
-          options: {
-            temperature: options.temperature ?? 0.7,
-            top_p: options.top_p ?? 0.9,
-            num_ctx: options.num_ctx ?? 4096,
-          },
+          options: ollamaOptions,
         }),
       });
 
       if (!response.ok || !response.body) {
-        throw new Error(`${i18next.t("service.errorModels")}: ${response.statusText}`);
+        throw await httpError(i18next.t("service.errorModels"), response);
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
+      let finished = false;
+      let lastEvalCount: number | null = null;
+      let lastEvalDurationNs: number | null = null;
+      let lastPromptEvalCount: number | null = null;
+      let lastPromptEvalDurationNs: number | null = null;
+      let lastLoadDurationNs: number | null = null;
+
+      const finish = (estimated: boolean): void => {
+        if (finished) return;
+        finished = true;
+        const endTime = performance.now();
+        const totalDurationMs = Math.round(endTime - startTime);
+        const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : 0;
+
+        const evalCount = lastEvalCount ?? tokenCount;
+        const evalDurationNs = lastEvalDurationNs ?? totalDurationMs * 1e6;
+
+        // TPS (Tokens Per Second)
+        const tps = evalDurationNs > 0
+          ? Number((evalCount / (evalDurationNs / 1e9)).toFixed(2))
+          : 0;
+
+        // Prompt-processing speed + model-load time (cold-start share of TTFT).
+        const promptTps = lastPromptEvalCount != null && (lastPromptEvalDurationNs ?? 0) > 0
+          ? Number((lastPromptEvalCount / ((lastPromptEvalDurationNs ?? 1) / 1e9)).toFixed(2))
+          : undefined;
+
+        const metrics: BenchmarkMetrics = {
+          ttftMs,
+          tps,
+          totalDurationMs,
+          totalTokens: evalCount,
+          evalDurationMs: Math.round(evalDurationNs / 1e6),
+          tpsEstimated: estimated,
+          tokenSource: estimated ? 'heuristic' : 'server',
+          completionTokens: evalCount,
+          promptTokens: lastPromptEvalCount ?? undefined,
+          loadDurationMs: lastLoadDurationNs != null ? Math.round(lastLoadDurationNs / 1e6) : undefined,
+          promptTps,
+        };
+
+        callbacks.onComplete(fullText, metrics);
+      };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -76,14 +128,24 @@ export class OllamaService {
           let json: {
             response?: string;
             done?: boolean;
+            error?: string;
             eval_count?: number;
             eval_duration?: number;
             prompt_eval_count?: number;
+            prompt_eval_duration?: number;
+            load_duration?: number;
           };
           try {
             json = JSON.parse(line);
           } catch {
             continue; // ignore malformed NDJSON lines
+          }
+
+          // Mid-stream server errors (e.g. out of memory) arrive as plain
+          // {"error": "..."} lines — surface them instead of ignoring.
+          if (json.error && !json.done) {
+            callbacks.onError(new Error(json.error));
+            return;
           }
 
           //Time To First Token (TTFT)
@@ -99,36 +161,22 @@ export class OllamaService {
             callbacks.onChunk(json.response, fullText);
           }
 
+          if (typeof json.eval_count === 'number') lastEvalCount = json.eval_count;
+          if (typeof json.eval_duration === 'number') lastEvalDurationNs = json.eval_duration;
+          if (typeof json.prompt_eval_count === 'number') lastPromptEvalCount = json.prompt_eval_count;
+          if (typeof json.prompt_eval_duration === 'number') lastPromptEvalDurationNs = json.prompt_eval_duration;
+          if (typeof json.load_duration === 'number') lastLoadDurationNs = json.load_duration;
+
           if (json.done) {
-            const endTime = performance.now();
-            const totalDurationMs = Math.round(endTime - startTime);
-            const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : 0;
-
-            const evalCount = json.eval_count || tokenCount;
-            const evalDurationNs = json.eval_duration || (totalDurationMs * 1e6);
-
-            // TPS (Tokens Per Second)
-            const tps = evalDurationNs > 0
-              ? Number((evalCount / (evalDurationNs / 1e9)).toFixed(2))
-              : 0;
-
-            const metrics: BenchmarkMetrics = {
-              ttftMs,
-              tps,
-              totalDurationMs,
-              totalTokens: evalCount,
-              evalDurationMs: Math.round(evalDurationNs / 1e6),
-              tpsEstimated: false,
-              tokenSource: 'server',
-              completionTokens: evalCount,
-              promptTokens: typeof json.prompt_eval_count === 'number' ? json.prompt_eval_count : undefined,
-            };
-
-            callbacks.onComplete(fullText, metrics);
+            finish(false);
             return;
           }
         }
       }
+
+      // Stream closed without a final done=true: finish with whatever we
+      // accumulated (marked estimated) instead of hanging the UI forever.
+      if (!signal?.aborted) finish(true);
     } catch (error) {
       callbacks.onError(error instanceof Error ? error : new Error(String(error)));
     }

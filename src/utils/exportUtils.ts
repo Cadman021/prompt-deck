@@ -78,27 +78,29 @@ ${outputSections}
 `;
 };
 
-export const copyHistoryAsJson = async (): Promise<boolean> => {
+export const copyHistoryAsJson = async (): Promise<'ok' | 'empty' | 'error'> => {
   try {
     const history = await DbService.getHistory();
 
     if (!history || history.length === 0) {
-      alert('No history records to export.');
-      return false;
+      return 'empty';
     }
 
     const jsonString = JSON.stringify(history, null, 2);
     await navigator.clipboard.writeText(jsonString);
-    return true;
+    return 'ok';
   } catch (error) {
     console.error('Failed to copy history JSON:', error);
-    alert('Failed to copy history JSON.');
-    return false;
+    return 'error';
   }
 };
 
 function csvEscape(value: string | number | null | undefined): string {
-  const s = value == null ? '' : String(value);
+  let s = value == null ? '' : String(value);
+  // CSV injection guard: cells starting with = + - @ (or tab/CR) can execute
+  // as formulas when opened in Excel. A leading single quote is Excel's
+  // text-marker and stays invisible in the cell.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -109,7 +111,8 @@ function csvEscape(value: string | number | null | undefined): string {
  */
 export const exportHistoryAsCsv = async (): Promise<boolean> => {
   try {
-    const history = await DbService.getHistory();
+    // limit 0 = no LIMIT: a "full history" export must not stop at 50 rows.
+    const history = await DbService.getHistory(0);
     if (!history || history.length === 0) return false;
 
     const header = ['run_id', 'created_at', 'prompt', 'model', 'tps', 'tps_estimated', 'ttft_ms', 'prompt_tokens', 'completion_tokens', 'cost_usd', 'winner_model', 'output'];
@@ -135,7 +138,8 @@ export const exportHistoryAsCsv = async (): Promise<boolean> => {
       }
     }
 
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    // Leading BOM so Excel detects UTF-8 (Persian/Chinese/Russian text).
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

@@ -6,10 +6,12 @@
   "permissions": [
     "core:default",
     "opener:default",
+    "process:default",
+    "updater:default",
     "sql:default",
     {
       "identifier": "sql:allow-execute",
-      "allow": [{ "path": "* " }]
+      "allow": [{ "path": "*" }]
     },
     {
       "identifier": "sql:allow-select",

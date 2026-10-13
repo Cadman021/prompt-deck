@@ -1,13 +1,48 @@
 // src/components/MarkdownRenderer.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { openExternal } from '../utils/openExternal';
 
 interface MarkdownRendererProps {
   content: string;
 }
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+/**
+ * Remote images in model output are untrusted network requests (breaks the
+ * local-first promise), so they never load automatically. The user sees the
+ * URL with an explicit opt-in to fetch it once.
+ */
+const SafeImage: React.FC<{ src?: string; alt?: string }> = ({ src, alt }) => {
+  const [loaded, setLoaded] = useState(false);
+  if (!src) return null;
+  if (!loaded) {
+    return (
+      <span
+        dir="ltr"
+        className="flex items-center gap-2 my-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400"
+      >
+        <span className="truncate flex-1 font-mono" title={src}>
+          🖼 {alt || src}
+        </span>
+        <button
+          onClick={() => setLoaded(true)}
+          className="shrink-0 px-2 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition"
+        >
+          Load
+        </button>
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line jsx-a11y/alt-text
+    <img src={src} alt={alt} className="rounded-lg my-2 max-w-full" loading="lazy" />
+  );
+};
+
+// Memoized: re-parsing Markdown on every stream chunk is the dominant render
+// cost, so skip renders unless the content string itself changed.
+export const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <div className="markdown-body text-sm leading-relaxed text-slate-800 dark:text-slate-200 space-y-2">
       <ReactMarkdown
@@ -98,10 +133,28 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
           
           blockquote({ children }) {
             return (
-              <blockquote dir="auto" className="border-r-4 border-indigo-500 pr-3 my-2 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/40 py-1.5 rounded-l">
+              <blockquote dir="auto" className="border-s-4 border-indigo-500 ps-3 my-2 text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/40 py-1.5 rounded-e">
                 {children}
               </blockquote>
             );
+          },
+
+          // Links must never navigate the app window away: open externally.
+          a({ href, children }) {
+            if (!href) return <span>{children}</span>;
+            return (
+              <button
+                onClick={() => void openExternal(href)}
+                title={href}
+                className="text-indigo-600 dark:text-indigo-300 underline underline-offset-2 hover:text-indigo-500 transition"
+              >
+                {children}
+              </button>
+            );
+          },
+
+          img({ src, alt }) {
+            return <SafeImage src={src} alt={alt} />;
           },
         }}
       >
@@ -109,4 +162,4 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
       </ReactMarkdown>
     </div>
   );
-};
+});

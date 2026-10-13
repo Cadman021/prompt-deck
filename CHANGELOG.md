@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+## [1.3.0] - 2026-10-13
+
+Correctness, benchmark credibility, and community release — with our first
+external contributors on board. Welcome [@AyanJaved](https://github.com/AyanJaved),
+[@lb1192176991-lab](https://github.com/lb1192176991-lab), and
+[@afifm561](https://github.com/afifm561)! 🎉
+
+### ✨ Added
+- N-repeat runs (1–5, medians reported) with mean±stdev tooltips; exact Ollama load/prompt timings; defensive llama.cpp/LM Studio rate parsing
+- Thinking-trace display for reasoning models (`reasoning_content` collapsible)
+- Sequential/Parallel run mode (sequential default: uncontaminated local TPS)
+- Server-defaults toggle + seed/max-tokens controls (Ollama `num_predict` mapped)
+- Script-aware token heuristic (CJK ≈ 1.5, Arabic-script ≈ 2.5 chars/token)
+- Test Suite "fastest" wording; run-config snapshot (`run_config` column) with card tooltip
+- SQL-side history search + pagination with "Show more"; full-DB JSON backup/export-import
+- Shared `runTarget` streaming core; Test Suite survives page switches and saves runs to history; bench retry updates its history row
+- Leaderboard Wilson ranking over successful runs only; `ConfirmModal` replaces native dialogs; JSON copy empty-state
+- Text-based PDF (selectable, paginated) with image fallback for non-Latin scripts
+- Signed in-app updates (`tauri-plugin-updater`): startup check against GitHub releases with consent dialog, progress, and relaunch; release workflow signs artifacts
+- Secrets centralized in `services/secrets.ts` (documented OS-keychain swap plan)
+- Community features by contributors: relative timestamps on history cards ([@AyanJaved](https://github.com/AyanJaved)), winners-only filter, reset-to-defaults ([@lb1192176991-lab](https://github.com/lb1192176991-lab)), Ctrl+K prompt focus ([@lb1192176991-lab](https://github.com/lb1192176991-lab)), Test Suite retry-failed ([@afifm561](https://github.com/afifm561))
+
+### 🔧 Changed
+- Explicit `cloud:` model prefix + `source`/`provider_id` history columns (no more local/cloud name collisions)
+- Versioned DB migrations (`PRAGMA user_version`); transactional saves; single-JOIN history; `run_id` index
+- Markdown `img` is click-to-load and links open externally; restrictive Tauri CSP
+- CSV: BOM, formula-injection guard, full (unlimited) export
+- CI runs unit tests (`npm test`, 49 tests); clippy `-D warnings` enforced, `cargo fmt` no longer best-effort; `npm audit` clean (0 vulnerabilities)
+- `.gitattributes`/`.editorconfig`, Dependabot, `SECURITY.md` versions, Cargo metadata
+- Missing `de` history keys + code-default-only cloud keys added to all locales
+- Remaining hardcoded UI strings moved to i18n (stop marker, add-model button, PDF error, print report, provider form)
+
+### 🐛 Fixed
+- Stream finalize without `[DONE]` (llmService + ollamaService); mid-stream Ollama errors surfaced; JSON error bodies on HTTP failures
+- `loadModels` preserves cloud slots; Ctrl+Enter gated to Bench; `saveHistory` returns `lastInsertId` (vote race removed)
+
 ## [1.2.0] - 2026-09-27
 
 Nine new cloud providers (19 total), three new locales, GPL-3.0, and community

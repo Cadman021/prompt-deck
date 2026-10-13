@@ -1,9 +1,16 @@
 {
+  "common": {
+    "cancel": "取消",
+    "confirm": "确认"
+  },
   "app": {
     "title": "PromptDeck",
     "refreshModels": "刷新模型",
     "run": "运行 (Ctrl+Enter)",
     "runHint": "Ctrl+Enter 运行 · Esc 停止 · Ctrl+K 聚焦",
+    "runModeParallel": "并行",
+    "runModeSequential": "串行",
+    "runModeHint": "串行一次只跑一个模型（本地数字更干净）",
     "running": "运行中...",
     "promptPlaceholder": "输入要对比的提示词（例如：用 Rust 写一个阶乘函数）...",
     "ollamaError": "无法连接到 Ollama。请确认 Ollama 服务正在运行。",
@@ -15,7 +22,11 @@
     "noModelsHintOllama": "试试：ollama pull llama3",
     "noModelsHintLMStudio": "在 LM Studio → Developer 选项卡中启动服务器",
     "stop": "停止",
+    "stoppedByUser": "用户已停止",
+    "addModel": "添加模型",
+    "pdfError": "生成 PDF 失败，请重试。",
     "waitingOutput": "等待输出...",
+    "thinking": "思考过程",
     "historyTitle": "打开历史记录",
     "toggleTheme": "切换主题",
     "switchLanguage": "切换语言",
@@ -39,7 +50,10 @@
     "ttft": "TTFT",
     "estimatedTooltip": "估算值 — 服务器未报告 token 用量",
     "estimatedShort": "估算",
-    "costTitle": "预估运行费用"
+    "costTitle": "预估运行费用",
+    "medianOf": "{{n}} 次运行的中位数",
+    "loadShare": "含模型加载 {{ms}}ms",
+    "promptSpeed": "提示词 {{v}} tok/s"
   },
   "history": {
     "title": "基准测试历史",
@@ -49,9 +63,14 @@
     "noResults": "没有匹配的基准测试。",
     "searchPlaceholder": "搜索提示词或模型…",
     "resultsCount": "{{count}} 条结果",
+    "showMore": "显示更多（{{shown}}/{{total}}）",
     "empty": "还没有基准测试记录。运行第一次对比后会显示在这里。",
     "deleteRecordTitle": "删除这条记录",
     "vs": "vs",
+    "exportDb": "导出完整备份 (JSON)",
+    "importDb": "导入备份 (JSON)",
+    "imported": "已导入 {{count}} 次运行。",
+    "importError": "备份失败。",
     "timeNow": "刚刚",
     "timeMinutes": "{{count}}分钟前",
     "timeHours": "{{count}}小时前",
@@ -68,7 +87,11 @@
     "systemPromptPlaceholder": "例如：你是一名资深工程师。回答简短且专业...",
     "temperature": "温度（创造力）：",
     "topP": "Top-P：",
-    "contextLength": "上下文长度（最大内存）："
+    "contextLength": "上下文长度（最大内存）：",
+    "serverDefaults": "使用服务器默认值（不发送 temperature/top-p/context）",
+    "seed": "种子（空 = 随机）",
+    "maxTokens": "最大输出 token（空 = 不限）",
+    "repeats": "重复次数（显示中位数）"
   },
   "presets": {
     "quickPrompts": "快捷提示词：",
@@ -114,7 +137,7 @@
     "empty": "还没有基准测试记录。运行第一次对比后会显示在这里。",
     "runs": "次运行",
     "wins": "次获胜",
-    "hint": "按胜率排序，其次按平均速度。失败的运行不计入平均值。"
+    "hint": "按 Wilson 胜率分排名，其次按平均速度。失败的运行不计入。"
   },
   "nav": {
     "bench": "测试台",
@@ -128,6 +151,7 @@
   "settings": {
     "providerTitle": "服务商与连接",
     "providerHint": "本地模型用 Ollama，LM Studio / llama.cpp 服务器用 OpenAI 兼容接口。",
+    "serverUrl": "服务器基础 URL",
     "resetTitle": "重置设置",
     "resetConfirm": "将服务商、连接和高级选项恢复为默认值？语言和主题保持不变。",
     "resetButton": "恢复默认设置"
@@ -148,6 +172,11 @@
     "subtitle": "管理你的 AI 服务商连接",
     "search": "搜索服务商…",
     "connected": "已连接",
+    "connections": "个连接",
+    "deleteModel": "从列表删除模型",
+    "searchModels": "搜索模型…",
+    "shown": "个显示",
+    "testModel": "测试此模型（1 token 探测）",
     "models": "个模型",
     "benchHint": "先在各服务商页面启用模型，再到 Bench 和 Test Suite 中选用。",
     "customTitle": "自定义服务商（OpenAI 兼容）",
@@ -223,6 +252,17 @@
       "anthropic": "Anthropic 官方 API（OpenAI SDK 兼容层）：Claude Opus、Sonnet 和 Haiku，Bearer 认证。"
     }
   },
+  "report": {
+    "title": "📊 PromptDeck 基准测试报告",
+    "prompt": "提示词",
+    "empty": "(空)",
+    "summary": "⚡ 性能摘要",
+    "model": "模型",
+    "tps": "TPS (tok/s)",
+    "ttft": "TTFT (毫秒)",
+    "outputs": "📝 模型输出",
+    "noOutput": "无输出"
+  },
   "bench": {
     "localModels": "本地模型",
     "noCloudKey": "该云服务商没有已启用的 API Key — 请到 Cloud 页面添加。",
@@ -246,7 +286,7 @@
     "stop": "停止",
     "stopped": "已停止",
     "scoreboard": "记分板",
-    "average": "平均 tok/s · 获胜",
+    "average": "平均 tok/s · 最快",
     "scoreHint": "👑 = 该测试中最快的 tok/s · 点击任意格查看完整输出。",
     "clearResults": "清空结果",
     "copied": "已复制！",

@@ -1,0 +1,9 @@
+# Normalize line endings to LF on commit (prevents CRLF/LF diff noise).
+* text=auto eol=lf
+
+# Binary files must never be touched.
+*.png binary
+*.ico binary
+*.icns binary
+*.gif binary
+*.db binary

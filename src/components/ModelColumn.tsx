@@ -22,6 +22,7 @@ interface ModelColumnProps {
   selectedModel: string;
   cloudGroups: CloudGroup[];
   output: string;
+  reasoning?: string;
   metrics: BenchmarkMetrics | null;
   error: string | null;
   canRemove: boolean;
@@ -66,6 +67,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   output,
   metrics,
   error,
+  reasoning,
   onSourceChange,
   onRemove,
   canRemove,
@@ -188,14 +190,33 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
         <div className={`grid ${costLabel ? 'grid-cols-4' : 'grid-cols-3'} gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono`}>
           <div
             className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
-            title={metrics.tpsEstimated ? t('metrics.estimatedTooltip') : undefined}
+            title={[
+              metrics.tpsEstimated ? t('metrics.estimatedTooltip') : '',
+              metrics.repeatCount != null && metrics.repeatCount > 1
+                ? t('metrics.medianOf', 'median of {{n}} runs', { n: metrics.repeatCount }) +
+                  (metrics.tpsMean != null ? ` (mean ${metrics.tpsMean.toFixed(1)}, ±${(metrics.tpsStd ?? 0).toFixed(1)})` : '')
+                : '',
+            ].filter(Boolean).join('\n') || undefined}
           >
             <Zap className="w-3 h-3" />
             <span>
               {formatTps(metrics)} {t('metrics.tps')}
+              {metrics.repeatCount != null && metrics.repeatCount > 1 && (
+                <span className="opacity-70"> ×{metrics.repeatCount}</span>
+              )}
             </span>
           </div>
-          <div className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
+          <div
+            className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400"
+            title={[
+              metrics.loadDurationMs != null
+                ? t('metrics.loadShare', 'incl. {{ms}}ms model load', { ms: metrics.loadDurationMs })
+                : '',
+              metrics.promptTps != null
+                ? t('metrics.promptSpeed', 'prompt {{v}} tok/s', { v: metrics.promptTps })
+                : '',
+            ].filter(Boolean).join('\n') || undefined}
+          >
             <Clock className="w-3 h-3" />
             <span>{t('metrics.ttft')}: {metrics.ttftMs}ms</span>
           </div>
@@ -229,8 +250,27 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
               </button>
             )}
           </div>
-        ) : output ? (
-          <MarkdownRenderer content={output} />
+        ) : output || reasoning ? (
+          <>
+            {reasoning && (
+              <details
+                className="mb-3 rounded-lg bg-violet-500/5 dark:bg-violet-400/5 border border-violet-500/20 px-3 py-2"
+                open={!output}
+              >
+                <summary className="text-[11px] font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
+                  {t('app.thinking', 'Thinking')}
+                </summary>
+                <div className="mt-1.5 text-xs opacity-80 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono" dir="auto">
+                  {reasoning}
+                </div>
+              </details>
+            )}
+            {output ? (
+              <MarkdownRenderer content={output} />
+            ) : (
+              <div className="text-slate-500 text-sm italic">{t('app.waitingOutput')}</div>
+            )}
+          </>
         ) : (
           <div className="text-slate-500 text-sm italic">{t('app.waitingOutput')}</div>
         )}

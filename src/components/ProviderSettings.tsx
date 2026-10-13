@@ -1,8 +1,10 @@
 // src/components/ProviderSettings.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSettingsStore, Provider } from '../store/useSettingsStore';
 
 export const ProviderSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { provider, baseUrl, setProvider, setBaseUrl } = useSettingsStore();
 
   return (
@@ -12,7 +14,7 @@ export const ProviderSettings: React.FC = () => {
         value={provider}
         onChange={(e) => setProvider(e.target.value as Provider)}
         className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1.5 focus:outline-none"
-        title="LLM Provider"
+        title={t('settings.providerTitle', 'Provider & Connection')}
       >
         <option value="ollama">Ollama</option>
         <option value="openai-compatible">LM Studio / llama.cpp</option>
@@ -22,9 +24,9 @@ export const ProviderSettings: React.FC = () => {
         type="text"
         value={baseUrl}
         onChange={(e) => setBaseUrl(e.target.value)}
-        placeholder="Server base URL"
+        placeholder={t('settings.serverUrl', 'Server base URL')}
         className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1.5 focus:outline-none font-mono"
-        title="Server Base URL"
+        title={t('settings.serverUrl', 'Server base URL')}
       />
     </div>
   );

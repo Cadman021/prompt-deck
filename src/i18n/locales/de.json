@@ -1,9 +1,16 @@
 {
+  "common": {
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen"
+  },
   "app": {
     "title": "PromptDeck",
     "refreshModels": "Modelle aktualisieren",
     "run": "Ausführen (Strg+Enter)",
     "runHint": "Strg+Enter zum Ausführen · Esc zum Stoppen · Strg+K zum Fokussieren",
+    "runModeParallel": "Parallel",
+    "runModeSequential": "Sequenziell",
+    "runModeHint": "Sequenziell führt ein Modell nach dem anderen aus (sauberere lokale Werte)",
     "running": "Wird ausgeführt...",
     "promptPlaceholder": "Geben Sie Ihren Prompt zum Vergleich ein (z. B. Schreibe eine Fakultätsfunktion in Rust)...",
     "ollamaError": "Verbindung zu Ollama fehlgeschlagen. Stellen Sie sicher, dass der Ollama-Dienst läuft.",
@@ -15,7 +22,11 @@
     "noModelsHintOllama": "Versuchen Sie: ollama pull llama3",
     "noModelsHintLMStudio": "Starten Sie den Server in LM Studio → Entwickler-Tab",
     "stop": "Stoppen",
+    "stoppedByUser": "Vom Benutzer gestoppt",
+    "addModel": "Modell hinzufügen",
+    "pdfError": "PDF konnte nicht erstellt werden. Bitte erneut versuchen.",
     "waitingOutput": "Warten auf Ausgabe...",
+    "thinking": "Denken",
     "historyTitle": "Verlauf öffnen",
     "toggleTheme": "Design umschalten",
     "switchLanguage": "Sprache wechseln",
@@ -39,16 +50,27 @@
     "ttft": "TTFT",
     "estimatedTooltip": "Geschätzt — Server hat keine Token-Nutzung gemeldet",
     "estimatedShort": "geschätzt",
-    "costTitle": "Geschätzte Laufkosten"
+    "costTitle": "Geschätzte Laufkosten",
+    "medianOf": "Median aus {{n}} Läufen",
+    "loadShare": "inkl. {{ms}}ms Modell-Ladezeit",
+    "promptSpeed": "Prompt {{v}} Tok/s"
   },
   "history": {
     "title": "Benchmark-Verlauf",
     "clearAllTitle": "Gesamten Verlauf löschen",
     "clearAllConfirm": "Möchten Sie den gesamten Verlauf wirklich löschen?",
     "loading": "Verlauf wird geladen...",
+    "noResults": "Keine passenden Benchmarks gefunden.",
+    "searchPlaceholder": "Prompts oder Modelle suchen…",
+    "resultsCount": "{{count}} Ergebnisse",
+    "showMore": "Mehr anzeigen ({{shown}} von {{total}})",
     "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
     "deleteRecordTitle": "Diesen Eintrag löschen",
     "vs": "vs",
+    "exportDb": "Voll-Backup exportieren (JSON)",
+    "importDb": "Backup importieren (JSON)",
+    "imported": "{{count}} Läufe importiert.",
+    "importError": "Backup fehlgeschlagen.",
     "timeNow": "jetzt",
     "timeMinutes": "vor {{count}} Min.",
     "timeHours": "vor {{count}} Std.",
@@ -66,7 +88,11 @@
     "systemPromptPlaceholder": "z. B. Du bist ein erfahrener Ingenieur. Halte Antworten kurz und technisch...",
     "temperature": "Temperatur (Kreativität):",
     "topP": "Top-P:",
-    "contextLength": "Kontextlänge (max. Speicher):"
+    "contextLength": "Kontextlänge (max. Speicher):",
+    "serverDefaults": "Server-Defaults (Temperatur/Top-P/Kontext weglassen)",
+    "seed": "Seed (leer = zufällig)",
+    "maxTokens": "Max. Output-Tokens (leer = unbegrenzt)",
+    "repeats": "Wiederholungen (Median wird gezeigt)"
   },
   "presets": {
     "quickPrompts": "Schnell-Prompts:",
@@ -112,7 +138,7 @@
     "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
     "runs": "Durchläufe",
     "wins": "Siege",
-    "hint": "Sortiert nach Gewinnrate, dann nach Durchschnittsgeschwindigkeit. Fehlgeschlagene Durchläufe werden ignoriert."
+    "hint": "Ranking nach Wilson-Gewinnrate, dann Durchschnittsgeschwindigkeit. Fehlgeschlagene Läufe zählen nicht."
   },
   "nav": {
     "bench": "Bench",
@@ -126,6 +152,7 @@
   "settings": {
     "providerTitle": "Provider & Verbindung",
     "providerHint": "Ollama für lokale Modelle, OpenAI-kompatibel für LM Studio / llama.cpp Server.",
+    "serverUrl": "Server-Basis-URL",
     "resetTitle": "Einstellungen zurücksetzen",
     "resetConfirm": "Provider, Verbindung und erweiterte Optionen auf Standardwerte zurücksetzen? Sprache und Design bleiben erhalten.",
     "resetButton": "Auf Standard zurücksetzen"
@@ -146,6 +173,11 @@
     "subtitle": "KI-Anbieter-Verbindungen verwalten",
     "search": "Anbieter suchen…",
     "connected": "Verbunden",
+    "connections": "Verbindungen",
+    "deleteModel": "Modell aus Liste entfernen",
+    "searchModels": "Modelle suchen…",
+    "shown": "angezeigt",
+    "testModel": "Dieses Modell testen (1-Token-Probe)",
     "models": "Modelle",
     "benchHint": "Modelle auf der jeweiligen Anbieterseite aktivieren, dann in Bench und Test-Suite auswählen.",
     "customTitle": "Eigene Anbieter (OpenAI-kompatibel)",
@@ -221,6 +253,17 @@
       "anthropic": "Offizielle Anthropic-API via OpenAI-SDK-Kompatibilität: Claude Opus, Sonnet und Haiku mit Bearer-Auth."
     }
   },
+  "report": {
+    "title": "📊 PromptDeck Benchmark-Bericht",
+    "prompt": "Prompt",
+    "empty": "(leer)",
+    "summary": "⚡ Leistungsübersicht",
+    "model": "Modell",
+    "tps": "TPS (Tok/s)",
+    "ttft": "TTFT (ms)",
+    "outputs": "📝 Modell-Ausgaben",
+    "noOutput": "Keine Ausgabe"
+  },
   "bench": {
     "localModels": "Lokale Modelle",
     "noCloudKey": "Kein aktivierter API-Key für diesen Cloud-Anbieter — auf der Cloud-Seite hinzufügen.",
@@ -244,7 +287,7 @@
     "stop": "Stoppen",
     "stopped": "Gestoppt",
     "scoreboard": "Scoreboard",
-    "average": "Ø Tok/s · Siege",
+    "average": "Ø Tok/s · schnellste",
     "scoreHint": "👑 = schnellste Tok/s in diesem Test · Zelle anklicken für die volle Ausgabe.",
     "clearResults": "Ergebnisse löschen",
     "copied": "Kopiert!",

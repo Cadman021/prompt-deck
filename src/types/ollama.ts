@@ -20,6 +20,9 @@ export interface PromptOptions {
   temperature?: number;
   top_p?: number;
   num_ctx?: number;
+  serverDefaults?: boolean;
+  seed?: number | null;
+  maxTokens?: number | null;
 }
 
 export type TokenSource = 'server' | 'heuristic';
@@ -37,6 +40,16 @@ export interface BenchmarkMetrics {
   completionTokens?: number;
   /** Exact prompt tokens, when reported by the server. */
   promptTokens?: number;
+  /** Model-load time in ms (Ollama `load_duration`), part of cold-start TTFT. */
+  loadDurationMs?: number;
+  /** Prompt-processing speed in tok/s (Ollama `prompt_eval_*`), when reported. */
+  promptTps?: number;
+  /** Repeat count this median aggregates (present when > 1). */
+  repeatCount?: number;
+  /** Mean TPS across repeats (for tooltips; median is displayed). */
+  tpsMean?: number;
+  /** Population stdev of TPS across repeats (for tooltips). */
+  tpsStd?: number;
 }
 
 /** Per-token USD prices, as reported by OpenRouter-style `/models` pricing. */
@@ -48,6 +61,8 @@ export interface ModelPricing {
 export interface StreamCallbacks {
   onChunk: (chunkText: string, fullText: string) => void;
   onFirstToken?: (ttftMs: number) => void;
+  /** Thinking/reasoning deltas (`reasoning_content`), kept separate from the answer. */
+  onReasoning?: (fullReasoning: string) => void;
   onComplete: (fullText: string, metrics: BenchmarkMetrics) => void;
   onError: (error: Error) => void;
 }

@@ -21,7 +21,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
       .then((s) =>
         setStats(
           [...s].sort(
-            (a, b) => b.winRate - a.winRate || b.avgTps - a.avgTps || b.runs - a.runs
+            (a, b) => b.wilson - a.wilson || b.avgTps - a.avgTps || b.runs - a.runs
           )
         )
       )

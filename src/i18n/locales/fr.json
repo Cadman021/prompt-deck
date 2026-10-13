@@ -1,9 +1,16 @@
 {
+  "common": {
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
+  },
   "app": {
     "title": "PromptDeck",
     "refreshModels": "Actualiser les modèles",
     "run": "Exécuter (Ctrl+Entrée)",
     "runHint": "Ctrl+Entrée pour exécuter · Échap pour arrêter · Ctrl+K pour focaliser",
+    "runModeParallel": "Parallèle",
+    "runModeSequential": "Séquentiel",
+    "runModeHint": "Séquentiel exécute un modèle à la fois (chiffres locaux plus propres)",
     "running": "Exécution en cours...",
     "promptPlaceholder": "Saisissez votre prompt à comparer (ex. : écrire une fonction factorielle en Rust)...",
     "ollamaError": "Connexion à Ollama impossible. Vérifiez que le service Ollama est en cours d'exécution.",
@@ -15,7 +22,11 @@
     "noModelsHintOllama": "Essayez : ollama pull llama3",
     "noModelsHintLMStudio": "Démarrez le serveur dans LM Studio → onglet Developer",
     "stop": "Arrêter",
+    "stoppedByUser": "Arrêté par l'utilisateur",
+    "addModel": "Ajouter un modèle",
+    "pdfError": "Échec de la création du PDF. Veuillez réessayer.",
     "waitingOutput": "En attente de la sortie...",
+    "thinking": "Réflexion",
     "historyTitle": "Ouvrir l'historique",
     "toggleTheme": "Changer de thème",
     "switchLanguage": "Changer de langue",
@@ -39,7 +50,10 @@
     "ttft": "TTFT",
     "estimatedTooltip": "Estimé — le serveur n'a pas rapporté l'utilisation de tokens",
     "estimatedShort": "estimé",
-    "costTitle": "Coût estimé d'exécution"
+    "costTitle": "Coût estimé d'exécution",
+    "medianOf": "médiane de {{n}} exécutions",
+    "loadShare": "dont {{ms}}ms de chargement du modèle",
+    "promptSpeed": "prompt {{v}} tok/s"
   },
   "history": {
     "title": "Historique des benchmarks",
@@ -49,9 +63,14 @@
     "noResults": "Aucun benchmark correspondant trouvé.",
     "searchPlaceholder": "Rechercher prompts ou modèles…",
     "resultsCount": "{{count}} résultats",
+    "showMore": "Afficher plus ({{shown}} sur {{total}})",
     "empty": "Aucun benchmark enregistré. Lancez votre première comparaison pour la voir ici.",
     "deleteRecordTitle": "Supprimer cet enregistrement",
     "vs": "vs",
+    "exportDb": "Exporter la sauvegarde complète (JSON)",
+    "importDb": "Importer une sauvegarde (JSON)",
+    "imported": "{{count}} exécutions importées.",
+    "importError": "Sauvegarde échouée.",
     "timeNow": "à l'instant",
     "timeMinutes": "il y a {{count}} min",
     "timeHours": "il y a {{count}} h",
@@ -68,7 +87,11 @@
     "systemPromptPlaceholder": "ex. : Vous êtes un ingénieur senior. Réponses courtes et techniques...",
     "temperature": "Température (créativité) :",
     "topP": "Top-P :",
-    "contextLength": "Longueur de contexte (mémoire max) :"
+    "contextLength": "Longueur de contexte (mémoire max) :",
+    "serverDefaults": "Défauts du serveur (omettre température/top-p/contexte)",
+    "seed": "Seed (vide = aléatoire)",
+    "maxTokens": "Tokens max en sortie (vide = illimité)",
+    "repeats": "Répétitions (médiane affichée)"
   },
   "presets": {
     "quickPrompts": "Prompts rapides :",
@@ -114,7 +137,7 @@
     "empty": "Aucun benchmark enregistré. Lancez votre première comparaison pour la voir ici.",
     "runs": "exécutions",
     "wins": "victoires",
-    "hint": "Trié par taux de victoire, puis vitesse moyenne. Les exécutions échouées sont ignorées."
+    "hint": "Classé par score de Wilson, puis vitesse moyenne. Les exécutions échouées sont exclues."
   },
   "nav": {
     "bench": "Bench",
@@ -128,6 +151,7 @@
   "settings": {
     "providerTitle": "Fournisseur & Connexion",
     "providerHint": "Ollama pour les modèles locaux, compatible OpenAI pour un serveur LM Studio / llama.cpp.",
+    "serverUrl": "URL de base du serveur",
     "resetTitle": "Réinitialiser les réglages",
     "resetConfirm": "Réinitialiser le fournisseur, la connexion et les options avancées ? La langue et le thème sont conservés.",
     "resetButton": "Réinitialiser par défaut"
@@ -148,6 +172,11 @@
     "subtitle": "Gérez vos connexions aux fournisseurs d'IA",
     "search": "Rechercher des fournisseurs…",
     "connected": "Connecté",
+    "connections": "connexions",
+    "deleteModel": "Retirer le modèle de la liste",
+    "searchModels": "Rechercher des modèles…",
+    "shown": "affichés",
+    "testModel": "Tester ce modèle (sonde 1 token)",
     "models": "modèles",
     "benchHint": "Activez les modèles sur la page de chaque fournisseur, puis choisissez-les dans Bench et Test Suite.",
     "customTitle": "Fournisseurs personnalisés (compatibles OpenAI)",
@@ -223,6 +252,17 @@
       "anthropic": "API officielle Anthropic via compatibilité OpenAI SDK : Claude Opus, Sonnet et Haiku avec auth Bearer."
     }
   },
+  "report": {
+    "title": "📊 Rapport de benchmark PromptDeck",
+    "prompt": "Prompt",
+    "empty": "(vide)",
+    "summary": "⚡ Résumé des performances",
+    "model": "Modèle",
+    "tps": "TPS (tok/s)",
+    "ttft": "TTFT (ms)",
+    "outputs": "📝 Sorties des modèles",
+    "noOutput": "Pas de sortie"
+  },
   "bench": {
     "localModels": "Modèles locaux",
     "noCloudKey": "Aucune clé API activée pour ce fournisseur cloud — ajoutez-en une sur la page Cloud.",
@@ -246,7 +286,7 @@
     "stop": "Arrêter",
     "stopped": "Arrêté",
     "scoreboard": "Tableau des scores",
-    "average": "Moy. tok/s · victoires",
+    "average": "Moy. tok/s · plus rapide",
     "scoreHint": "👑 = tok/s le plus rapide sur ce test · cliquez une cellule pour lire la sortie complète.",
     "clearResults": "Effacer les résultats",
     "copied": "Copié !",

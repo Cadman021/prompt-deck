@@ -1,10 +1,11 @@
 // src/App.tsx
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LLMService } from './services/llmService';
 import { OllamaModel, BenchmarkMetrics } from './types/ollama';
 import { useSettingsStore } from './store/useSettingsStore';
 import { useCloudStore } from './store/useCloudStore';
+import { APP_VERSION } from './version';
 import {
   ModelSource,
   buildCloudGroups,
@@ -12,22 +13,28 @@ import {
   formatCost,
   parseQualified,
   qualifiedName,
-  resolveCloudTarget,
 } from './services/modelTarget';
+import { resolveRunEndpoint, runRepeatedStream } from './services/runTarget';
 import { HistorySidebar } from './components/HistorySidebar';
 import { ModelColumn } from './components/ModelColumn';
 import { generateMarkdownReport, copyHistoryAsJson, exportHistoryAsCsv } from './utils/exportUtils';
+import { rafBatch } from './utils/rafBatch';
 import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
 import { BenchmarkChart } from './components/BenchmarkChart';
 import { DiffView } from './components/DiffView';
 import { Leaderboard } from './components/Leaderboard';
-import { exportElementAsPdf } from './utils/pdfExport';
+import {
+  exportElementAsPdf,
+  exportReportAsPdfText,
+  needsImageFallback,
+} from './utils/pdfExport';
 import { ReportPrintView } from './components/ReportPrintView';
 import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
 import { TestSuiteView } from './components/testsuite/TestSuiteView';
 import { CloudProvidersView } from './components/cloud/CloudProvidersView';
 import { TopBar } from './components/layout/TopBar';
+import { UpdaterPrompt } from './components/UpdaterPrompt';
 import { ResultToolbar } from './components/layout/ResultToolbar';
 import { SettingsPanel } from './components/layout/SettingsPanel';
 import './i18n/config';
@@ -45,6 +52,8 @@ interface Slot {
   model: string;
   source: ModelSource;
   output: string;
+  /** Thinking trace (`reasoning_content`); shown collapsible, not scored. */
+  reasoning: string;
   metrics: BenchmarkMetrics | null;
   loading: boolean;
   error: string | null;
@@ -55,6 +64,7 @@ const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot =
   model,
   source,
   output: '',
+  reasoning: '',
   metrics: null,
   loading: false,
   error: null,
@@ -63,6 +73,38 @@ const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot =
 /** Storage/display name: `providerId/model` for cloud, plain id for local. */
 const slotQualified = (s: Pick<Slot, 'source' | 'model'>): string =>
   qualifiedName(s.source, s.model);
+
+/** Parallel streams everything at once; sequential runs one slot at a time
+ * so local models don't fight over the same GPU/server (cleaner numbers). */
+const RunModeToggle: React.FC = () => {
+  const { t } = useTranslation();
+  const runMode = useSettingsStore((s) => s.runMode);
+  const setRunMode = useSettingsStore((s) => s.setRunMode);
+  const base = 'px-2 py-0.5 text-[10px] font-mono rounded-md transition';
+  return (
+    <div
+      className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0"
+      title={t('app.runModeHint', 'Sequential runs one model at a time (cleaner local numbers)')}
+    >
+      <button
+        onClick={() => setRunMode('parallel')}
+        className={`${base} ${runMode === 'parallel'
+          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+      >
+        {t('app.runModeParallel', 'Parallel')}
+      </button>
+      <button
+        onClick={() => setRunMode('sequential')}
+        className={`${base} ${runMode === 'sequential'
+          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+      >
+        {t('app.runModeSequential', 'Sequential')}
+      </button>
+    </div>
+  );
+};
 
 export default function App() {
   const { t } = useTranslation();
@@ -117,7 +159,7 @@ export default function App() {
   const savedRunIdRef = useRef<number | null>(null);
 
   const [copied, setCopied] = useState(false);
-  const [jsonCopied, setJsonCopied] = useState(false);
+  const [jsonState, setJsonState] = useState<'idle' | 'copied' | 'empty'>('idle');
   const [csvState, setCsvState] = useState<'idle' | 'exporting' | 'done' | 'empty'>('idle');
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -157,7 +199,7 @@ export default function App() {
     setSlots((prev) =>
       prev.map((s) =>
         s.loading
-          ? { ...s, loading: false, error: s.error ?? 'Stopped by user' }
+          ? { ...s, loading: false, error: s.error ?? t('app.stoppedByUser', 'Stopped by user') }
           : s
       )
     );
@@ -167,11 +209,10 @@ export default function App() {
   }, []);
 
   const handleCopyJson = async () => {
-    const success = await copyHistoryAsJson();
-    if (success) {
-      setJsonCopied(true);
-      setTimeout(() => setJsonCopied(false), 2000);
-    }
+    const status = await copyHistoryAsJson();
+    // 'error' (clipboard denied) surfaces as empty feedback, same as CSV.
+    setJsonState(status === 'ok' ? 'copied' : 'empty');
+    setTimeout(() => setJsonState('idle'), 2000);
   };
 
   const handleExportCsv = async () => {
@@ -182,19 +223,82 @@ export default function App() {
     setTimeout(() => setCsvState('idle'), 2500);
   };
 
-  const handleExportPdf = async () => {
-    if (pdfState === 'exporting' || !printRef.current) return;
-    setPdfState('exporting');
-    try {
-      await exportElementAsPdf(printRef.current);
-      setPdfState('done');
-      setTimeout(() => setPdfState('idle'), 2500);
-    } catch (err) {
-      console.error('PDF export failed:', err);
-      setError('خطا در ساخت فایل PDF. لطفاً دوباره تلاش کنید.');
-      setPdfState('idle');
-    }
+  // The hidden PDF source mounts only for the duration of an export — it
+  // used to live mounted (re-rendering on every stream chunk for nothing).
+  const [printMounted, setPrintMounted] = useState(false);
+
+  const buildPdfResults = () => {
+    const cloud = useCloudStore.getState();
+    return slots.map((s) => ({
+      model: slotQualified(s),
+      output: s.output,
+      tps: s.metrics?.tps || 0,
+      ttft: s.metrics?.ttftMs || 0,
+      tpsEstimated: s.metrics?.tpsEstimated,
+      tokenSource: s.metrics?.tokenSource,
+      promptTokens: s.metrics?.promptTokens ?? null,
+      completionTokens: s.metrics?.completionTokens ?? null,
+      costUsd:
+        s.source.kind === 'cloud' && s.metrics?.tokenSource === 'server'
+          ? calcCost(
+              s.metrics.promptTokens,
+              s.metrics.completionTokens,
+              (cloud.modelPricing[s.source.providerId] ?? {})[s.model]
+            )
+          : null,
+    }));
   };
+
+  const handleExportPdf = () => {
+    if (pdfState === 'exporting') return;
+    const results = buildPdfResults();
+    // Selectable-text PDF for Latin content; image fallback preserves
+    // Persian/CJK/Cyrillic/emoji rendering (jsPDF fonts lack those glyphs).
+    if (!needsImageFallback(prompt, results)) {
+      setPdfState('exporting');
+      try {
+        exportReportAsPdfText(prompt, results);
+        setPdfState('done');
+        setTimeout(() => setPdfState('idle'), 2500);
+      } catch (err) {
+        console.error('PDF export failed:', err);
+        setError(t('app.pdfError', 'Failed to build the PDF file. Please try again.'));
+        setPdfState('idle');
+      }
+      return;
+    }
+    setPdfState('exporting');
+    setPrintMounted(true);
+  };
+
+  useEffect(() => {
+    if (!printMounted || pdfState !== 'exporting') return;
+    // Wait a tick so the freshly mounted source commits before capture.
+    const timer = setTimeout(() => {
+      const el = printRef.current;
+      if (!el) {
+        setPdfState('idle');
+        setPrintMounted(false);
+        return;
+      }
+      void exportElementAsPdf(el).then(
+        () => {
+          setPdfState('done');
+          setTimeout(() => {
+            setPdfState('idle');
+            setPrintMounted(false);
+          }, 2500);
+        },
+        (err: unknown) => {
+          console.error('PDF export failed:', err);
+          setError(t('app.pdfError', 'Failed to build the PDF file. Please try again.'));
+          setPdfState('idle');
+          setPrintMounted(false);
+        }
+      );
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [printMounted, pdfState]);
 
   const handleCopyReport = async () => {
     if (!slots.some((s) => s.output)) return;
@@ -202,6 +306,8 @@ export default function App() {
     const results: BenchmarkResult[] = slots.map((s) => ({
       model: slotQualified(s),
       output: s.output,
+      source: s.source.kind,
+      providerId: s.source.kind === 'cloud' ? s.source.providerId : null,
       tps: s.metrics?.tps || 0,
       ttft: s.metrics?.ttftMs || 0,
       tpsEstimated: s.metrics?.tpsEstimated,
@@ -230,8 +336,16 @@ export default function App() {
       const data = await LLMService.getInstalledModels({ provider, baseUrl });
       setModels(data);
       if (data.length > 0) {
+        // Only local slots get (re)assigned — cloud slots keep the user's
+        // explicit choice, which a provider refresh must never clobber.
+        let localIdx = 0;
         setSlots((prev) =>
-          prev.map((s, i) => ({ ...s, model: data[i]?.name || data[0].name }))
+          prev.map((s) => {
+            if (s.source.kind === 'cloud') return s;
+            const name = data[localIdx % data.length].name;
+            localIdx += 1;
+            return { ...s, model: name };
+          })
         );
       } else {
         setError(t('app.noModelsFound'));
@@ -275,18 +389,11 @@ export default function App() {
     const next = winnerModel === model ? null : model;
     setWinnerModel(next);
     // Persist the vote onto the saved run row when we know it.
+    // savedRunIdRef is set from the insert's lastInsertId, so a missing id
+    // only means the run hasn't been saved yet (still running / failed save)
+    // — in that case the vote simply stays local for this session.
     if (savedRunIdRef.current != null) {
       void DbService.setWinner(savedRunIdRef.current, next);
-    } else {
-      // Run may still be saving — retry attaching the vote shortly after.
-      setTimeout(async () => {
-        const history = await DbService.getHistory();
-        const latest = history[0];
-        if (latest?.id != null) {
-          savedRunIdRef.current = latest.id;
-          await DbService.setWinner(latest.id, next);
-        }
-      }, 1500);
     }
   };
 
@@ -297,8 +404,22 @@ export default function App() {
     savedRunIdRef.current = record.id ?? null;
     setSlots(
       record.results.map((r) => {
-        const parsed = parseQualified(r.model, cloudCustom);
-        const knownLocal = models.some((m) => m.name === parsed.model);
+        // Explicit source wins (stored since the source/provider_id columns
+        // landed); otherwise fall back to qualified-name parsing for legacy rows.
+        let parsed: { source: ModelSource; model: string };
+        if (r.source === 'cloud' && r.providerId) {
+          const prefix = `cloud:${r.providerId}/`;
+          parsed = {
+            source: { kind: 'cloud', providerId: r.providerId },
+            model: r.model.startsWith(prefix) ? r.model.slice(prefix.length) : r.model,
+          };
+        } else if (r.source === 'local') {
+          parsed = { source: { kind: 'local' }, model: r.model };
+        } else {
+          parsed = parseQualified(r.model, cloudCustom);
+        }
+        const knownLocal = parsed.source.kind === 'local'
+          && models.some((m) => m.name === parsed.model);
         return {
           ...createSlot(knownLocal || parsed.source.kind === 'cloud' ? parsed.model : '', parsed.source),
           output: r.output,
@@ -331,78 +452,79 @@ export default function App() {
       }
 
       // Resolve the endpoint: local settings or a stored cloud API key.
-      let target: { provider: typeof provider; baseUrl: string; apiKey?: string } = {
-        provider,
-        baseUrl,
-      };
-      if (slot.source.kind === 'cloud') {
-        const cloud = useCloudStore.getState();
-        const resolved = resolveCloudTarget(slot.source.providerId, cloud.customProviders, cloud.keys);
-        if ('error' in resolved) {
-          const msg =
-            resolved.error === 'noCloudKey'
-              ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
-              : t('bench.unknownProvider', 'Unknown cloud provider.');
-          setSlots((prev) =>
-            prev.map((s) =>
-              s.id === slot.id
-                ? { ...s, output: `Error: ${msg}`, loading: false, error: msg }
-                : s
-            )
-          );
-          onSlotFinished(slot.id);
-          return;
-        }
-        target = resolved.config;
+      const resolved = resolveRunEndpoint(slot.source, slot.model, { provider, baseUrl });
+      if ('error' in resolved) {
+        const msg =
+          resolved.error === 'noCloudKey'
+            ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
+            : t('bench.unknownProvider', 'Unknown cloud provider.');
+        setSlots((prev) =>
+          prev.map((s) =>
+            s.id === slot.id
+              ? { ...s, output: `Error: ${msg}`, loading: false, error: msg }
+              : s
+          )
+        );
+        onSlotFinished(slot.id);
+        return;
       }
 
       const options = {
-        model: slot.model,
+        model: resolved.run.model,
         prompt: currentPrompt,
         system: advancedConfig.system,
         temperature: advancedConfig.temperature,
         top_p: advancedConfig.top_p,
         num_ctx: advancedConfig.num_ctx,
+        serverDefaults: advancedConfig.serverDefaults,
+        seed: advancedConfig.seed,
+        maxTokens: advancedConfig.maxTokens,
       };
 
-      LLMService.generateStream(
-        target,
-        options,
-        {
-          onChunk: (_, fullText) => {
-            outputRefs.current[slot.id] = fullText;
+      runRepeatedStream(resolved.run.config, options, signal, advancedConfig.repeats ?? 1, {
+        onChunk: (fullText) => {
+          outputRefs.current[slot.id] = fullText;
+          // One render per frame max — refs stay exact, paint stays cheap.
+          rafBatch(slot.id, () => {
             setSlots((prev) =>
-              prev.map((s) => (s.id === slot.id ? { ...s, output: fullText } : s))
+              prev.map((s) => (s.id === slot.id ? { ...s, output: outputRefs.current[slot.id] } : s))
             );
-          },
-          onComplete: (_, metrics) => {
+          });
+        },
+        onReasoning: (fullReasoning) => {
+          rafBatch(`${slot.id}:reasoning`, () => {
+            setSlots((prev) =>
+              prev.map((s) => (s.id === slot.id ? { ...s, reasoning: fullReasoning } : s))
+            );
+          });
+        },
+        onDone: (_output, metrics, error, aborted) => {
+          // Abort-triggered endings arrive after Stop already finished the slot.
+          if (aborted) {
+            onSlotFinished(slot.id);
+            return;
+          }
+          if (error || !metrics) {
+            const msg = error ?? 'Empty response.';
+            setSlots((prev) =>
+              prev.map((s) =>
+                s.id === slot.id
+                  ? { ...s, output: `Error: ${msg}`, loading: false, error: msg }
+                  : s
+              )
+            );
+            outputRefs.current[slot.id] = `Error: ${msg}`;
+          } else {
             metricsRefs.current[slot.id] = metrics;
             setSlots((prev) =>
               prev.map((s) =>
                 s.id === slot.id ? { ...s, metrics, loading: false, error: null } : s
               )
             );
-            onSlotFinished(slot.id);
-          },
-          onError: (err) => {
-            // Abort-triggered errors arrive after Stop already finished the slot.
-            if (signal.aborted) {
-              onSlotFinished(slot.id);
-              return;
-            }
-            setSlots((prev) =>
-              prev.map((s) =>
-                s.id === slot.id
-                  ? { ...s, output: `Error: ${err.message}`, loading: false, error: err.message }
-                  : s
-              )
-            );
-            outputRefs.current[slot.id] = `Error: ${err.message}`;
-            onSlotFinished(slot.id);
-          },
+          }
+          onSlotFinished(slot.id);
         },
-        signal
-      );
+      });
     },
     [provider, baseUrl, advancedConfig]
   );
@@ -422,7 +544,7 @@ export default function App() {
 
     setSlots((prev) => {
       finishedRefs.current = Object.fromEntries(prev.map((s) => [s.id, !s.model]));
-      return prev.map((s) => ({ ...s, output: '', metrics: null, loading: true, error: null }));
+      return prev.map((s) => ({ ...s, output: '', reasoning: '', metrics: null, loading: true, error: null }));
     });
     setIsLoading(true);
 
@@ -432,6 +554,33 @@ export default function App() {
     const finalizeRun = (): void => {
       const snapshot = slotsRef.current;
       const cloud = useCloudStore.getState();
+      const settings = useSettingsStore.getState();
+      // Reproducibility snapshot: sampling params + endpoint host + app
+      // version. Never includes secrets (no API keys).
+      let host = '';
+      try {
+        host = new URL(settings.baseUrl).host;
+      } catch {
+        host = settings.baseUrl;
+      }
+      const runConfig = JSON.stringify({
+        provider: settings.provider,
+        host,
+        runMode: settings.runMode,
+        system: settings.advancedConfig.system || undefined,
+        temperature: settings.advancedConfig.serverDefaults
+          ? undefined
+          : settings.advancedConfig.temperature,
+        top_p: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.top_p,
+        num_ctx: settings.advancedConfig.serverDefaults
+          ? undefined
+          : settings.advancedConfig.num_ctx,
+        serverDefaults: settings.advancedConfig.serverDefaults || undefined,
+        seed: settings.advancedConfig.seed ?? undefined,
+        maxTokens: settings.advancedConfig.maxTokens ?? undefined,
+        repeats: settings.advancedConfig.repeats ?? 1,
+        appVersion: APP_VERSION,
+      });
       const results: BenchmarkResult[] = snapshot.map((s) => {
         const m = metricsRefs.current[s.id];
         // Freeze the run cost: exact server tokens × current pricing, else null.
@@ -453,12 +602,14 @@ export default function App() {
           promptTokens: m?.promptTokens ?? null,
           completionTokens: m?.completionTokens ?? null,
           costUsd,
+          source: s.source.kind,
+          providerId: s.source.kind === 'cloud' ? s.source.providerId : null,
         };
       });
-      void DbService.saveHistory(currentPrompt, results).then(async () => {
+      void DbService.saveHistory(currentPrompt, results, null, runConfig).then((runId) => {
         // Remember the new run id so a later vote updates the same row.
-        const history = await DbService.getHistory();
-        savedRunIdRef.current = history[0]?.id ?? null;
+        // The id comes straight from the insert — no history re-read, no race.
+        savedRunIdRef.current = runId;
       });
     };
 
@@ -475,6 +626,25 @@ export default function App() {
 
     // Defer stream startup so the reset render commits first.
     setTimeout(() => {
+      if (useSettingsStore.getState().runMode === 'sequential') {
+        // One slot at a time: local models share one GPU/server, so parallel
+        // runs contaminate each other's TPS. Partial results still save on Stop.
+        void (async () => {
+          for (const slot of runnable) {
+            if (signal.aborted) break;
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise<void>((resolve) => {
+              runSlot(slot, currentPrompt, signal, () => resolve());
+            });
+          }
+          Object.keys(finishedRefs.current).forEach((id) => {
+            finishedRefs.current[id] = true;
+          });
+          setIsLoading(false);
+          finalizeRun();
+        })();
+        return;
+      }
       runnable.forEach((slot) => runSlot(slot, currentPrompt, signal, markFinished));
     }, 0);
   }, [prompt, isLoading, runSlot]);
@@ -490,7 +660,7 @@ export default function App() {
     finishedRefs.current[id] = false;
     setIsLoading(true);
     setSlots((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, output: '', metrics: null, error: null, loading: true } : s))
+      prev.map((s) => (s.id === id ? { ...s, output: '', reasoning: '', metrics: null, error: null, loading: true } : s))
     );
 
     const controller = new AbortController();
@@ -500,17 +670,47 @@ export default function App() {
     const markFinished = (slotId: string) => {
       finishedRefs.current[slotId] = true;
       if (Object.values(finishedRefs.current).every(Boolean)) setIsLoading(false);
+      // Persist the retried column back into its saved history row (when the
+      // run was saved and the retry actually completed — never on Stop, so a
+      // half retry can't clobber good data).
+      if (slotId === id && !signal.aborted && savedRunIdRef.current != null) {
+        const m = metricsRefs.current[id];
+        const output = outputRefs.current[id] || '';
+        const retried = slotsRef.current.find((s) => s.id === id);
+        if (retried) {
+          const cloud = useCloudStore.getState();
+          void DbService.updateBenchmarkResult(savedRunIdRef.current, slotQualified(retried), {
+            output,
+            tps: m?.tps || 0,
+            ttft: m?.ttftMs || 0,
+            tpsEstimated: m?.tpsEstimated,
+            tokenSource: m?.tokenSource,
+            promptTokens: m?.promptTokens ?? null,
+            completionTokens: m?.completionTokens ?? null,
+            costUsd:
+              retried.source.kind === 'cloud' && m?.tokenSource === 'server'
+                ? calcCost(
+                    m.promptTokens,
+                    m.completionTokens,
+                    (cloud.modelPricing[retried.source.providerId] ?? {})[retried.model]
+                  )
+                : null,
+          });
+        }
+      }
     };
-    runSlot({ ...slot, output: '', metrics: null, error: null, loading: true }, prompt, signal, markFinished);
+    runSlot({ ...slot, output: '', reasoning: '', metrics: null, error: null, loading: true }, prompt, signal, markFinished);
   };
 
   // Keep refs to the latest handlers so the global shortcut never goes stale.
   const runHandlerRef = useRef(handleRunComparison);
   const stopHandlerRef = useRef(handleStopGeneration);
+  const activePageRef = useRef(activePage);
   useEffect(() => {
     runHandlerRef.current = handleRunComparison;
     stopHandlerRef.current = handleStopGeneration;
-  }, [handleRunComparison, handleStopGeneration]);
+    activePageRef.current = activePage;
+  }, [handleRunComparison, handleStopGeneration, activePage]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -524,7 +724,8 @@ export default function App() {
         return;
       }
       const modEnter = (e.ctrlKey || e.metaKey) && e.key === 'Enter';
-      if (modEnter) {
+      // Bench-only: never fire a background run from the Tests/Cloud pages.
+      if (modEnter && activePageRef.current === 'bench') {
         e.preventDefault();
         runHandlerRef.current();
         return;
@@ -567,6 +768,7 @@ export default function App() {
         onSelectRecord={handleSelectHistoryRecord}
       />
       <Leaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+      <UpdaterPrompt />
       <SettingsPanel
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -595,7 +797,7 @@ export default function App() {
           onCopyReport={handleCopyReport}
           pdfState={pdfState}
           onExportPdf={handleExportPdf}
-          jsonCopied={jsonCopied}
+          jsonState={jsonState}
           onCopyJson={handleCopyJson}
           csvState={csvState}
           onExportCsv={handleExportCsv}
@@ -638,6 +840,7 @@ export default function App() {
                 selectedModel={slot.model}
                 cloudGroups={cloudGroups}
                 output={slot.output}
+                reasoning={slot.reasoning}
                 metrics={slot.metrics}
                 error={slot.error}
                 canRemove={slots.length > MIN_MODELS}
@@ -692,7 +895,7 @@ export default function App() {
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add model ({slots.length}/{MAX_MODELS})</span>
+              <span>{t('app.addModel', 'Add model')} ({slots.length}/{MAX_MODELS})</span>
             </button>
           </div>
         </div>
@@ -714,9 +917,12 @@ export default function App() {
                 placeholder={t('app.promptPlaceholder')}
                 className="w-full bg-transparent resize-none text-sm focus:outline-none placeholder:text-slate-400"
               />
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                {t('app.runHint')}
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                  {t('app.runHint')}
+                </span>
+                <RunModeToggle />
+              </div>
             </div>
             {isLoading ? (
               <button
@@ -742,21 +948,24 @@ export default function App() {
         )}
       </div>
 
-      {/* Hidden report source for PDF export (html2canvas captures this) */}
-      <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
-        <ReportPrintView
-          ref={printRef}
-          prompt={prompt}
-          results={slots.map((s) => ({
-            model: slotQualified(s),
-            output: s.output,
-            tps: s.metrics?.tps || 0,
-            ttft: s.metrics?.ttftMs || 0,
-            tpsEstimated: s.metrics?.tpsEstimated,
-            tokenSource: s.metrics?.tokenSource,
-          }))}
-        />
-      </div>
+      {/* Hidden report source for PDF export (html2canvas captures this).
+          Mounted only while exporting so streams never pay for it. */}
+      {printMounted && (
+        <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
+          <ReportPrintView
+            ref={printRef}
+            prompt={prompt}
+            results={slots.map((s) => ({
+              model: slotQualified(s),
+              output: s.output,
+              tps: s.metrics?.tps || 0,
+              ttft: s.metrics?.ttftMs || 0,
+              tpsEstimated: s.metrics?.tpsEstimated,
+              tokenSource: s.metrics?.tokenSource,
+            }))}
+          />
+        </div>
+      )}
     </div>
   );
 }

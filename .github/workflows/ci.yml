@@ -25,6 +25,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        run: npm test
+
       - name: Build frontend
         run: npm run build
 
@@ -45,8 +48,11 @@ jobs:
       - name: Check Rust formatting
         working-directory: ./src-tauri
         run: cargo fmt --check
-        continue-on-error: true
 
       - name: Cargo check
         working-directory: ./src-tauri
         run: cargo check
+
+      - name: Clippy lints
+        working-directory: ./src-tauri
+        run: cargo clippy --all-targets -- -D warnings

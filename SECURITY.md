@@ -8,8 +8,8 @@ trust seriously — thank you for reporting issues responsibly.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.1.x   | :white_check_mark: |
-| < 1.1.0 | :x:                |
+| 1.2.x   | :white_check_mark: |
+| < 1.2.0 | :x:                |
 
 Only the latest minor release receives security fixes. Please upgrade before
 reporting.
@@ -55,6 +55,13 @@ Out of scope:
 ## Known Limitation (not a vulnerability, but be aware)
 
 Cloud API keys are currently stored in the app's local persisted store in
-plaintext. This matches the trust level of a single-user local app, but OS
-keychain migration (`tauri-plugin-keyring`) is on the roadmap. If you work in
-a shared-machine environment, keep that in mind.
+plaintext. All secret access already flows through a single module
+(`src/services/secrets.ts`), so the planned OS-keychain backend only needs
+to implement `initSecrets`/`cacheSecret` there.
+
+Deliberately NOT shipped yet: there is no official Tauri v2 keyring plugin
+(`@tauri-apps/plugin-keyring` does not exist; the only community crate is an
+unmaintained 0.1.0), so the correct path is the `keyring` crate behind three
+small custom Tauri commands — which requires a Rust toolchain and real-OS
+testing to land safely. If you work in a shared-machine environment, keep
+the current storage in mind.

@@ -1,14 +1,17 @@
 // src/services/modelTarget.ts
 // Model source abstraction: a bench/test target is either a local model
 // (current provider + base URL from settings) or a cloud model
-// (`providerId/model` qualified name + stored API key).
+// (`cloud:providerId/model` qualified name + stored API key).
 //
-// Qualified names (`openrouter/openai/gpt-4o-mini`) flow through history,
+// Qualified names (`cloud:openrouter/openai/gpt-4o-mini`) flow through history,
 // leaderboard, votes, charts and exports as plain strings — no DB migration.
+// The `cloud:` prefix is explicit so a local model id can never collide with
+// a provider id (e.g. LM Studio's `openai/gpt-oss-20b` stays local).
 
 import { CLOUD_CATALOG, CustomProviderDef } from '../data/cloudProviders';
 import type { Provider } from '../store/useSettingsStore';
 import type { ModelPricing } from '../types/ollama';
+import { secretFor } from './secrets';
 
 export type ModelSource = { kind: 'local' } | { kind: 'cloud'; providerId: string };
 
@@ -24,17 +27,19 @@ export interface CloudGroup {
   models: string[];
 }
 
+export const CLOUD_PREFIX = 'cloud:';
+
 export function qualifiedName(source: ModelSource, model: string): string {
-  return source.kind === 'cloud' ? `${source.providerId}/${model}` : model;
+  return source.kind === 'cloud' ? `${CLOUD_PREFIX}${source.providerId}/${model}` : model;
 }
 
-/** Short display name: cloud drops the `providerId/` prefix. */
+/** Short display name: cloud drops the `cloud:providerId/` prefix. Local names are never truncated. */
 export function shortModelName(qualified: string, source?: ModelSource): string {
-  if (source?.kind === 'cloud' || (source === undefined && qualified.includes('/'))) {
-    const slash = qualified.indexOf('/');
-    return slash >= 0 ? qualified.slice(slash + 1) : qualified;
-  }
-  return qualified;
+  const isCloud = source?.kind === 'cloud' || (source === undefined && qualified.startsWith(CLOUD_PREFIX));
+  if (!isCloud) return qualified;
+  const rest = qualified.startsWith(CLOUD_PREFIX) ? qualified.slice(CLOUD_PREFIX.length) : qualified;
+  const slash = rest.indexOf('/');
+  return slash >= 0 ? rest.slice(slash + 1) : rest;
 }
 
 function knownProviderIds(custom: CustomProviderDef[]): Set<string> {
@@ -46,6 +51,21 @@ export function parseQualified(
   qualified: string,
   custom: CustomProviderDef[]
 ): { source: ModelSource; model: string } {
+  // Explicit new format: `cloud:providerId/model`. Unambiguous by construction.
+  if (qualified.startsWith(CLOUD_PREFIX)) {
+    const rest = qualified.slice(CLOUD_PREFIX.length);
+    const slash = rest.indexOf('/');
+    if (slash > 0) {
+      return {
+        source: { kind: 'cloud', providerId: rest.slice(0, slash) },
+        model: rest.slice(slash + 1),
+      };
+    }
+    // Malformed `cloud:` name — keep everything so nothing is silently lost.
+    return { source: { kind: 'local' }, model: qualified };
+  }
+  // Legacy format (`providerId/model`, written before the prefix existed):
+  // still honored so old history/leaderboard rows keep resolving.
   const slash = qualified.indexOf('/');
   if (slash > 0) {
     const head = qualified.slice(0, slash);
@@ -106,11 +126,13 @@ export type ResolveError = 'noCloudKey' | 'unknownProvider';
 export function resolveCloudTarget(
   providerId: string,
   custom: CustomProviderDef[],
-  keys: { providerId: string; apiKey: string; enabled: boolean }[]
+  keys: { id: string; providerId: string; apiKey: string; enabled: boolean }[]
 ): { config: TargetConfig } | { error: ResolveError } {
   const baseUrl = findCloudBaseUrl(providerId, custom);
   if (!baseUrl) return { error: 'unknownProvider' };
-  const key = keys.find((k) => k.providerId === providerId && k.enabled && k.apiKey.trim());
+  const key = keys.find(
+    (k) => k.providerId === providerId && k.enabled && secretFor(k).trim()
+  );
   if (!key) return { error: 'noCloudKey' };
-  return { config: { provider: 'openai-compatible', baseUrl, apiKey: key.apiKey.trim() } };
+  return { config: { provider: 'openai-compatible', baseUrl, apiKey: secretFor(key).trim() } };
 }

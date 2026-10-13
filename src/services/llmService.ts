@@ -2,6 +2,8 @@
 import { OllamaService } from './ollamaService';
 import { Provider } from '../store/useSettingsStore';
 import { OllamaModel, PromptOptions, StreamCallbacks, BenchmarkMetrics } from '../types/ollama';
+import { httpError } from '../utils/httpError';
+import { estimateTokens } from '../utils/tokens';
 
 interface ProviderConfig {
   provider: Provider;
@@ -20,27 +22,28 @@ async function getInstalledModels(config: ProviderConfig): Promise<OllamaModel[]
     return OllamaService.getInstalledModels(config.baseUrl);
   }
 
+  let response: Response;
   try {
     const headers: Record<string, string> = {};
     if (config.apiKey?.trim()) headers['Authorization'] = `Bearer ${config.apiKey.trim()}`;
-    const response = await fetch(`${config.baseUrl}/models`, { headers });
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.statusText}`);
-    }
-    const data = await response.json();
-    const models = data.data || [];
-    return models.map((m: { id: string }) => ({
-      name: m.id,
-      modified_at: '',
-      size: 0,
-      digest: '',
-    }));
+    response = await fetch(`${config.baseUrl}/models`, { headers });
   } catch (error) {
     console.error('OpenAI-compatible server connection error:', error);
     throw new Error(
       'Could not connect to the local server. Make sure LM Studio (or llama.cpp server) is running and the base URL is correct.'
     );
   }
+  if (!response.ok) {
+    throw await httpError('Server error', response);
+  }
+  const data = await response.json();
+  const models = data.data || [];
+  return models.map((m: { id: string }) => ({
+    name: m.id,
+    modified_at: '',
+    size: 0,
+    digest: '',
+  }));
 }
 
 /**
@@ -62,8 +65,14 @@ async function generateOpenAICompatibleStream(
   const startTime = performance.now();
   let firstTokenTime: number | null = null;
   let fullText = '';
+  let fullReasoning = '';
   let usageTokens: number | null = null;
   let usagePromptTokens: number | null = null;
+  // llama.cpp (`timings`) and some LM Studio builds report exact per-second
+  // rates inside stream payloads. Only honored when present and sane —
+  // otherwise the computed values below stand.
+  let reportedTps: number | null = null;
+  let reportedPromptTps: number | null = null;
 
   try {
     const messages = [];
@@ -75,6 +84,16 @@ async function generateOpenAICompatibleStream(
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (apiKey?.trim()) headers['Authorization'] = `Bearer ${apiKey.trim()}`;
 
+    // With serverDefaults, sampling params are omitted entirely so the
+    // model's own recommended defaults apply instead of ours.
+    const sampling: Record<string, number> = {};
+    if (!options.serverDefaults) {
+      sampling.temperature = options.temperature ?? 0.7;
+      sampling.top_p = options.top_p ?? 0.9;
+    }
+    if (options.seed != null) sampling.seed = options.seed;
+    if (options.maxTokens != null) sampling.max_tokens = options.maxTokens;
+
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers,
@@ -84,18 +103,121 @@ async function generateOpenAICompatibleStream(
         messages,
         stream: true,
         stream_options: { include_usage: true },
-        temperature: options.temperature ?? 0.7,
-        top_p: options.top_p ?? 0.9,
+        ...sampling,
       }),
     });
 
     if (!response.ok || !response.body) {
-      throw new Error(`Server error: ${response.statusText}`);
+      throw await httpError('Server error', response);
     }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
+    let finished = false;
+
+    const buildMetrics = (): BenchmarkMetrics => {
+      const endTime = performance.now();
+      const totalDurationMs = Math.round(endTime - startTime);
+      const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : 0;
+
+          // Unit definition (same meaning as Ollama's eval_count/eval_duration):
+          // TPS measures the generation phase only, excluding time-to-first-token.
+          // Token source is exact when the server reports usage, otherwise a
+          // script-aware heuristic flagged as estimated so the UI can render `~`.
+      const tokenSource = usageTokens != null ? 'server' : 'heuristic';
+      const totalTokens = usageTokens ?? estimateTokens(fullText);
+      const evalMs = Math.max(1, totalDurationMs - ttftMs);
+      const tps = reportedTps ?? Number((totalTokens / (evalMs / 1000)).toFixed(2));
+
+      return {
+        ttftMs,
+        tps,
+        totalDurationMs,
+        totalTokens,
+        evalDurationMs: evalMs,
+        tpsEstimated: tokenSource === 'heuristic',
+        tokenSource,
+        completionTokens: usageTokens ?? undefined,
+        promptTokens: usagePromptTokens ?? undefined,
+        promptTps: reportedPromptTps ?? undefined,
+      };
+    };
+
+    const finish = (): void => {
+      if (finished) return;
+      finished = true;
+      callbacks.onComplete(fullText, buildMetrics());
+    };
+
+    // Returns true when the stream is complete ([DONE]).
+    // Throws on server-side error payloads so they surface instead of hanging.
+    const ingestLine = (trimmed: string): boolean => {
+      if (!trimmed.startsWith('data:')) return false;
+      const payload = trimmed.slice(5).trim();
+      if (payload === '[DONE]') return true;
+      let json: {
+        usage?: { completion_tokens?: number; prompt_tokens?: number };
+        choices?: { delta?: { content?: string } }[];
+        error?: { message?: string } | string;
+        timings?: Record<string, unknown>;
+        stats?: Record<string, unknown>;
+      };
+      try {
+        json = JSON.parse(payload);
+      } catch {
+        return false; // Ignore malformed SSE lines (e.g. keep-alive comments)
+      }
+      // Defensive: some servers embed exact rates (llama.cpp `timings`,
+      // LM Studio `stats`). Field names differ by version, so probe a few.
+      const timingBag = json.timings ?? json.stats;
+      if (timingBag && typeof timingBag === 'object') {
+        const bag = timingBag as Record<string, unknown>;
+        const pred = Number(bag.predicted_per_second ?? bag.tokens_per_second);
+        if (Number.isFinite(pred) && pred > 0) reportedTps = pred;
+        const qp = Number(
+          bag.prompt_per_second ?? bag.prompt_tokens_per_second ?? bag['prompt tokens per second']
+        );
+        if (Number.isFinite(qp) && qp > 0) reportedPromptTps = qp;
+      }
+      if (json.error) {
+        const msg = typeof json.error === 'string' ? json.error : json.error.message;
+        throw new Error(msg || 'Server-side stream error.');
+      }
+      if (json.usage?.completion_tokens) {
+        usageTokens = json.usage.completion_tokens;
+      }
+      if (json.usage?.prompt_tokens) {
+        usagePromptTokens = json.usage.prompt_tokens;
+      }
+      const deltaChoice = json.choices?.[0]?.delta as
+        | { content?: string; reasoning_content?: string }
+        | undefined;
+      // Thinking tokens arrive before (and separately from) the answer on
+      // reasoning models (R1/QwQ via OpenRouter-style gateways). TTFT counts
+      // the very first token of either kind; the answer stream stays clean.
+      const reasoning = deltaChoice?.reasoning_content;
+      if (reasoning) {
+        if (!firstTokenTime) {
+          firstTokenTime = performance.now();
+          const ttft = Math.round(firstTokenTime - startTime);
+          callbacks.onFirstToken?.(ttft);
+        }
+        fullReasoning += reasoning;
+        callbacks.onReasoning?.(fullReasoning);
+      }
+      const delta = deltaChoice?.content;
+      if (delta) {
+        if (!firstTokenTime) {
+          firstTokenTime = performance.now();
+          const ttft = Math.round(firstTokenTime - startTime);
+          callbacks.onFirstToken?.(ttft);
+        }
+        fullText += delta;
+        callbacks.onChunk(delta, fullText);
+      }
+      return false;
+    };
 
     while (true) {
       const { done, value } = await reader.read();
@@ -106,65 +228,21 @@ async function generateOpenAICompatibleStream(
       buffer = lines.pop() || '';
 
       for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data:')) continue;
-
-        const payload = trimmed.slice(5).trim();
-        if (payload === '[DONE]') {
-          const endTime = performance.now();
-          const totalDurationMs = Math.round(endTime - startTime);
-          const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : 0;
-
-          // Unit definition (same meaning as Ollama's eval_count/eval_duration):
-          // TPS measures the generation phase only, excluding time-to-first-token.
-          // Token source is exact when the server reports usage, otherwise a
-          // chars/4 heuristic flagged as estimated so the UI can render `~`.
-          const tokenSource = usageTokens != null ? 'server' : 'heuristic';
-          const totalTokens = usageTokens ?? Math.max(1, Math.ceil(fullText.length / 4));
-          const evalMs = Math.max(1, totalDurationMs - ttftMs);
-          const tps = Number((totalTokens / (evalMs / 1000)).toFixed(2));
-
-          const metrics: BenchmarkMetrics = {
-            ttftMs,
-            tps,
-            totalDurationMs,
-            totalTokens,
-            evalDurationMs: evalMs,
-            tpsEstimated: tokenSource === 'heuristic',
-            tokenSource,
-            completionTokens: usageTokens ?? undefined,
-            promptTokens: usagePromptTokens ?? undefined,
-          };
-
-          callbacks.onComplete(fullText, metrics);
+        if (ingestLine(line.trim())) {
+          finish();
           return;
-        }
-
-        try {
-          const json = JSON.parse(payload);
-
-          if (json.usage?.completion_tokens) {
-            usageTokens = json.usage.completion_tokens;
-          }
-          if (json.usage?.prompt_tokens) {
-            usagePromptTokens = json.usage.prompt_tokens;
-          }
-
-          const delta = json.choices?.[0]?.delta?.content;
-          if (delta) {
-            if (!firstTokenTime) {
-              firstTokenTime = performance.now();
-              const ttft = Math.round(firstTokenTime - startTime);
-              callbacks.onFirstToken?.(ttft);
-            }
-            fullText += delta;
-            callbacks.onChunk(delta, fullText);
-          }
-        } catch {
-          // Ignore malformed SSE lines (e.g. keep-alive comments)
         }
       }
     }
+
+    // Some servers (llama.cpp, certain cloud gateways) close the stream
+    // without sending [DONE]. Finish with whatever accumulated instead of
+    // hanging the UI forever. Trailing buffered bytes get one last parse.
+    buffer += decoder.decode();
+    for (const line of buffer.split('\n')) {
+      if (ingestLine(line.trim())) break;
+    }
+    if (!signal?.aborted) finish();
   } catch (error) {
     callbacks.onError(error instanceof Error ? error : new Error(String(error)));
   }
@@ -201,8 +279,8 @@ export interface CloudTestResult {
   error?: string;
 }
 
-/** Parse OpenRouter-style pricing (per-token USD as string or number). */
-function parsePricing(raw: unknown): { prompt: number; completion: number } | null {
+/** Parse OpenRouter-style pricing (per-token USD as string or number). Exported for unit tests. */
+export function parsePricing(raw: unknown): { prompt: number; completion: number } | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = Number((raw as { prompt?: unknown }).prompt);
   const c = Number((raw as { completion?: unknown }).completion);
@@ -234,7 +312,7 @@ async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<Cl
       if ((response.status === 404 || response.status === 405 || response.status === 501) && apiKey?.trim()) {
         return await probeKeyOnly(normalized, apiKey.trim());
       }
-      return { ok: false, modelsListed: true, error: `Server error: ${response.status} ${response.statusText}` };
+      return { ok: false, modelsListed: true, error: (await httpError('Server error', response)).message };
     }
     const data = await response.json();
     const models = Array.isArray(data?.data) ? data.data : [];

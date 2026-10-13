@@ -1,9 +1,16 @@
 {
+  "common": {
+    "cancel": "انصراف",
+    "confirm": "تأیید"
+  },
   "app": {
     "title": "PromptDeck",
     "refreshModels": "به‌روزرسانی مدل‌ها",
     "run": "اجرا (Ctrl+Enter)",
     "runHint": "اجرا با Ctrl+Enter · توقف با Esc · فوکوس با Ctrl+K",
+    "runModeParallel": "موازی",
+    "runModeSequential": "ترتیبی",
+    "runModeHint": "ترتیبی یعنی یک مدل در هر لحظه (اعداد تمیزتر برای لوکال)",
     "running": "در حال پردازش...",
     "promptPlaceholder": "پرومپت خود را برای مقایسه بنویسید (مثلاً: یک تابع فاکتوریل به زبان Rust بنویس)...",
     "ollamaError": "ارتباط با سرویس Ollama برقرار نشد. از فعال بودن آن مطمئن شوید.",
@@ -15,7 +22,11 @@
     "noModelsHintOllama": "اجرا کنید: ollama pull llama3",
     "noModelsHintLMStudio": "شروع سرور در LM Studio از تب Developer",
     "stop": "توقف",
+    "stoppedByUser": "توسط کاربر متوقف شد",
+    "addModel": "افزودن مدل",
+    "pdfError": "خطا در ساخت فایل PDF. لطفاً دوباره تلاش کنید.",
     "waitingOutput": "در انتظار خروجی...",
+    "thinking": "تفکر",
     "historyTitle": "باز کردن تاریخچه",
     "toggleTheme": "تغییر پوسته",
     "switchLanguage": "تغییر زبان",
@@ -39,7 +50,10 @@
     "ttft": "زمان اولین توکن",
     "estimatedTooltip": "تخمینی — سرور تعداد توکن را گزارش نکرد",
     "estimatedShort": "تخمینی",
-    "costTitle": "هزینه تخمینی اجرا"
+    "costTitle": "هزینه تخمینی اجرا",
+    "medianOf": "میانه {{n}} اجرا",
+    "loadShare": "شامل {{ms}}ms بارگذاری مدل",
+    "promptSpeed": "پرامپت {{v}} توکن/ثانیه"
   },
   "history": {
     "title": "تاریخچه بنچمارک",
@@ -49,9 +63,14 @@
     "noResults": "هیچ بنچمارک منطبقی یافت نشد.",
     "searchPlaceholder": "جستجو در پرامپت‌ها یا مدل‌ها…",
     "resultsCount": "{{count}} نتیجه",
+    "showMore": "نمایش بیشتر ({{shown}} از {{total}})",
     "empty": "هیچ بنچمارکی ثبت نشده است. اولین مقایسه را اجرا کن تا اینجا نمایش داده شود.",
     "deleteRecordTitle": "حذف این رکورد",
     "vs": "vs",
+    "exportDb": "خروجی بکاپ کامل (JSON)",
+    "importDb": "درون‌ریزی بکاپ (JSON)",
+    "imported": "{{count}} اجرا درون‌ریزی شد.",
+    "importError": "بکاپ ناموفق بود.",
     "timeNow": "اکنون",
     "timeMinutes": "{{count}} دقیقه پیش",
     "timeHours": "{{count}} ساعت پیش",
@@ -68,7 +87,11 @@
     "systemPromptPlaceholder": "مثال: شما یک برنامه‌نویس ارشد هستید. پاسخ‌ها را خلاصه و فنی بدهید...",
     "temperature": "Temperature (خلاقیت):",
     "topP": "Top-P:",
-    "contextLength": "Context Length (حداکثر حافظه):"
+    "contextLength": "Context Length (حداکثر حافظه):",
+    "serverDefaults": "پیش‌فرض سرور (رد شدن temperature/top-p/context)",
+    "seed": "Seed (خالی = تصادفی)",
+    "maxTokens": "حداکثر توکن خروجی (خالی = نامحدود)",
+    "repeats": "تکرار (میانه گزارش می‌شود)"
   },
   "presets": {
     "quickPrompts": "پرامپت‌های سریع:",
@@ -114,7 +137,7 @@
     "empty": "هنوز بنچمارکی ثبت نشده است. اولین مقایسه را اجرا کن تا اینجا نمایش داده شود.",
     "runs": "اجرا",
     "wins": "برد",
-    "hint": "مرتب‌سازی بر اساس نرخ برد، بعد میانگین سرعت. اجراهای ناموفق در میانگین حساب نمی‌شوند."
+    "hint": "رتبه‌بندی با امتیاز ویلسون نرخ برد، بعد میانگین سرعت. اجراهای ناموفق حذف می‌شوند."
   },
   "nav": {
     "bench": "بنچ",
@@ -128,6 +151,7 @@
   "settings": {
     "providerTitle": "ارائه‌دهنده و اتصال",
     "providerHint": "Ollama برای مدل‌های لوکال، OpenAI-compatible برای سرور LM Studio / llama.cpp.",
+    "serverUrl": "آدرس پایه سرور",
     "resetTitle": "بازنشانی تنظیمات",
     "resetConfirm": "ارائه‌دهنده، اتصال و گزینه‌های پیشرفته به پیش‌فرض بازگردند؟ زبان و تم حفظ می‌شوند.",
     "resetButton": "بازنشانی به پیش‌فرض"
@@ -148,6 +172,11 @@
     "subtitle": "اتصال‌های ارائه‌دهنده هوش مصنوعی را مدیریت کن",
     "search": "جستجوی ارائه‌دهنده…",
     "connected": "متصل",
+    "connections": "اتصال",
+    "deleteModel": "حذف مدل از لیست",
+    "searchModels": "جستجوی مدل…",
+    "shown": "نمایش",
+    "testModel": "تست این مدل (پروب ۱ توکنی)",
     "models": "مدل",
     "benchHint": "مدل‌ها را در صفحه هر ارائه‌دهنده فعال کن، بعد در Bench و Test Suite انتخابشان کن.",
     "customTitle": "ارائه‌دهنده‌های سفارشی (سازگار با OpenAI)",
@@ -223,6 +252,17 @@
       "anthropic": "API رسمی Anthropic با سازگاری OpenAI SDK: مدل‌های Claude Opus و Sonnet و Haiku با احراز Bearer."
     }
   },
+  "report": {
+    "title": "📊 گزارش بنچمارک PromptDeck",
+    "prompt": "پرامپت",
+    "empty": "(خالی)",
+    "summary": "⚡ خلاصه عملکرد",
+    "model": "مدل",
+    "tps": "TPS (توکن/ثانیه)",
+    "ttft": "TTFT (میلی‌ثانیه)",
+    "outputs": "📝 خروجی مدل‌ها",
+    "noOutput": "بدون خروجی"
+  },
   "bench": {
     "localModels": "مدل‌های لوکال",
     "noCloudKey": "کلید API فعالی برای این ارائه‌دهنده ابری نیست — از صفحه Cloud اضافه کن.",
@@ -246,7 +286,7 @@
     "stop": "توقف",
     "stopped": "متوقف شد",
     "scoreboard": "جدول امتیاز",
-    "average": "میانگین توکن/ثانیه · برد",
+    "average": "میانگین توکن/ثانیه · سریع‌ترین",
     "scoreHint": "👑 یعنی سریع‌ترین توکن/ثانیه در آن تست · برای خواندن خروجی کامل روی هر خانه کلیک کن.",
     "clearResults": "پاک کردن نتایج",
     "copied": "کپی شد!",

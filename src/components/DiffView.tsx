@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, ChevronDown } from 'lucide-react';
 import { diffLines, summarizeDiff } from '../utils/diffUtils';
+import { shortModelName } from '../services/modelTarget';
 
 interface DiffViewProps {
   leftName: string;
@@ -71,11 +72,11 @@ export const DiffView: React.FC<DiffViewProps> = ({
             </span>
           )}
           <span className="font-mono text-indigo-600 dark:text-indigo-300 truncate max-w-[180px]" title={leftName}>
-            {leftName.split(':')[0]}
+            {shortModelName(leftName).split(':')[0]}
           </span>
           <span className="text-slate-400">↔</span>
           <span className="font-mono text-cyan-600 dark:text-cyan-300 truncate max-w-[180px]" title={rightName}>
-            {rightName.split(':')[0]}
+            {shortModelName(rightName).split(':')[0]}
           </span>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
             {Math.round(summary.similarity * 100)}% {t('diff.similar')}
