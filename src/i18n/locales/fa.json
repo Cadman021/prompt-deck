@@ -137,7 +137,8 @@
     "empty": "هنوز بنچمارکی ثبت نشده است. اولین مقایسه را اجرا کن تا اینجا نمایش داده شود.",
     "runs": "اجرا",
     "wins": "برد",
-    "hint": "رتبه‌بندی با امتیاز ویلسون نرخ برد، بعد میانگین سرعت. اجراهای ناموفق حذف می‌شوند."
+    "hint": "رتبه‌بندی با امتیاز Elo از رأی‌های رودررو، بعد میانگین سرعت. اجراهای ناموفق حذف می‌شوند.",
+    "eloTitle": "امتیاز Elo از رأی‌های رودررو"
   },
   "nav": {
     "bench": "بنچ",
@@ -252,6 +253,15 @@
       "anthropic": "API رسمی Anthropic با سازگاری OpenAI SDK: مدل‌های Claude Opus و Sonnet و Haiku با احراز Bearer."
     }
   },
+  "judge": {
+    "title": "داور LLM",
+    "subtitle": "یک مدل همه خروجی‌ها را کور بر اساس rubric ثابت امتیاز می‌دهد",
+    "judgeModel": "مدل داور",
+    "run": "داوری",
+    "judging": "در حال داوری…",
+    "pick": "انتخاب داور",
+    "parseError": "رأی به‌صورت JSON پارس نشد — پاسخ خام را بخوان"
+  },
   "report": {
     "title": "📊 گزارش بنچمارک PromptDeck",
     "prompt": "پرامپت",
@@ -266,7 +276,10 @@
   "bench": {
     "localModels": "مدل‌های لوکال",
     "noCloudKey": "کلید API فعالی برای این ارائه‌دهنده ابری نیست — از صفحه Cloud اضافه کن.",
-    "unknownProvider": "ارائه‌دهنده ابری ناشناس."
+    "unknownProvider": "ارائه‌دهنده ابری ناشناس.",
+    "blind": "کور",
+    "blindTitle": "حالت کور: هویت‌ها برای رأی بی‌طرفانه پنهان است",
+    "blindName": "مدل {{letter}}"
   },
   "testsuite": {
     "title": "تست‌سوئیت",
@@ -278,6 +291,18 @@
     "addPrompt": "افزودن",
     "removePrompt": "حذف",
     "promptPlaceholder": "پرامپت تست…",
+    "checkTitle": "بررسی خودکار خروجی",
+    "checkNone": "بدون بررسی",
+    "checkContains": "شامل باشد",
+    "checkRegex": "رجکس",
+    "checkExact": "دقیقاً",
+    "checkJson": "JSON معتبر",
+    "checkTextPlaceholder": "متن مورد انتظار…",
+    "checkPatternPlaceholder": "مثلاً error \\d+",
+    "checkInvalid": "نامعتبر",
+    "checkPassed": "بررسی موفق",
+    "checkFailed": "بررسی ناموفق",
+    "passRateTitle": "بررسی‌های خودکار موفق",
     "models": "مدل‌ها",
     "emptyModels": "مدلی نصب نشده — اول یک مدل نصب کن، بعد اینجا انتخابش کن.",
     "needPrompt": "برای اجرا حداقل یک پرامپت تست غیرخالی اضافه کن.",

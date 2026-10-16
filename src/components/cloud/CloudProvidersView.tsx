@@ -7,7 +7,7 @@ import { Server, Search, Plus } from 'lucide-react';
 import { CLOUD_CATALOG, CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
 import { useCloudStore } from '../../store/useCloudStore';
 import { LLMService } from '../../services/llmService';
-import { secretFor } from '../../services/secrets';
+import { cacheSecret, keychainDelete, secretFor } from '../../services/secrets';
 import { ProviderIcon } from './ProviderIcon';
 import { ProviderDetailPage } from './ProviderDetailPage';
 
@@ -79,7 +79,7 @@ export const CloudProvidersView: React.FC = () => {
     for (const d of targets) {
       const key = keys.find((k) => k.providerId === d.id && secretFor(k));
       if (!key) continue;
-      // eslint-disable-next-line no-await-in-loop
+
       const result = await LLMService.testCloudConnection(d.defaultBaseUrl, secretFor(key));
       updateKey(key.id, {
         status: result.ok ? 'ok' : 'error',
@@ -146,14 +146,20 @@ export const CloudProvidersView: React.FC = () => {
         def={selectedDef}
         isCustom={selectedDef.isCustom}
         onBack={() => setSelectedId(null)}
-        onDeleteCustom={
-          selectedDef.isCustom
-            ? (id) => {
-                removeCustomProvider(id);
-                setSelectedId(null);
-              }
-            : undefined
-        }
+          onDeleteCustom={
+            selectedDef.isCustom
+              ? (id) => {
+                  for (const k of keys.filter((kk) => kk.providerId === id)) {
+                    cacheSecret(k.id, null);
+                    void keychainDelete(k.id).catch(() => {
+                      // Absent key or no keychain — store removal is what matters.
+                    });
+                  }
+                  removeCustomProvider(id);
+                  setSelectedId(null);
+                }
+              : undefined
+          }
       />
     );
   }

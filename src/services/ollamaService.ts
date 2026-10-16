@@ -15,10 +15,10 @@ export class OllamaService {
       response = await fetch(`${baseUrl}/api/tags`);
     } catch (error) {
       console.error('Ollama connection error:', error);
-      throw new Error(i18next.t("service.connectOllama"));
+      throw new Error(i18next.t('service.connectOllama'), { cause: error });
     }
     if (!response.ok) {
-      throw await httpError(i18next.t("service.errorModels"), response);
+      throw await httpError(i18next.t('service.errorModels'), response);
     }
     const data = await response.json();
     return data.models || [];
@@ -64,7 +64,7 @@ export class OllamaService {
       });
 
       if (!response.ok || !response.body) {
-        throw await httpError(i18next.t("service.errorModels"), response);
+        throw await httpError(i18next.t('service.errorModels'), response);
       }
 
       const reader = response.body.getReader();
@@ -88,14 +88,14 @@ export class OllamaService {
         const evalDurationNs = lastEvalDurationNs ?? totalDurationMs * 1e6;
 
         // TPS (Tokens Per Second)
-        const tps = evalDurationNs > 0
-          ? Number((evalCount / (evalDurationNs / 1e9)).toFixed(2))
-          : 0;
+        const tps =
+          evalDurationNs > 0 ? Number((evalCount / (evalDurationNs / 1e9)).toFixed(2)) : 0;
 
         // Prompt-processing speed + model-load time (cold-start share of TTFT).
-        const promptTps = lastPromptEvalCount != null && (lastPromptEvalDurationNs ?? 0) > 0
-          ? Number((lastPromptEvalCount / ((lastPromptEvalDurationNs ?? 1) / 1e9)).toFixed(2))
-          : undefined;
+        const promptTps =
+          lastPromptEvalCount != null && (lastPromptEvalDurationNs ?? 0) > 0
+            ? Number((lastPromptEvalCount / ((lastPromptEvalDurationNs ?? 1) / 1e9)).toFixed(2))
+            : undefined;
 
         const metrics: BenchmarkMetrics = {
           ttftMs,
@@ -107,7 +107,8 @@ export class OllamaService {
           tokenSource: estimated ? 'heuristic' : 'server',
           completionTokens: evalCount,
           promptTokens: lastPromptEvalCount ?? undefined,
-          loadDurationMs: lastLoadDurationNs != null ? Math.round(lastLoadDurationNs / 1e6) : undefined,
+          loadDurationMs:
+            lastLoadDurationNs != null ? Math.round(lastLoadDurationNs / 1e6) : undefined,
           promptTps,
         };
 
@@ -163,8 +164,10 @@ export class OllamaService {
 
           if (typeof json.eval_count === 'number') lastEvalCount = json.eval_count;
           if (typeof json.eval_duration === 'number') lastEvalDurationNs = json.eval_duration;
-          if (typeof json.prompt_eval_count === 'number') lastPromptEvalCount = json.prompt_eval_count;
-          if (typeof json.prompt_eval_duration === 'number') lastPromptEvalDurationNs = json.prompt_eval_duration;
+          if (typeof json.prompt_eval_count === 'number')
+            lastPromptEvalCount = json.prompt_eval_count;
+          if (typeof json.prompt_eval_duration === 'number')
+            lastPromptEvalDurationNs = json.prompt_eval_duration;
           if (typeof json.load_duration === 'number') lastLoadDurationNs = json.load_duration;
 
           if (json.done) {

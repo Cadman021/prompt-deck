@@ -137,7 +137,8 @@
     "empty": "Aucun benchmark enregistré. Lancez votre première comparaison pour la voir ici.",
     "runs": "exécutions",
     "wins": "victoires",
-    "hint": "Classé par score de Wilson, puis vitesse moyenne. Les exécutions échouées sont exclues."
+    "hint": "Classé par cote Elo des votes directs, puis vitesse moyenne. Les exécutions échouées sont exclues.",
+    "eloTitle": "Cote Elo des votes directs"
   },
   "nav": {
     "bench": "Bench",
@@ -252,6 +253,15 @@
       "anthropic": "API officielle Anthropic via compatibilité OpenAI SDK : Claude Opus, Sonnet et Haiku avec auth Bearer."
     }
   },
+  "judge": {
+    "title": "Juge LLM",
+    "subtitle": "Un modèle note toutes les sorties en aveugle selon une grille fixe",
+    "judgeModel": "Modèle juge",
+    "run": "Juger",
+    "judging": "En cours de jugement…",
+    "pick": "Choix du juge",
+    "parseError": "Verdict illisible en JSON — lire la réponse brute"
+  },
   "report": {
     "title": "📊 Rapport de benchmark PromptDeck",
     "prompt": "Prompt",
@@ -266,7 +276,10 @@
   "bench": {
     "localModels": "Modèles locaux",
     "noCloudKey": "Aucune clé API activée pour ce fournisseur cloud — ajoutez-en une sur la page Cloud.",
-    "unknownProvider": "Fournisseur cloud inconnu."
+    "unknownProvider": "Fournisseur cloud inconnu.",
+    "blind": "Aveugle",
+    "blindTitle": "Mode aveugle : identités masquées pour un vote impartial",
+    "blindName": "Modèle {{letter}}"
   },
   "testsuite": {
     "title": "Suite de tests",
@@ -278,6 +291,18 @@
     "addPrompt": "Ajouter",
     "removePrompt": "Supprimer",
     "promptPlaceholder": "Prompt de test…",
+    "checkTitle": "Vérification automatique",
+    "checkNone": "Aucune",
+    "checkContains": "Contient",
+    "checkRegex": "Regex",
+    "checkExact": "Exact",
+    "checkJson": "JSON valide",
+    "checkTextPlaceholder": "Texte attendu…",
+    "checkPatternPlaceholder": "ex. error \\d+",
+    "checkInvalid": "Invalide",
+    "checkPassed": "Vérification réussie",
+    "checkFailed": "Vérification échouée",
+    "passRateTitle": "Vérifications réussies",
     "models": "Modèles",
     "emptyModels": "Aucun modèle installé — installez d'abord un modèle, puis sélectionnez-le ici.",
     "needPrompt": "Ajoutez au moins un prompt de test non vide pour exécuter.",

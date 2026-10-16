@@ -20,9 +20,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
     DbService.getModelStats()
       .then((s) =>
         setStats(
-          [...s].sort(
-            (a, b) => b.wilson - a.wilson || b.avgTps - a.avgTps || b.runs - a.runs
-          )
+          [...s].sort((a, b) => b.elo - a.elo || b.avgTps - a.avgTps || b.runs - a.runs)
         )
       )
       .finally(() => setLoading(false));
@@ -92,6 +90,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
               <div className="flex items-center justify-between text-[11px] font-mono">
                 <span className="text-emerald-600 dark:text-emerald-400">
                   {s.avgTps} {t('metrics.tps')}
+                </span>
+                <span className="text-indigo-600 dark:text-indigo-300" title={t('leaderboard.eloTitle', 'Elo rating from pairwise votes')}>
+                  Elo {s.elo}
                 </span>
                 <span className="text-amber-600 dark:text-amber-300">
                   {s.wins} {t('leaderboard.wins')} · {Math.round(s.winRate * 100)}%

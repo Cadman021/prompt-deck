@@ -28,6 +28,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: ESLint
+        run: npx eslint .
+
       - name: Tauri npm/Rust version gate
         run: node scripts/check-tauri-versions.cjs
 

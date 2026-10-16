@@ -19,7 +19,14 @@ import {
   X,
 } from 'lucide-react';
 import { LLMService } from '../../services/llmService';
-import { cacheSecret, fingerprint, secretFor } from '../../services/secrets';
+import {
+  cacheSecret,
+  currentBackend,
+  fingerprint,
+  keychainDelete,
+  keychainSet,
+  secretFor,
+} from '../../services/secrets';
 import { openExternal } from '../../utils/openExternal';
 import { createKeyId, useCloudStore } from '../../store/useCloudStore';
 import type { CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
@@ -246,6 +253,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 <button
                   onClick={() => {
                     cacheSecret(k.id, null);
+                    void keychainDelete(k.id).catch(() => {
+                      // Absent key or no keychain — store removal is what matters.
+                    });
                     removeKey(k.id);
                   }}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
@@ -468,25 +478,62 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
           providerName={def.name}
           baseUrl={baseUrl}
           initialLabel={editingKey?.label ?? ''}
-          initialKey={editingKey?.apiKey ?? ''}
+          initialKey={editingKey ? secretFor(editingKey) : ''}
           onClose={() => setKeyModal(null)}
           onSave={(label, apiKey) => {
-            if (keyModal.mode === 'edit' && editingKey) {
-              cacheSecret(editingKey.id, apiKey);
-              updateKey(editingKey.id, { label, apiKey, status: 'unknown', error: undefined });
-            } else {
-              const id = createKeyId();
-              cacheSecret(id, apiKey);
-              addKey({
-                id,
-                providerId: def.id,
-                label,
-                apiKey,
-                enabled: true,
-                status: 'unknown',
-              });
-            }
-            setKeyModal(null);
+            void (async () => {
+              const trimmed = apiKey.trim();
+              if (keyModal.mode === 'edit' && editingKey) {
+                // Empty box on edit keeps the existing secret, label still updates.
+                if (!trimmed) {
+                  updateKey(editingKey.id, { label });
+                } else if (currentBackend() === 'keychain') {
+                  try {
+                    await keychainSet(editingKey.id, trimmed);
+                    cacheSecret(editingKey.id, trimmed);
+                    updateKey(editingKey.id, {
+                      label,
+                      apiKey: '',
+                      storage: 'keychain',
+                      keyHint: fingerprint(trimmed),
+                      status: 'unknown',
+                      error: undefined,
+                    });
+                  } catch {
+                    cacheSecret(editingKey.id, trimmed);
+                    updateKey(editingKey.id, { label, apiKey: trimmed, status: 'unknown', error: undefined });
+                  }
+                } else {
+                  cacheSecret(editingKey.id, trimmed);
+                  updateKey(editingKey.id, { label, apiKey: trimmed, status: 'unknown', error: undefined });
+                }
+              } else {
+                const id = createKeyId();
+                if (currentBackend() === 'keychain') {
+                  try {
+                    await keychainSet(id, trimmed);
+                    cacheSecret(id, trimmed);
+                    addKey({
+                      id,
+                      providerId: def.id,
+                      label,
+                      apiKey: '',
+                      storage: 'keychain',
+                      keyHint: fingerprint(trimmed),
+                      enabled: true,
+                      status: 'unknown',
+                    });
+                  } catch {
+                    cacheSecret(id, trimmed);
+                    addKey({ id, providerId: def.id, label, apiKey: trimmed, enabled: true, status: 'unknown' });
+                  }
+                } else {
+                  cacheSecret(id, trimmed);
+                  addKey({ id, providerId: def.id, label, apiKey: trimmed, enabled: true, status: 'unknown' });
+                }
+              }
+              setKeyModal(null);
+            })();
           }}
         />
       )}

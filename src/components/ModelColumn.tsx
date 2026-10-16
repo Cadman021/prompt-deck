@@ -1,6 +1,18 @@
 // src/components/ModelColumn.tsx
 import React from 'react';
-import { Cpu, Zap, Clock, Cloud, X, RotateCcw, ThumbsUp, Crown, Copy, Check } from 'lucide-react';
+import {
+  Cpu,
+  Zap,
+  Clock,
+  Cloud,
+  EyeOff,
+  X,
+  RotateCcw,
+  ThumbsUp,
+  Crown,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { OllamaModel, BenchmarkMetrics } from '../types/ollama';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { ModelSource, CloudGroup } from '../services/modelTarget';
@@ -29,6 +41,8 @@ interface ModelColumnProps {
   isWinner: boolean;
   /** Pre-formatted run cost (e.g. "$0.00234"), shown only for priced cloud runs. */
   costLabel?: string | null;
+  /** Blind voting: show this label instead of any model identity. */
+  blindLabel?: string | null;
   onSourceChange: (source: ModelSource, name: string) => void;
   onRemove?: () => void;
   onRetry?: () => void;
@@ -36,7 +50,11 @@ interface ModelColumnProps {
 }
 
 const encodeValue = (source: ModelSource, model: string): string =>
-  JSON.stringify({ kind: source.kind, providerId: source.kind === 'cloud' ? source.providerId : undefined, model });
+  JSON.stringify({
+    kind: source.kind,
+    providerId: source.kind === 'cloud' ? source.providerId : undefined,
+    model,
+  });
 
 const decodeValue = (value: string): { source: ModelSource; model: string } => {
   try {
@@ -73,6 +91,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   canRemove,
   isWinner,
   costLabel,
+  blindLabel,
   onRetry,
   onVote,
 }) => {
@@ -102,14 +121,25 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           ) : (
             <Cpu className={`w-4 h-4 ${color} shrink-0`} />
           )}
-          {source.kind === 'cloud' && (
+          {blindLabel ? (
             <span
-              className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30"
-              title={cloudGroups.find((g) => g.providerId === source.providerId)?.name}
+              className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30"
+              title={t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')}
             >
-              <Cloud className="w-3 h-3" />
-              {cloudGroups.find((g) => g.providerId === source.providerId)?.name.split(' ')[0] ?? '☁'}
+              <EyeOff className="w-3 h-3" />
+              {blindLabel}
             </span>
+          ) : (
+            source.kind === 'cloud' && (
+              <span
+                className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30"
+                title={cloudGroups.find((g) => g.providerId === source.providerId)?.name}
+              >
+                <Cloud className="w-3 h-3" />
+                {cloudGroups.find((g) => g.providerId === source.providerId)?.name.split(' ')[0] ??
+                  '☁'}
+              </span>
+            )
           )}
           <select
             value={encodeValue(source, selectedModel)}
@@ -117,27 +147,39 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
               const next = decodeValue(e.target.value);
               onSourceChange(next.source, next.model);
             }}
-            className="bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none w-full min-w-0"
+            disabled={!!blindLabel}
+            title={
+              blindLabel
+                ? t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')
+                : undefined
+            }
+            className="bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none w-full min-w-0 disabled:opacity-70"
           >
-            <optgroup label={t('bench.localModels', 'Local models')}>
-              {models.map((m) => (
-                <option key={`local:${m.name}`} value={encodeValue({ kind: 'local' }, m.name)}>
-                  {m.name}
-                </option>
-              ))}
-            </optgroup>
-            {cloudGroups.map((g) => (
-              <optgroup key={g.providerId} label={`☁ ${g.name}`}>
-                {g.models.map((m) => (
-                  <option
-                    key={`cloud:${g.providerId}:${m}`}
-                    value={encodeValue({ kind: 'cloud', providerId: g.providerId }, m)}
-                  >
-                    {m}
-                  </option>
+            {blindLabel ? (
+              <option value={encodeValue(source, selectedModel)}>{blindLabel}</option>
+            ) : (
+              <>
+                <optgroup label={t('bench.localModels', 'Local models')}>
+                  {models.map((m) => (
+                    <option key={`local:${m.name}`} value={encodeValue({ kind: 'local' }, m.name)}>
+                      {m.name}
+                    </option>
+                  ))}
+                </optgroup>
+                {cloudGroups.map((g) => (
+                  <optgroup key={g.providerId} label={`☁ ${g.name}`}>
+                    {g.models.map((m) => (
+                      <option
+                        key={`cloud:${g.providerId}:${m}`}
+                        value={encodeValue({ kind: 'cloud', providerId: g.providerId }, m)}
+                      >
+                        {m}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
-              </optgroup>
-            ))}
+              </>
+            )}
           </select>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -187,16 +229,24 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
       )}
 
       {metrics && (
-        <div className={`grid ${costLabel ? 'grid-cols-4' : 'grid-cols-3'} gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono`}>
+        <div
+          className={`grid ${costLabel ? 'grid-cols-4' : 'grid-cols-3'} gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono`}
+        >
           <div
             className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
-            title={[
-              metrics.tpsEstimated ? t('metrics.estimatedTooltip') : '',
-              metrics.repeatCount != null && metrics.repeatCount > 1
-                ? t('metrics.medianOf', 'median of {{n}} runs', { n: metrics.repeatCount }) +
-                  (metrics.tpsMean != null ? ` (mean ${metrics.tpsMean.toFixed(1)}, ±${(metrics.tpsStd ?? 0).toFixed(1)})` : '')
-                : '',
-            ].filter(Boolean).join('\n') || undefined}
+            title={
+              [
+                metrics.tpsEstimated ? t('metrics.estimatedTooltip') : '',
+                metrics.repeatCount != null && metrics.repeatCount > 1
+                  ? t('metrics.medianOf', 'median of {{n}} runs', { n: metrics.repeatCount }) +
+                    (metrics.tpsMean != null
+                      ? ` (mean ${metrics.tpsMean.toFixed(1)}, ±${(metrics.tpsStd ?? 0).toFixed(1)})`
+                      : '')
+                  : '',
+              ]
+                .filter(Boolean)
+                .join('\n') || undefined
+            }
           >
             <Zap className="w-3 h-3" />
             <span>
@@ -208,17 +258,25 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           </div>
           <div
             className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400"
-            title={[
-              metrics.loadDurationMs != null
-                ? t('metrics.loadShare', 'incl. {{ms}}ms model load', { ms: metrics.loadDurationMs })
-                : '',
-              metrics.promptTps != null
-                ? t('metrics.promptSpeed', 'prompt {{v}} tok/s', { v: metrics.promptTps })
-                : '',
-            ].filter(Boolean).join('\n') || undefined}
+            title={
+              [
+                metrics.loadDurationMs != null
+                  ? t('metrics.loadShare', 'incl. {{ms}}ms model load', {
+                      ms: metrics.loadDurationMs,
+                    })
+                  : '',
+                metrics.promptTps != null
+                  ? t('metrics.promptSpeed', 'prompt {{v}} tok/s', { v: metrics.promptTps })
+                  : '',
+              ]
+                .filter(Boolean)
+                .join('\n') || undefined
+            }
           >
             <Clock className="w-3 h-3" />
-            <span>{t('metrics.ttft')}: {metrics.ttftMs}ms</span>
+            <span>
+              {t('metrics.ttft')}: {metrics.ttftMs}ms
+            </span>
           </div>
           <div className="text-slate-500 dark:text-slate-400 text-end">
             {(metrics.totalDurationMs / 1000).toFixed(2)}s
@@ -260,7 +318,10 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
                 <summary className="text-[11px] font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
                   {t('app.thinking', 'Thinking')}
                 </summary>
-                <div className="mt-1.5 text-xs opacity-80 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono" dir="auto">
+                <div
+                  className="mt-1.5 text-xs opacity-80 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono"
+                  dir="auto"
+                >
                   {reasoning}
                 </div>
               </details>

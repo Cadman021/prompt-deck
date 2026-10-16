@@ -1,4 +1,3 @@
-
 # 🚀 PromptDeck
 
 **English** | **中文** | [Русский](./README.ru.md) | [Back to English](./README.md)
@@ -24,7 +23,10 @@
 - 🔁 **重复运行（1–5 次）** — 报告中位数，tooltip 显示均值±标准差，抖动不再决定胜负
 - 💰 **费用追踪** — Bench 列显示单次运行费用，Test Suite 显示每个模型总费用，并冻结存入历史和导出（仅在服务端 token 精确 + 服务商有定价时显示——绝不猜测）
 - 🧠 **思考过程** — 推理模型在答案上方显示可折叠的 Thinking 区块
-- 🏆 **投票 + 排行榜** — 为每次运行选出最佳答案，按胜率和平均速度长期追踪每个模型，并以 Wilson 评分排名，小样本无法霸榜
+- 🏆 **投票 + 排行榜** — 为每次运行选出最佳答案，按 Elo 评分和平均速度长期追踪每个模型（4 模型对决的胜利比单挑更值钱）
+- 🙈 **盲测投票** — 用字母标签隐藏模型身份（列表、图表、Diff 全覆盖）以消除偏见，运行前自动打乱顺序，投票后自动揭晓
+- ⚖️ **LLM 裁判** — 一个模型按固定标准（准确/完整/清晰）盲评所有输出，给出建议徽章；最终加冕的永远是你
+- ✅ **套件自动检查** — 每个测试可配规则（包含/正则/精确/有效 JSON），单元格显示通过徽章并汇总通过率
 
   ![Model Leaderboard](./docs/screenshot-leaderboard.png)
 
@@ -66,6 +68,7 @@
 
 - 📋 **一键导出** — 复制 Markdown 报告或完整 JSON 历史，或下载 CSV（含 token 和费用列）
 - 💾 **备份与恢复** — 在历史侧边栏把整个数据库（运行记录 + 预设）导出/导入为 JSON
+- 🔑 **系统钥匙串** — 云 API Key 存在系统凭据库（自动迁移），不再是明文文件
 - 🔄 **自动更新** — 从 GitHub releases 签名更新，经你确认后下载安装重启
 - 🔒 **默认本地、永远隐私** — 基于 [Tauri](https://tauri.app)，无遥测；仅当你主动配置了 API Key 时才会调用云端
 
@@ -73,18 +76,18 @@
 
 ## 🖥️ 技术栈
 
-| 层 | 技术 |
-|---|---|
-| 外壳 | [Tauri 2](https://tauri.app) (Rust) |
-| 前端 | React + TypeScript + Vite |
-| 样式 | Tailwind CSS v4 |
-| 状态 | Zustand (持久化) |
-| 数据库 | SQLite (via `tauri-plugin-sql`) |
-| 图表 | Recharts |
-| PDF 导出 | jsPDF + autotable（文本）/ html2canvas（兜底）|
-| i18n | react-i18next |
-| Markdown | react-markdown + remark-gfm |
-| 测试 | Vitest (`npm test`) |
+| 层       | 技术                                           |
+| -------- | ---------------------------------------------- |
+| 外壳     | [Tauri 2](https://tauri.app) (Rust)            |
+| 前端     | React + TypeScript + Vite                      |
+| 样式     | Tailwind CSS v4                                |
+| 状态     | Zustand (持久化)                               |
+| 数据库   | SQLite (via `tauri-plugin-sql`)                |
+| 图表     | Recharts                                       |
+| PDF 导出 | jsPDF + autotable（文本）/ html2canvas（兜底） |
+| i18n     | react-i18next                                  |
+| Markdown | react-markdown + remark-gfm                    |
+| 测试     | Vitest (`npm test`)                            |
 
 ---
 
@@ -100,6 +103,7 @@
 - **或 [`llama.cpp` server](https://github.com/ggerganov/llama.cpp)** — 启用 OpenAI 兼容端点运行
 
 还需要：
+
 1. **[Rust](https://www.rust-lang.org/tools/install)**（stable 工具链）
 2. **[Node.js](https://nodejs.org)**（v18+）和 npm
 
@@ -120,6 +124,7 @@ npm run tauri dev
 ```
 
 构建各系统生产版本：
+
 ```bash
 npm run tauri build
 ```
@@ -147,7 +152,7 @@ npm run tauri build
 - [x] AMOLED 深色主题（+ 浅色 / 深色）
 - [x] 双输出并排 Diff
 - [x] 基准历史导出 CSV
-- [ ] API Key 存入系统钥匙串（目前为本地持久化存储）
+- [x] API Key 存入系统钥匙串（自动迁移、内存缓存、静默兜底）
 - [ ] 云端运行费用/用量统计
 
 欢迎贡献想法 — 见下方 [Contributing](#-contributing)。

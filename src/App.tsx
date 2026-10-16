@@ -18,30 +18,25 @@ import { resolveRunEndpoint, runRepeatedStream } from './services/runTarget';
 import { HistorySidebar } from './components/HistorySidebar';
 import { ModelColumn } from './components/ModelColumn';
 import { generateMarkdownReport, copyHistoryAsJson, exportHistoryAsCsv } from './utils/exportUtils';
+import { safeHost } from './utils/httpError';
 import { rafBatch } from './utils/rafBatch';
 import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
 import { BenchmarkChart } from './components/BenchmarkChart';
 import { DiffView } from './components/DiffView';
 import { Leaderboard } from './components/Leaderboard';
-import {
-  exportElementAsPdf,
-  exportReportAsPdfText,
-  needsImageFallback,
-} from './utils/pdfExport';
+import { exportElementAsPdf, exportReportAsPdfText, needsImageFallback } from './utils/pdfExport';
 import { ReportPrintView } from './components/ReportPrintView';
 import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
 import { TestSuiteView } from './components/testsuite/TestSuiteView';
 import { CloudProvidersView } from './components/cloud/CloudProvidersView';
 import { TopBar } from './components/layout/TopBar';
 import { UpdaterPrompt } from './components/UpdaterPrompt';
+import { JudgePanel } from './components/JudgePanel';
 import { ResultToolbar } from './components/layout/ResultToolbar';
 import { SettingsPanel } from './components/layout/SettingsPanel';
 import './i18n/config';
-import {
-  Play,
-  Plus,
-} from 'lucide-react';
+import { Play, Plus, Eye, EyeOff } from 'lucide-react';
 
 const MAX_MODELS = 4;
 const MIN_MODELS = 2;
@@ -74,6 +69,32 @@ const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot =
 const slotQualified = (s: Pick<Slot, 'source' | 'model'>): string =>
   qualifiedName(s.source, s.model);
 
+/** Blind voting toggle: enabling hides identities AND shuffles columns, so no
+ * positional knowledge survives; voting reveals again. Disabled mid-run. */
+const BlindToggle: React.FC<{
+  disabled: boolean;
+  onEnable: () => void;
+  onDisable: () => void;
+}> = ({ disabled, onEnable, onDisable }) => {
+  const { t } = useTranslation();
+  const blindMode = useSettingsStore((s) => s.blindMode);
+  return (
+    <button
+      onClick={() => (blindMode ? onDisable() : onEnable())}
+      disabled={disabled}
+      title={t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')}
+      className={`flex items-center gap-1 px-2 py-1 text-[10px] font-mono rounded-lg border transition shrink-0 disabled:opacity-50 ${
+        blindMode
+          ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-800 dark:border-slate-100 font-bold'
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
+      }`}
+    >
+      {blindMode ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+      {t('bench.blind', 'Blind')}
+    </button>
+  );
+};
+
 /** Parallel streams everything at once; sequential runs one slot at a time
  * so local models don't fight over the same GPU/server (cleaner numbers). */
 const RunModeToggle: React.FC = () => {
@@ -88,17 +109,21 @@ const RunModeToggle: React.FC = () => {
     >
       <button
         onClick={() => setRunMode('parallel')}
-        className={`${base} ${runMode === 'parallel'
-          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
-          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+        className={`${base} ${
+          runMode === 'parallel'
+            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+        }`}
       >
         {t('app.runModeParallel', 'Parallel')}
       </button>
       <button
         onClick={() => setRunMode('sequential')}
-        className={`${base} ${runMode === 'sequential'
-          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
-          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+        className={`${base} ${
+          runMode === 'sequential'
+            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
+            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+        }`}
       >
         {t('app.runModeSequential', 'Sequential')}
       </button>
@@ -108,8 +133,11 @@ const RunModeToggle: React.FC = () => {
 
 export default function App() {
   const { t } = useTranslation();
-  const { provider, baseUrl, advancedConfig, setAdvancedConfig } =
-    useSettingsStore();
+  const { provider, baseUrl, advancedConfig, setAdvancedConfig } = useSettingsStore();
+  const blindMode = useSettingsStore((s) => s.blindMode);
+  const setBlindMode = useSettingsStore((s) => s.setBlindMode);
+  const blindLabelFor = (index: number): string =>
+    t('bench.blindName', 'Model {{letter}}', { letter: String.fromCharCode(65 + index) });
 
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -128,7 +156,10 @@ export default function App() {
   const cloudPricing = useCloudStore((s) => s.modelPricing);
 
   /** Formatted run cost for priced cloud slots, else null. */
-  const slotCost = (s: Pick<Slot, 'source' | 'model'>, m: BenchmarkMetrics | null): string | null => {
+  const slotCost = (
+    s: Pick<Slot, 'source' | 'model'>,
+    m: BenchmarkMetrics | null
+  ): string | null => {
     if (s.source.kind !== 'cloud' || !m || m.tokenSource !== 'server') return null;
     const cost = calcCost(
       m.promptTokens,
@@ -142,6 +173,7 @@ export default function App() {
     [cloudCustom, cloudEnabledModels]
   );
   const outputRefs = useRef<Record<string, string>>({});
+  const reasoningRefs = useRef<Record<string, string>>({});
   const metricsRefs = useRef<Record<string, BenchmarkMetrics | null>>({});
   const finishedRefs = useRef<Record<string, boolean>>({});
   const slotsRef = useRef<Slot[]>([]);
@@ -206,7 +238,7 @@ export default function App() {
     Object.keys(finishedRefs.current).forEach((id) => {
       finishedRefs.current[id] = true;
     });
-  }, []);
+  }, [t]);
 
   const handleCopyJson = async () => {
     const status = await copyHistoryAsJson();
@@ -238,6 +270,7 @@ export default function App() {
       tokenSource: s.metrics?.tokenSource,
       promptTokens: s.metrics?.promptTokens ?? null,
       completionTokens: s.metrics?.completionTokens ?? null,
+      reasoning: reasoningRefs.current[s.id]?.trim() ? reasoningRefs.current[s.id] : null,
       costUsd:
         s.source.kind === 'cloud' && s.metrics?.tokenSource === 'server'
           ? calcCost(
@@ -257,7 +290,11 @@ export default function App() {
     if (!needsImageFallback(prompt, results)) {
       setPdfState('exporting');
       try {
-        exportReportAsPdfText(prompt, results);
+        const reasoningByModel: Record<string, string> = {};
+        for (const s of slots) {
+          if (s.reasoning?.trim()) reasoningByModel[slotQualified(s)] = s.reasoning;
+        }
+        exportReportAsPdfText(prompt, results, reasoningByModel);
         setPdfState('done');
         setTimeout(() => setPdfState('idle'), 2500);
       } catch (err) {
@@ -298,7 +335,7 @@ export default function App() {
       );
     }, 50);
     return () => clearTimeout(timer);
-  }, [printMounted, pdfState]);
+  }, [printMounted, pdfState, t]);
 
   const handleCopyReport = async () => {
     if (!slots.some((s) => s.output)) return;
@@ -314,6 +351,7 @@ export default function App() {
       tokenSource: s.metrics?.tokenSource,
       promptTokens: s.metrics?.promptTokens ?? null,
       completionTokens: s.metrics?.completionTokens ?? null,
+      reasoning: reasoningRefs.current[s.id]?.trim() ? reasoningRefs.current[s.id] : null,
       costUsd:
         s.source.kind === 'cloud' && s.metrics?.tokenSource === 'server'
           ? calcCost(
@@ -377,7 +415,10 @@ export default function App() {
     const group = cloudGroups[0];
     const cloudModel = group?.models[0] || '';
     if (!group || !cloudModel) return;
-    setSlots((prev) => [...prev, createSlot(cloudModel, { kind: 'cloud', providerId: group.providerId })]);
+    setSlots((prev) => [
+      ...prev,
+      createSlot(cloudModel, { kind: 'cloud', providerId: group.providerId }),
+    ]);
   };
 
   const handleRemoveSlot = (id: string) => {
@@ -385,9 +426,22 @@ export default function App() {
     setSlots((prev) => prev.filter((s) => s.id !== id));
   };
 
+  /** Fisher-Yates shuffle of column order (blind mode: positions carry no meaning). */
+  const shuffleSlots = useCallback(() => {
+    const next = [...slotsRef.current];
+    for (let i = next.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [next[i], next[j]] = [next[j], next[i]];
+    }
+    slotsRef.current = next;
+    setSlots(next);
+  }, []);
+
   const handleVote = (model: string) => {
     const next = winnerModel === model ? null : model;
     setWinnerModel(next);
+    // Voting ends the blind round: reveal identities.
+    if (blindMode) setBlindMode(false);
     // Persist the vote onto the saved run row when we know it.
     // savedRunIdRef is set from the insert's lastInsertId, so a missing id
     // only means the run hasn't been saved yet (still running / failed save)
@@ -418,11 +472,15 @@ export default function App() {
         } else {
           parsed = parseQualified(r.model, cloudCustom);
         }
-        const knownLocal = parsed.source.kind === 'local'
-          && models.some((m) => m.name === parsed.model);
+        const knownLocal =
+          parsed.source.kind === 'local' && models.some((m) => m.name === parsed.model);
         return {
-          ...createSlot(knownLocal || parsed.source.kind === 'cloud' ? parsed.model : '', parsed.source),
+          ...createSlot(
+            knownLocal || parsed.source.kind === 'cloud' ? parsed.model : '',
+            parsed.source
+          ),
           output: r.output,
+          reasoning: r.reasoning || '',
           metrics: {
             tps: r.tps,
             ttftMs: r.ttft,
@@ -456,13 +514,14 @@ export default function App() {
       if ('error' in resolved) {
         const msg =
           resolved.error === 'noCloudKey'
-            ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
+            ? t(
+                'bench.noCloudKey',
+                'No enabled API key for this cloud provider — add one on the Cloud page.'
+              )
             : t('bench.unknownProvider', 'Unknown cloud provider.');
         setSlots((prev) =>
           prev.map((s) =>
-            s.id === slot.id
-              ? { ...s, output: `Error: ${msg}`, loading: false, error: msg }
-              : s
+            s.id === slot.id ? { ...s, output: `Error: ${msg}`, loading: false, error: msg } : s
           )
         );
         onSlotFinished(slot.id);
@@ -487,11 +546,14 @@ export default function App() {
           // One render per frame max — refs stay exact, paint stays cheap.
           rafBatch(slot.id, () => {
             setSlots((prev) =>
-              prev.map((s) => (s.id === slot.id ? { ...s, output: outputRefs.current[slot.id] } : s))
+              prev.map((s) =>
+                s.id === slot.id ? { ...s, output: outputRefs.current[slot.id] } : s
+              )
             );
           });
         },
         onReasoning: (fullReasoning) => {
+          reasoningRefs.current[slot.id] = fullReasoning;
           rafBatch(`${slot.id}:reasoning`, () => {
             setSlots((prev) =>
               prev.map((s) => (s.id === slot.id ? { ...s, reasoning: fullReasoning } : s))
@@ -508,9 +570,7 @@ export default function App() {
             const msg = error ?? 'Empty response.';
             setSlots((prev) =>
               prev.map((s) =>
-                s.id === slot.id
-                  ? { ...s, output: `Error: ${msg}`, loading: false, error: msg }
-                  : s
+                s.id === slot.id ? { ...s, output: `Error: ${msg}`, loading: false, error: msg } : s
               )
             );
             outputRefs.current[slot.id] = `Error: ${msg}`;
@@ -526,14 +586,18 @@ export default function App() {
         },
       });
     },
-    [provider, baseUrl, advancedConfig]
+    [provider, baseUrl, advancedConfig, t]
   );
 
   const handleRunComparison = useCallback(() => {
     if (!prompt.trim() || isLoading) return;
 
+    // Blind runs shuffle column order first, so positions carry no meaning.
+    if (blindMode) shuffleSlots();
+
     const currentPrompt = prompt;
     outputRefs.current = {};
+    reasoningRefs.current = {};
     metricsRefs.current = {};
     savedRunIdRef.current = null;
     setWinnerModel(null);
@@ -544,7 +608,14 @@ export default function App() {
 
     setSlots((prev) => {
       finishedRefs.current = Object.fromEntries(prev.map((s) => [s.id, !s.model]));
-      return prev.map((s) => ({ ...s, output: '', reasoning: '', metrics: null, loading: true, error: null }));
+      return prev.map((s) => ({
+        ...s,
+        output: '',
+        reasoning: '',
+        metrics: null,
+        loading: true,
+        error: null,
+      }));
     });
     setIsLoading(true);
 
@@ -557,12 +628,7 @@ export default function App() {
       const settings = useSettingsStore.getState();
       // Reproducibility snapshot: sampling params + endpoint host + app
       // version. Never includes secrets (no API keys).
-      let host = '';
-      try {
-        host = new URL(settings.baseUrl).host;
-      } catch {
-        host = settings.baseUrl;
-      }
+      const host = safeHost(settings.baseUrl);
       const runConfig = JSON.stringify({
         provider: settings.provider,
         host,
@@ -604,6 +670,7 @@ export default function App() {
           costUsd,
           source: s.source.kind,
           providerId: s.source.kind === 'cloud' ? s.source.providerId : null,
+          reasoning: reasoningRefs.current[s.id]?.trim() ? reasoningRefs.current[s.id] : null,
         };
       });
       void DbService.saveHistory(currentPrompt, results, null, runConfig).then((runId) => {
@@ -632,7 +699,7 @@ export default function App() {
         void (async () => {
           for (const slot of runnable) {
             if (signal.aborted) break;
-            // eslint-disable-next-line no-await-in-loop
+
             await new Promise<void>((resolve) => {
               runSlot(slot, currentPrompt, signal, () => resolve());
             });
@@ -647,7 +714,7 @@ export default function App() {
       }
       runnable.forEach((slot) => runSlot(slot, currentPrompt, signal, markFinished));
     }, 0);
-  }, [prompt, isLoading, runSlot]);
+  }, [prompt, isLoading, runSlot, blindMode, shuffleSlots]);
 
   /** Re-runs a single failed/stopped slot without touching the others. */
   const handleRetrySlot = (id: string) => {
@@ -656,11 +723,16 @@ export default function App() {
     if (!prompt.trim()) return;
 
     outputRefs.current[id] = '';
+    reasoningRefs.current[id] = '';
     metricsRefs.current[id] = null;
     finishedRefs.current[id] = false;
     setIsLoading(true);
     setSlots((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, output: '', reasoning: '', metrics: null, error: null, loading: true } : s))
+      prev.map((s) =>
+        s.id === id
+          ? { ...s, output: '', reasoning: '', metrics: null, error: null, loading: true }
+          : s
+      )
     );
 
     const controller = new AbortController();
@@ -676,6 +748,7 @@ export default function App() {
       if (slotId === id && !signal.aborted && savedRunIdRef.current != null) {
         const m = metricsRefs.current[id];
         const output = outputRefs.current[id] || '';
+        const reasoning = reasoningRefs.current[id]?.trim() ? reasoningRefs.current[id] : null;
         const retried = slotsRef.current.find((s) => s.id === id);
         if (retried) {
           const cloud = useCloudStore.getState();
@@ -687,6 +760,7 @@ export default function App() {
             tokenSource: m?.tokenSource,
             promptTokens: m?.promptTokens ?? null,
             completionTokens: m?.completionTokens ?? null,
+            reasoning,
             costUsd:
               retried.source.kind === 'cloud' && m?.tokenSource === 'server'
                 ? calcCost(
@@ -699,7 +773,12 @@ export default function App() {
         }
       }
     };
-    runSlot({ ...slot, output: '', reasoning: '', metrics: null, error: null, loading: true }, prompt, signal, markFinished);
+    runSlot(
+      { ...slot, output: '', reasoning: '', metrics: null, error: null, loading: true },
+      prompt,
+      signal,
+      markFinished
+    );
   };
 
   // Keep refs to the latest handlers so the global shortcut never goes stale.
@@ -754,7 +833,11 @@ export default function App() {
   const canShowDiff = comparableSlots.length >= 2;
 
   const gridColsClass =
-    slots.length === 2 ? 'grid-cols-2' : slots.length === 3 ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4';
+    slots.length === 2
+      ? 'grid-cols-2'
+      : slots.length === 3
+        ? 'grid-cols-3'
+        : 'grid-cols-2 lg:grid-cols-4';
 
   const hasOutput = slots.some((s) => s.output);
 
@@ -786,23 +869,23 @@ export default function App() {
         />
 
         {activePage === 'bench' && (
-        <ResultToolbar
-          hasOutput={hasOutput}
-          canShowDiff={canShowDiff}
-          diffActive={diffPair !== null}
-          onToggleDiff={() => {
-            setDiffPair(diffPair ? null : [comparableSlots[0].id, comparableSlots[1].id]);
-          }}
-          copied={copied}
-          onCopyReport={handleCopyReport}
-          pdfState={pdfState}
-          onExportPdf={handleExportPdf}
-          jsonState={jsonState}
-          onCopyJson={handleCopyJson}
-          csvState={csvState}
-          onExportCsv={handleExportCsv}
-          slotsLabel={`${slots.length}/${MAX_MODELS} models`}
-        />
+          <ResultToolbar
+            hasOutput={hasOutput}
+            canShowDiff={canShowDiff}
+            diffActive={diffPair !== null}
+            onToggleDiff={() => {
+              setDiffPair(diffPair ? null : [comparableSlots[0].id, comparableSlots[1].id]);
+            }}
+            copied={copied}
+            onCopyReport={handleCopyReport}
+            pdfState={pdfState}
+            onExportPdf={handleExportPdf}
+            jsonState={jsonState}
+            onCopyJson={handleCopyJson}
+            csvState={csvState}
+            onExportCsv={handleExportCsv}
+            slotsLabel={`${slots.length}/${MAX_MODELS} models`}
+          />
         )}
 
         {error && (
@@ -811,7 +894,11 @@ export default function App() {
               {error}
               {error === t('app.noModelsFound') && (
                 <span className="ms-2 font-mono opacity-90">
-                  ({provider === 'openai-compatible' ? t('app.noModelsHintLMStudio') : t('app.noModelsHintOllama')})
+                  (
+                  {provider === 'openai-compatible'
+                    ? t('app.noModelsHintLMStudio')
+                    : t('app.noModelsHintOllama')}
+                  )
                 </span>
               )}
             </span>
@@ -827,124 +914,174 @@ export default function App() {
             <CloudProvidersView />
           </div>
         ) : (
-        <>
-        {/* Scrollable workspace — model outputs get max height now */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <main className={`grid ${gridColsClass} gap-3 p-3 min-h-[320px]`}>
-            {slots.map((slot, index) => (
-              <ModelColumn
-                key={slot.id}
-                index={index}
-                models={models}
-                source={slot.source}
-                selectedModel={slot.model}
-                cloudGroups={cloudGroups}
-                output={slot.output}
-                reasoning={slot.reasoning}
-                metrics={slot.metrics}
-                error={slot.error}
-                canRemove={slots.length > MIN_MODELS}
-                isWinner={winnerModel !== null && winnerModel === slotQualified(slot) && slot.model !== ''}
-                costLabel={slotCost(slot, slot.metrics)}
-                onSourceChange={(source, name) =>
-                  setSlots((prev) =>
-                    prev.map((s) => (s.id === slot.id ? { ...s, source, model: name } : s))
-                  )
-                }
-                onRemove={() => handleRemoveSlot(slot.id)}
-                onRetry={() => handleRetrySlot(slot.id)}
-                onVote={() => handleVote(slotQualified(slot))}
-              />
-            ))}
-          </main>
+          <>
+            {/* Scrollable workspace — model outputs get max height now */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <main className={`grid ${gridColsClass} gap-3 p-3 min-h-[320px]`}>
+                {slots.map((slot, index) => (
+                  <ModelColumn
+                    key={slot.id}
+                    index={index}
+                    models={models}
+                    source={slot.source}
+                    selectedModel={slot.model}
+                    cloudGroups={cloudGroups}
+                    output={slot.output}
+                    reasoning={slot.reasoning}
+                    metrics={slot.metrics}
+                    error={slot.error}
+                    canRemove={slots.length > MIN_MODELS}
+                    isWinner={
+                      winnerModel !== null &&
+                      winnerModel === slotQualified(slot) &&
+                      slot.model !== ''
+                    }
+                    costLabel={slotCost(slot, slot.metrics)}
+                    blindLabel={blindMode && slot.model ? blindLabelFor(index) : null}
+                    onSourceChange={(source, name) =>
+                      setSlots((prev) =>
+                        prev.map((s) => (s.id === slot.id ? { ...s, source, model: name } : s))
+                      )
+                    }
+                    onRemove={() => handleRemoveSlot(slot.id)}
+                    onRetry={() => handleRetrySlot(slot.id)}
+                    onVote={() => handleVote(slotQualified(slot))}
+                  />
+                ))}
+              </main>
 
-          {diffPair && diffSlots.length === 2 && (
-            <div className="px-3 pb-2">
-              <DiffView
-                leftName={slotQualified(diffSlots[0])}
-                rightName={slotQualified(diffSlots[1])}
-                leftText={diffSlots[0].output}
-                rightText={diffSlots[1].output}
-                onClose={() => setDiffPair(null)}
-                onPairChange={(a, b) => {
-                  const left = comparableSlots[a] ?? comparableSlots[0];
-                  const right = comparableSlots[b] ?? comparableSlots[1];
-                  if (left && right) setDiffPair([left.id, right.id]);
-                }}
-                pairIndex={[
-                  comparableSlots.findIndex((s) => s.id === diffSlots[0].id),
-                  comparableSlots.findIndex((s) => s.id === diffSlots[1].id),
-                ]}
-                pairCount={comparableSlots.length}
-              />
-            </div>
-          )}
+              {diffPair && diffSlots.length === 2 && (
+                <div className="px-3 pb-2">
+                  <DiffView
+                    leftName={
+                      blindMode
+                        ? blindLabelFor(slots.findIndex((s) => s.id === diffSlots[0].id))
+                        : slotQualified(diffSlots[0])
+                    }
+                    rightName={
+                      blindMode
+                        ? blindLabelFor(slots.findIndex((s) => s.id === diffSlots[1].id))
+                        : slotQualified(diffSlots[1])
+                    }
+                    leftText={diffSlots[0].output}
+                    rightText={diffSlots[1].output}
+                    onClose={() => setDiffPair(null)}
+                    onPairChange={(a, b) => {
+                      const left = comparableSlots[a] ?? comparableSlots[0];
+                      const right = comparableSlots[b] ?? comparableSlots[1];
+                      if (left && right) setDiffPair([left.id, right.id]);
+                    }}
+                    pairIndex={[
+                      comparableSlots.findIndex((s) => s.id === diffSlots[0].id),
+                      comparableSlots.findIndex((s) => s.id === diffSlots[1].id),
+                    ]}
+                    pairCount={comparableSlots.length}
+                  />
+                </div>
+              )}
 
-          {slots.every((s) => s.metrics) && slots[0]?.metrics && (
-            <div className="px-3 pb-2">
-              <BenchmarkChart
-                entries={slots.map((s) => ({ name: slotQualified(s), metrics: s.metrics! }))}
-              />
-            </div>
-          )}
+              {slots.every((s) => s.metrics) && slots[0]?.metrics && (
+                <div className="px-3 pb-2">
+                  <BenchmarkChart
+                    entries={slots.map((s, i) => ({
+                      name: blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
+                      metrics: s.metrics!,
+                    }))}
+                  />
+                </div>
+              )}
 
-          <div className="px-3 pb-3 flex justify-center">
-            <button
-              onClick={handleAddModel}
-              disabled={slots.length >= MAX_MODELS || !hasAnySource}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t('app.addModel', 'Add model')} ({slots.length}/{MAX_MODELS})</span>
-            </button>
-          </div>
-        </div>
+              {slots.filter((s) => s.output && !s.output.startsWith('Error:')).length >= 2 && (
+                <div className="px-3 pb-2">
+                  <JudgePanel
+                    prompt={prompt}
+                    items={slots
+                      .filter((s) => s.output && !s.output.startsWith('Error:'))
+                      .map((s) => ({
+                        slotId: s.id,
+                        qualified: slotQualified(s),
+                        output: s.output,
+                      }))}
+                    models={models}
+                    cloudGroups={cloudGroups}
+                  />
+                </div>
+              )}
 
-        {/* Prompt dock */}
-        <div className="shrink-0 px-3 pt-1">
-          <PromptPresets currentPrompt={prompt} onSelect={(p) => setPrompt(p)} disabled={isLoading} />
-        </div>
-
-        <footer className="shrink-0 p-3 border-t border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
-          <div className="flex gap-2.5 max-w-5xl mx-auto items-stretch">
-            <div className="flex-1 flex flex-col gap-1 min-w-0 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-400 transition px-3 py-2">
-              <textarea
-                ref={promptRef}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                disabled={isLoading}
-                rows={2}
-                placeholder={t('app.promptPlaceholder')}
-                className="w-full bg-transparent resize-none text-sm focus:outline-none placeholder:text-slate-400"
-              />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                  {t('app.runHint')}
-                </span>
-                <RunModeToggle />
+              <div className="px-3 pb-3 flex justify-center">
+                <button
+                  onClick={handleAddModel}
+                  disabled={slots.length >= MAX_MODELS || !hasAnySource}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>
+                    {t('app.addModel', 'Add model')} ({slots.length}/{MAX_MODELS})
+                  </span>
+                </button>
               </div>
             </div>
-            {isLoading ? (
-              <button
-                onClick={handleStopGeneration}
-                className="px-5 rounded-xl bg-rose-600 text-white font-medium text-sm hover:bg-rose-700 transition-colors flex items-center gap-2 shadow-sm shrink-0"
-              >
-                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                {t('app.stop')}
-              </button>
-            ) : (
-              <button
-                onClick={handleRunComparison}
-                disabled={slots.some((s) => s.loading) || !prompt.trim()}
-                className="flex flex-col items-center justify-center gap-1 px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition disabled:opacity-50 font-medium text-xs shrink-0 shadow-sm"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>{slots.some((s) => s.loading) ? t('app.running') : t('app.run')}</span>
-              </button>
-            )}
-          </div>
-        </footer>
-        </>
+
+            {/* Prompt dock */}
+            <div className="shrink-0 px-3 pt-1">
+              <PromptPresets
+                currentPrompt={prompt}
+                onSelect={(p) => setPrompt(p)}
+                disabled={isLoading}
+              />
+            </div>
+
+            <footer className="shrink-0 p-3 border-t border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
+              <div className="flex gap-2.5 max-w-5xl mx-auto items-stretch">
+                <div className="flex-1 flex flex-col gap-1 min-w-0 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-400 transition px-3 py-2">
+                  <textarea
+                    ref={promptRef}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    disabled={isLoading}
+                    rows={2}
+                    placeholder={t('app.promptPlaceholder')}
+                    className="w-full bg-transparent resize-none text-sm focus:outline-none placeholder:text-slate-400"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                      {t('app.runHint')}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <RunModeToggle />
+                      <BlindToggle
+                        disabled={isLoading}
+                        onEnable={() => {
+                          setBlindMode(true);
+                          // Invalidate any prior positional knowledge immediately.
+                          shuffleSlots();
+                        }}
+                        onDisable={() => setBlindMode(false)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {isLoading ? (
+                  <button
+                    onClick={handleStopGeneration}
+                    className="px-5 rounded-xl bg-rose-600 text-white font-medium text-sm hover:bg-rose-700 transition-colors flex items-center gap-2 shadow-sm shrink-0"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    {t('app.stop')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRunComparison}
+                    disabled={slots.some((s) => s.loading) || !prompt.trim()}
+                    className="flex flex-col items-center justify-center gap-1 px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition disabled:opacity-50 font-medium text-xs shrink-0 shadow-sm"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>{slots.some((s) => s.loading) ? t('app.running') : t('app.run')}</span>
+                  </button>
+                )}
+              </div>
+            </footer>
+          </>
         )}
       </div>
 

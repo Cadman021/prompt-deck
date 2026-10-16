@@ -22,6 +22,15 @@ export async function httpErrorDetail(response: Response): Promise<string | null
   return null;
 }
 
+/** Host part of a base URL for run-config snapshots; raw value on failure. */
+export function safeHost(baseUrl: string): string {
+  try {
+    return new URL(baseUrl).host;
+  } catch {
+    return baseUrl;
+  }
+}
+
 export async function httpError(prefix: string, response: Response): Promise<Error> {
   const detail = await httpErrorDetail(response);
   const status = `${response.status} ${response.statusText}`.trim();

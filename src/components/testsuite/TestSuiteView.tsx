@@ -21,15 +21,12 @@ import {
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useCloudStore } from '../../store/useCloudStore';
 import { useTestSuiteStore, type SuiteCell } from '../../store/useTestSuiteStore';
-import {
-  buildCloudGroups,
-  calcCost,
-  formatCost,
-  parseQualified,
-} from '../../services/modelTarget';
+import { buildCloudGroups, calcCost, formatCost, parseQualified } from '../../services/modelTarget';
 import { resolveRunEndpoint, runRepeatedStream } from '../../services/runTarget';
 import { DbService, type BenchmarkResult } from '../../services/dbService';
+import { safeHost } from '../../utils/httpError';
 import { rafBatch } from '../../utils/rafBatch';
+import { NO_CHECK, evalCheck, isValidCheck, type CheckType } from '../../utils/checks';
 import { APP_VERSION } from '../../version';
 import { OllamaModel, BenchmarkMetrics } from '../../types/ollama';
 import { MarkdownRenderer } from '../MarkdownRenderer';
@@ -86,6 +83,8 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
   // progress, or the run's AbortController. Definition is persisted.
   const tests = useTestSuiteStore((s) => s.tests);
   const setTests = useTestSuiteStore((s) => s.setTests);
+  const checks = useTestSuiteStore((s) => s.checks);
+  const setCheck = useTestSuiteStore((s) => s.setCheck);
   const selectedModels = useTestSuiteStore((s) => s.selectedModels);
   const toggleModel = useTestSuiteStore((s) => s.toggleModel);
   const results = useTestSuiteStore((s) => s.results);
@@ -127,8 +126,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     if (s.selectedModels.length === 0 && models.length > 0) {
       s.setSelectedModels(models.slice(0, 2).map((m) => m.name));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [models]);
+  }, [models, t]);
 
   const activeTests = useMemo(
     () => tests.map((p, i) => ({ prompt: p, index: i })).filter((x) => x.prompt.trim()),
@@ -139,14 +137,22 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     patchCell(ti, model, patch);
   };
 
-  const runCell = (ti: number, target: string, promptText: string, signal: AbortSignal): Promise<void> => {
+  const runCell = (
+    ti: number,
+    target: string,
+    promptText: string,
+    signal: AbortSignal
+  ): Promise<void> => {
     const parsed = parseQualified(target, cloudCustom);
     // Resolve the endpoint: local settings or a stored cloud API key.
     const resolved = resolveRunEndpoint(parsed.source, parsed.model, { provider, baseUrl });
     if ('error' in resolved) {
       const msg =
         resolved.error === 'noCloudKey'
-          ? t('bench.noCloudKey', 'No enabled API key for this cloud provider — add one on the Cloud page.')
+          ? t(
+              'bench.noCloudKey',
+              'No enabled API key for this cloud provider — add one on the Cloud page.'
+            )
           : t('bench.unknownProvider', 'Unknown cloud provider.');
       updateCell(ti, target, { status: 'error', error: msg });
       return Promise.resolve();
@@ -173,6 +179,11 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               updateCell(ti, target, { status: 'running', output: fullText });
             });
           },
+          onReasoning: (fullReasoning) => {
+            rafBatch(`${ti}:${target}:reasoning`, () => {
+              updateCell(ti, target, { reasoning: fullReasoning });
+            });
+          },
           onDone: (output, metrics, error, aborted) => {
             if (aborted) {
               updateCell(ti, target, {
@@ -182,7 +193,14 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             } else if (error || !metrics) {
               updateCell(ti, target, { status: 'error', error: error ?? 'Empty response.' });
             } else {
-              updateCell(ti, target, { status: 'done', output, metrics, error: null });
+              const check = useTestSuiteStore.getState().checks[ti] ?? NO_CHECK;
+              updateCell(ti, target, {
+                status: 'done',
+                output,
+                metrics,
+                error: null,
+                passed: evalCheck(output, check),
+              });
             }
             resolve();
           },
@@ -223,7 +241,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         total: queue.length,
         label: `${q.model} · ${t('testsuite.test', 'Test')} ${activeTests.findIndex((x) => x.index === q.ti) + 1}/${activeTests.length}`,
       });
-      // eslint-disable-next-line no-await-in-loop
+
       await runCell(q.ti, q.model, q.prompt, signal);
       done += 1;
       setProgress({
@@ -247,17 +265,14 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     const st = useTestSuiteStore.getState();
     const settings = useSettingsStore.getState();
     const cloud = useCloudStore.getState();
-    let host = '';
-    try {
-      host = new URL(settings.baseUrl).host;
-    } catch {
-      host = settings.baseUrl;
-    }
+    const host = safeHost(settings.baseUrl);
     const runConfig = JSON.stringify({
       suite: true,
       provider: settings.provider,
       host,
-      temperature: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.temperature,
+      temperature: settings.advancedConfig.serverDefaults
+        ? undefined
+        : settings.advancedConfig.temperature,
       top_p: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.top_p,
       num_ctx: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.num_ctx,
       serverDefaults: settings.advancedConfig.serverDefaults || undefined,
@@ -299,9 +314,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
           costUsd,
           source: parsed.source.kind,
           providerId: parsed.source.kind === 'cloud' ? parsed.source.providerId : null,
+          reasoning: c?.reasoning?.trim() ? c.reasoning : null,
         };
       });
-      // eslint-disable-next-line no-await-in-loop
+
       await DbService.saveHistory(items[0].prompt, results, null, runConfig);
     }
   };
@@ -365,7 +381,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         .filter((c) => c?.status === 'done' && c.metrics);
       const avgTps =
         cells.length > 0
-          ? Number((cells.reduce((s, c) => s + (c!.metrics?.tps || 0), 0) / cells.length).toFixed(2))
+          ? Number(
+              (cells.reduce((s, c) => s + (c!.metrics?.tps || 0), 0) / cells.length).toFixed(2)
+            )
           : 0;
       const wins = activeTests.filter(({ index }) => winners[index] === m).length;
       const totalCost = cells.reduce<number | null>((sum, c) => {
@@ -373,7 +391,16 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         if (cost == null) return sum;
         return (sum ?? 0) + cost;
       }, null);
-      return { model: m, avgTps, wins, finished: cells.length, totalCost };
+      const checked = cells.filter((c) => c!.passed != null);
+      const passed = checked.filter((c) => c!.passed).length;
+      return {
+        model: m,
+        avgTps,
+        wins,
+        finished: cells.length,
+        totalCost,
+        passRate: checked.length > 0 ? { passed, total: checked.length } : null,
+      };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTests, selectedModels, results, winners, cloudPricing, cloudCustom]);
@@ -394,7 +421,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
       lines.push(`- ${t('testsuite.totalCost', 'Total cost')}: ${costParts.join(' · ')}`);
     }
     lines.push('');
-    lines.push(`| ${t('testsuite.test', 'Test')} | ${selectedModels.join(' (tok/s) | ')} (tok/s) |`);
+    lines.push(
+      `| ${t('testsuite.test', 'Test')} | ${selectedModels.join(' (tok/s) | ')} (tok/s) |`
+    );
     lines.push(`| --- | ${selectedModels.map(() => '---').join(' | ')} |`);
     activeTests.forEach(({ prompt, index }, i) => {
       const cells = selectedModels.map((m) => {
@@ -475,7 +504,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
           <div>
             <h2 className="text-base font-bold">{t('testsuite.title', 'Test Suite')}</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {t('testsuite.subtitle', 'Run a batch of prompts across models and compare the scoreboard.')}
+              {t(
+                'testsuite.subtitle',
+                'Run a batch of prompts across models and compare the scoreboard.'
+              )}
             </p>
           </div>
         </div>
@@ -486,7 +518,11 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                 onClick={handleCopyMarkdown}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
                 <span>{copied ? t('testsuite.copied', 'Copied!') : 'Markdown'}</span>
               </button>
               <button
@@ -548,7 +584,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
           <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 transition-all"
-              style={{ width: `${progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0}%` }}
+              style={{
+                width: `${progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0}%`,
+              }}
             />
           </div>
         </div>
@@ -570,29 +608,85 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               {t('testsuite.addPrompt', 'Add')}
             </button>
           </div>
-          <div className="p-3 space-y-2 max-h-[420px] overflow-y-auto">
-            {tests.map((tp, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <span className="mt-2 text-[11px] font-mono text-slate-400 w-5 shrink-0">#{i + 1}</span>
-                <textarea
-                  value={tp}
-                  onChange={(e) => setTests(tests.map((x, j) => (j === i ? e.target.value : x)))}
-                  disabled={running}
-                  rows={2}
-                  placeholder={t('testsuite.promptPlaceholder', `Test prompt #${i + 1}…`)}
-                  className="flex-1 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y min-h-[56px]"
-                  dir="auto"
-                />
-                <button
-                  onClick={() => setTests(tests.length <= 1 ? [''] : tests.filter((_, j) => j !== i))}
-                  disabled={running}
-                  className="mt-2 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition disabled:opacity-40"
-                  title={t('testsuite.removePrompt', 'Remove')}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+          <div className="p-3 space-y-3 max-h-[420px] overflow-y-auto">
+            {tests.map((tp, i) => {
+              const check = checks[i] ?? NO_CHECK;
+              const valid = isValidCheck(check);
+              const setType = (type: CheckType) =>
+                setCheck(i, { type, pattern: type === 'json' ? '' : check.pattern });
+              return (
+                <div key={i} className="space-y-1.5">
+                  <div className="flex gap-2 items-start">
+                    <span className="mt-2 text-[11px] font-mono text-slate-400 w-5 shrink-0">
+                      #{i + 1}
+                    </span>
+                    <textarea
+                      value={tp}
+                      onChange={(e) =>
+                        setTests(tests.map((x, j) => (j === i ? e.target.value : x)))
+                      }
+                      disabled={running}
+                      rows={2}
+                      placeholder={t('testsuite.promptPlaceholder', `Test prompt #${i + 1}…`)}
+                      className="flex-1 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y min-h-[56px]"
+                      dir="auto"
+                    />
+                    <button
+                      onClick={() =>
+                        setTests(tests.length <= 1 ? [''] : tests.filter((_, j) => j !== i))
+                      }
+                      disabled={running}
+                      className="mt-2 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition disabled:opacity-40"
+                      title={t('testsuite.removePrompt', 'Remove')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex gap-2 items-center ps-7">
+                    <select
+                      value={check.type}
+                      onChange={(e) => setType(e.target.value as CheckType)}
+                      disabled={running}
+                      title={t('testsuite.checkTitle', 'Automatic output check')}
+                      className={`text-[11px] font-mono rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-950 shrink-0 ${
+                        valid
+                          ? 'border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400'
+                          : 'border-rose-400 text-rose-500'
+                      }`}
+                    >
+                      <option value="none">{t('testsuite.checkNone', 'No check')}</option>
+                      <option value="contains">{t('testsuite.checkContains', 'Contains')}</option>
+                      <option value="regex">{t('testsuite.checkRegex', 'Regex')}</option>
+                      <option value="exact">{t('testsuite.checkExact', 'Exact')}</option>
+                      <option value="json">{t('testsuite.checkJson', 'Valid JSON')}</option>
+                    </select>
+                    {check.type !== 'none' && check.type !== 'json' && (
+                      <input
+                        value={check.pattern}
+                        onChange={(e) => setCheck(i, { type: check.type, pattern: e.target.value })}
+                        disabled={running}
+                        placeholder={
+                          check.type === 'regex'
+                            ? t('testsuite.checkPatternPlaceholder', 'e.g. error \\d+')
+                            : t('testsuite.checkTextPlaceholder', 'Expected text…')
+                        }
+                        dir="auto"
+                        className={`flex-1 min-w-0 p-1.5 rounded-lg text-[11px] font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                          valid
+                            ? 'border-slate-200 dark:border-slate-700/60'
+                            : 'border-rose-400 text-rose-500'
+                        }`}
+                      />
+                    )}
+                    {check.type !== 'none' && !valid && (
+                      <span className="text-[10px] text-rose-500 shrink-0">
+                        {t('testsuite.checkInvalid', 'Invalid')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -606,7 +700,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
           <div className="p-3 space-y-1.5 max-h-[420px] overflow-y-auto">
             {models.length === 0 && cloudGroups.length === 0 && (
               <p className="text-xs text-slate-500 italic p-2">
-                {t('testsuite.emptyModels', 'No models installed — pull a model first, then select it here.')}
+                {t(
+                  'testsuite.emptyModels',
+                  'No models installed — pull a model first, then select it here.'
+                )}
               </p>
             )}
             {models.map((m, i) => {
@@ -720,7 +817,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                       return (
                         <td key={m} className="px-2 py-1.5 text-center">
                           <button
-                            onClick={() => c && c.status !== 'idle' && setDetail({ ti: index, model: m })}
+                            onClick={() =>
+                              c && c.status !== 'idle' && setDetail({ ti: index, model: m })
+                            }
                             disabled={!c || c.status === 'idle'}
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-mono transition ${
                               !c || c.status === 'idle'
@@ -746,6 +845,18 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                               .join('\n')}
                           >
                             {isWinner && c?.status === 'done' && <Crown className="w-3 h-3" />}
+                            {c?.status === 'done' && c.passed != null && (
+                              <span
+                                title={
+                                  c.passed
+                                    ? t('testsuite.checkPassed', 'Check passed')
+                                    : t('testsuite.checkFailed', 'Check failed')
+                                }
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  c.passed ? 'bg-emerald-500' : 'bg-rose-500'
+                                }`}
+                              />
+                            )}
                             <span>
                               {!c || c.status === 'idle'
                                 ? '—'
@@ -768,10 +879,24 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   </td>
                   {summary.map((s) => (
                     <td key={s.model} className="px-3 py-2 text-center">
-                      <div className="text-emerald-600 dark:text-emerald-300 font-bold">{s.avgTps || '—'}</div>
+                      <div className="text-emerald-600 dark:text-emerald-300 font-bold">
+                        {s.avgTps || '—'}
+                      </div>
                       <div className="text-[10px] text-amber-600 dark:text-amber-300">
                         {s.wins} 👑 / {s.finished}
                       </div>
+                      {s.passRate && (
+                        <div
+                          className={`text-[10px] font-bold ${
+                            s.passRate.passed === s.passRate.total
+                              ? 'text-emerald-600 dark:text-emerald-300'
+                              : 'text-rose-500'
+                          }`}
+                          title={t('testsuite.passRateTitle', 'Automatic checks passed')}
+                        >
+                          ✓ {s.passRate.passed}/{s.passRate.total}
+                        </div>
+                      )}
                       {s.totalCost != null && (
                         <div
                           className="text-[10px] text-slate-500 dark:text-slate-400"
@@ -787,7 +912,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             </table>
           </div>
           <p className="px-4 py-2 text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-            {t('testsuite.scoreHint', '👑 = fastest tok/s on that test · click any cell to read the full output.')}
+            {t(
+              'testsuite.scoreHint',
+              '👑 = fastest tok/s on that test · click any cell to read the full output.'
+            )}
           </p>
         </section>
       )}
@@ -797,7 +925,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         detailCell &&
         createPortal(
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDetail(null)} />
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDetail(null)}
+            />
             <div className="relative w-[720px] max-w-full max-h-[80vh] flex flex-col rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-slate-200 dark:border-white/10">
                 <div className="min-w-0">
@@ -809,6 +940,19 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {detailCell.passed != null && (
+                    <span
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                        detailCell.passed
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+                          : 'bg-rose-500/10 text-rose-500'
+                      }`}
+                    >
+                      {detailCell.passed
+                        ? t('testsuite.checkPassed', 'Check passed')
+                        : t('testsuite.checkFailed', 'Check failed')}
+                    </span>
+                  )}
                   {detailCell.metrics && (
                     <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-300">
                       {detailCell.metrics.tpsEstimated ? '~' : ''}
@@ -829,7 +973,22 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                     {detailCell.error}
                   </p>
                 ) : (
-                  <MarkdownRenderer content={detailCell.output} />
+                  <>
+                    {detailCell.reasoning?.trim() && (
+                      <details className="mb-3 rounded-lg bg-violet-500/5 dark:bg-violet-400/5 border border-violet-500/20 px-3 py-2">
+                        <summary className="text-[11px] font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
+                          {t('app.thinking', 'Thinking')}
+                        </summary>
+                        <div
+                          className="mt-1.5 text-xs opacity-80 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono"
+                          dir="auto"
+                        >
+                          {detailCell.reasoning}
+                        </div>
+                      </details>
+                    )}
+                    <MarkdownRenderer content={detailCell.output} />
+                  </>
                 )}
               </div>
             </div>

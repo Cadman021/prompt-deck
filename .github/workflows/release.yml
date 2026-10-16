@@ -51,6 +51,20 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      # --- Code signing (optional, uncomment when certificates exist) ---
+      # macOS notarization needs an Apple Developer account ($99/yr) plus these
+      # Actions secrets: APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD,
+      # APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_PASSWORD (app-specific), APPLE_TEAM_ID.
+      # - name: Import Apple signing certificate
+      #   if: matrix.platform == 'macos-latest'
+      #   uses: apple-actions/import-codesign-certs@v5
+      #   with:
+      #     p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+      #     p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      # Windows SmartScreen needs an EV code-signing certificate on a hardware
+      # token (or Azure Trusted Signing); uncomment + configure once owned.
+      # See https://v2.tauri.app/distribute/sign/windows/
+
       - name: Build and release Tauri app
         uses: tauri-apps/tauri-action@v1
         env:
@@ -58,6 +72,10 @@ jobs:
           # Private updater signing key (Settings → Secrets → Actions).
           # The matching public key is committed in tauri.conf.json.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # Uncomment with the Apple secrets above to notarize macOS builds:
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'PromptDeck ${{ github.ref_name }}'

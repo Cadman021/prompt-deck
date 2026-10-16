@@ -32,6 +32,9 @@ interface SettingsState {
   baseUrl: string;
   advancedConfig: AdvancedConfig;
   runMode: RunMode;
+  /** Blind voting: mask model identities everywhere in Bench. */
+  blindMode: boolean;
+  setBlindMode: (blind: boolean) => void;
   setTheme: (theme: Theme) => void;
   setLanguage: (lang: Language) => void;
   setProvider: (provider: Provider) => void;
@@ -48,6 +51,7 @@ interface PersistedSettings {
   baseUrl: string;
   advancedConfig: AdvancedConfig;
   runMode: RunMode;
+  blindMode: boolean;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -59,6 +63,8 @@ export const useSettingsStore = create<SettingsState>()(
       baseUrl: DEFAULT_BASE_URLS.ollama,
       advancedConfig: DEFAULT_ADVANCED,
       runMode: 'sequential',
+      blindMode: false,
+      setBlindMode: (blindMode) => set({ blindMode }),
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => set({ language }),
       setProvider: (provider) => {
@@ -90,6 +96,7 @@ export const useSettingsStore = create<SettingsState>()(
         baseUrl: s.baseUrl,
         advancedConfig: s.advancedConfig,
         runMode: s.runMode,
+        blindMode: s.blindMode,
       }),
     }
   )

@@ -18,7 +18,16 @@ export interface CloudApiKey {
   id: string;
   providerId: string;
   label: string;
+  /**
+   * Legacy/plaintext field. Empty once migrated to the OS keychain — the
+   * secret then lives in keychain + in-memory cache only. `keyHint`
+   * (last 4) stays for masked display.
+   */
   apiKey: string;
+  /** Storage location of the secret. Absent = legacy local field. */
+  storage?: 'keychain' | 'local';
+  /** Last-4 fingerprint for masked display when the secret isn't local. */
+  keyHint?: string;
   enabled: boolean;
   status: CloudStatus;
   lastTested?: string;

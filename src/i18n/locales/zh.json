@@ -137,7 +137,8 @@
     "empty": "还没有基准测试记录。运行第一次对比后会显示在这里。",
     "runs": "次运行",
     "wins": "次获胜",
-    "hint": "按 Wilson 胜率分排名，其次按平均速度。失败的运行不计入。"
+    "hint": "按两两对决投票的 Elo 评分排名，其次按平均速度。失败的运行不计入。",
+    "eloTitle": "两两对决投票的 Elo 评分"
   },
   "nav": {
     "bench": "测试台",
@@ -252,6 +253,15 @@
       "anthropic": "Anthropic 官方 API（OpenAI SDK 兼容层）：Claude Opus、Sonnet 和 Haiku，Bearer 认证。"
     }
   },
+  "judge": {
+    "title": "LLM 裁判",
+    "subtitle": "一个模型按固定标准盲评所有输出",
+    "judgeModel": "裁判模型",
+    "run": "评审",
+    "judging": "评审中…",
+    "pick": "裁判之选",
+    "parseError": "无法解析为 JSON 裁决 — 查看原始回复"
+  },
   "report": {
     "title": "📊 PromptDeck 基准测试报告",
     "prompt": "提示词",
@@ -266,7 +276,10 @@
   "bench": {
     "localModels": "本地模型",
     "noCloudKey": "该云服务商没有已启用的 API Key — 请到 Cloud 页面添加。",
-    "unknownProvider": "未知的云服务商。"
+    "unknownProvider": "未知的云服务商。",
+    "blind": "盲测",
+    "blindTitle": "盲测模式：隐藏身份以便公正投票",
+    "blindName": "模型{{letter}}"
   },
   "testsuite": {
     "title": "测试套件",
@@ -278,6 +291,18 @@
     "addPrompt": "添加",
     "removePrompt": "删除",
     "promptPlaceholder": "测试提示词…",
+    "checkTitle": "自动输出检查",
+    "checkNone": "无检查",
+    "checkContains": "包含",
+    "checkRegex": "正则",
+    "checkExact": "精确",
+    "checkJson": "有效 JSON",
+    "checkTextPlaceholder": "期望文本…",
+    "checkPatternPlaceholder": "例如 error \\d+",
+    "checkInvalid": "无效",
+    "checkPassed": "检查通过",
+    "checkFailed": "检查未通过",
+    "passRateTitle": "通过的自动检查",
     "models": "模型",
     "emptyModels": "未安装模型 — 先安装模型，再回来这里选择。",
     "needPrompt": "至少添加一条非空测试提示词才能运行。",

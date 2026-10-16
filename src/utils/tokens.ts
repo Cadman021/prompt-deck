@@ -3,8 +3,10 @@
 // Latin ≈ 4 chars/token, Arabic-script (fa/ar/ur) ≈ 2.5, CJK ≈ 1.5.
 // Still a heuristic — always rendered with `~`.
 
-const CJK_RE = /[㐀-䶿一-鿿豈-﫿぀-ヿ가-힯]/g;
-const ARABIC_SCRIPT_RE = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/g;
+// Escaped ranges (literal non-ASCII chars trip no-irregular-whitespace, and
+// the old Arabic range accidentally included U+FEFF zero-width no-break space).
+const CJK_RE = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\u3040-\u30FF\uAC00-\uD7AF]/g;
+const ARABIC_SCRIPT_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFC]/g;
 
 export function estimateTokens(text: string): number {
   if (!text) return 1;

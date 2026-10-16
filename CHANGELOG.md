@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-16
+
+Quality-evaluation release: blind voting that actually works, automatic suite
+checks, an LLM judge, OS-keychain secrets, and Elo rankings.
+
+### ✨ Added
+
+- Blind voting mode: toggle in the footer (before running), auto-shuffle of columns on every blind run, identities masked everywhere, auto-reveal on vote
+- Test Suite automatic checks (contains/regex/exact/valid-JSON) with per-cell verdicts, detail badges, and pass-rate summary
+- LLM-as-judge panel: blind scoring against a fixed rubric (accuracy/completeness/clarity), deterministic settings, defensive JSON parsing, advisory pick badge that never auto-votes
+- OS-keychain storage for API keys (`keyring` crate + 3 Tauri commands): auto-migration, in-memory cache, silent fallback; secrets centralized in `services/secrets.ts`
+- Leaderboard Elo ratings from pairwise vote outcomes (a 4-model win moves more points than head-to-head)
+- Thinking traces persist (`reasoning` DB column, schema v4) and appear in suite detail, Markdown/PDF exports, and history reloads
+
+### 🔧 Changed
+
+- ESLint (type-aware + react-hooks) + Prettier configs, zero warnings/errors enforced in CI
+- Release workflow: code-signing scaffolding (commented, awaiting certificates)
+
+### 🐛 Fixed
+
+- `decodeValue` returning the raw JSON option for local models (picker stuck on first model)
+- Provider icon fallback tile rendering white-on-white
+
 ## [1.3.0] - 2026-10-13
 
 Correctness, benchmark credibility, and community release — with our first
@@ -12,6 +36,7 @@ external contributors on board. Welcome [@AyanJaved](https://github.com/AyanJave
 [@afifm561](https://github.com/afifm561)! 🎉
 
 ### ✨ Added
+
 - N-repeat runs (1–5, medians reported) with mean±stdev tooltips; exact Ollama load/prompt timings; defensive llama.cpp/LM Studio rate parsing
 - Thinking-trace display for reasoning models (`reasoning_content` collapsible)
 - Sequential/Parallel run mode (sequential default: uncontaminated local TPS)
@@ -27,16 +52,20 @@ external contributors on board. Welcome [@AyanJaved](https://github.com/AyanJave
 - Community features by contributors: relative timestamps on history cards ([@AyanJaved](https://github.com/AyanJaved)), winners-only filter, reset-to-defaults ([@lb1192176991-lab](https://github.com/lb1192176991-lab)), Ctrl+K prompt focus ([@lb1192176991-lab](https://github.com/lb1192176991-lab)), Test Suite retry-failed ([@afifm561](https://github.com/afifm561))
 
 ### 🔧 Changed
+
 - Explicit `cloud:` model prefix + `source`/`provider_id` history columns (no more local/cloud name collisions)
 - Versioned DB migrations (`PRAGMA user_version`); transactional saves; single-JOIN history; `run_id` index
 - Markdown `img` is click-to-load and links open externally; restrictive Tauri CSP
 - CSV: BOM, formula-injection guard, full (unlimited) export
-- CI runs unit tests (`npm test`, 49 tests); clippy `-D warnings` enforced, `cargo fmt` no longer best-effort; `npm audit` clean (0 vulnerabilities)
+- CI runs unit tests (`npm test`, 56 tests), ESLint, and the Tauri version gate; clippy `-D warnings` enforced, `cargo fmt` no longer best-effort; `npm audit` clean (0 vulnerabilities)
 - `.gitattributes`/`.editorconfig`, Dependabot, `SECURITY.md` versions, Cargo metadata
 - Missing `de` history keys + code-default-only cloud keys added to all locales
 - Remaining hardcoded UI strings moved to i18n (stop marker, add-model button, PDF error, print report, provider form)
+- Thinking traces persist (`reasoning` DB column, schema v4) and appear in suite detail, Markdown/PDF exports, and history reloads
+- OS-keychain storage for API keys (`keyring` crate + 3 Tauri commands, auto-migration, in-memory cache); code-signing scaffolding commented in release workflow
 
 ### 🐛 Fixed
+
 - Stream finalize without `[DONE]` (llmService + ollamaService); mid-stream Ollama errors surfaced; JSON error bodies on HTTP failures
 - `loadModels` preserves cloud slots; Ctrl+Enter gated to Bench; `saveHistory` returns `lastInsertId` (vote race removed)
 
@@ -46,6 +75,7 @@ Nine new cloud providers (19 total), three new locales, GPL-3.0, and community
 files — plus robustness fixes for providers with non-standard APIs.
 
 ### ✨ Added
+
 - **9 new cloud providers**: Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, and Anthropic (via its official OpenAI SDK compatibility layer, Bearer auth) — each with brand icon, info banner, suggested models, and a direct API-key link
 - **Real API-key links everywhere**: the "Where to get an API key" button now points at each provider's actual key-creation page and opens it in the system browser via the Tauri opener plugin (new `openExternal` helper; plugin registered in `lib.rs`)
 - **Support for providers without a `/models` endpoint** (e.g. Poolside): key test falls back to a key-only probe, reports `modelsListed: false`, and the detail page shows a hint to add model ids manually instead of an error
@@ -56,10 +86,12 @@ files — plus robustness fixes for providers with non-standard APIs.
 - **Backdrop dim** for History and Leaderboard panels (same as Settings), click-to-close
 
 ### 🔄 Changed
+
 - **License: MIT → GPL-3.0-only** (`LICENSE`, `package.json`, README)
 - Settings provider form restacked vertically for the panel layout
 
 ### 🐛 Fixed
+
 - Local model picker stuck on the first model: `decodeValue` returned the raw JSON option value instead of the parsed model name for local sources (cloud sources were unaffected)
 - Provider icon fallback tile rendered white-on-white (invisible initials) after a styling change — brand color restored, white backdrop kept only behind raster icons
 
@@ -70,6 +102,7 @@ files — plus robustness fixes for providers with non-standard APIs.
 Cloud release: manage cloud LLM providers 9Router-style and benchmark their models side-by-side with local ones — in both Bench and Test Suite.
 
 ### ✨ Added
+
 - **Cloud Providers page** (new sidebar entry): Custom Providers section (user-added OpenAI-compatible endpoints) plus a curated catalog split into **Free Tier Providers** and **API Key Providers**, with search, per-section Test All, and per-card connection status
 - **10 providers in the catalog**: OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI (Grok), Kimi (Moonshot), NVIDIA NIM, Ollama Cloud, and Gemini (via Google's OpenAI-compatibility endpoint) — each with docs link, info banner, suggested models, and a 128px brand icon (`public/providers/`, graceful initials-tile fallback)
 - **Provider detail page**: named API-key connections (add / test / edit / delete / enable-toggle), an **Available Models** section that fetches the real `/models` list, model search, per-model enable toggles, **per-model 1-token probe test** (green check / red X with latency or error), copy-id, remove, manual add, suggested-model chips, and enable/disable-all
@@ -78,11 +111,13 @@ Cloud release: manage cloud LLM providers 9Router-style and benchmark their mode
 - `LLMService.testCloudConnection` now also returns the model id list; new `probeCloudModel` for single-model reachability checks
 
 ### 🔄 Changed
+
 - Cloud store migrated to v2 (multiple named keys per provider, `enabledModels`, `knownModels`) with automatic non-destructive migration of v1 connections
 - Add-model button no longer depends on local models — with cloud-only sources it adds the first enabled cloud model instead of staying disabled
 - Removed obsolete `nav.soon` / `*Soon` i18n keys (Cloud and Tests are real pages now); full EN + FA + DE coverage for all new UI
 
 ### 🐛 Fixed
+
 - Missing `X` icon import in `ProviderDetailPage` that broke `tsc` (probe-error state)
 - Test Suite Run stayed disabled when only cloud models were selected (leftover local-models guard)
 
@@ -93,6 +128,7 @@ Cloud release: manage cloud LLM providers 9Router-style and benchmark their mode
 First stable release. The headline changes are a full **App Shell redesign** that frees up space for new workflows, a brand-new **Test Suite** page for batch benchmarking, an **AMOLED Dark** theme, and a proper **language picker** — plus German locale coverage and CI updates.
 
 ### ✨ Added
+
 - **Test Suite (batch execution)**: run a list of 1–10 test prompts across all selected models sequentially, with a live progress bar and Stop support. Results land in a **scoreboard matrix** (one row per test, one column per model) showing TPS per cell, a 👑 crown for the fastest model on each test, an average-TPS + wins summary row, click-to-read full-output detail modal, Markdown report copy, and CSV download. The suite definition persists in `localStorage`
 - **AMOLED Dark theme**: pure-black (`#000000`) canvas with neon glows on primary actions, status dots, and focus rings. Builds on top of dark mode, so every `dark:` style keeps working; persisted in settings (store migrated to v2, old `dark`/`light` values carry over untouched)
 - **Language picker modal**: grid-style popup (region code + native name tiles, e.g. US/English, DE/Deutsch, IR/فارسی) with selected-state highlight, `Esc`/backdrop close, and support for future locales — opened from both the header and the settings panel
@@ -101,6 +137,7 @@ First stable release. The headline changes are a full **App Shell redesign** tha
 - **App Shell navigation**: icon-rail sidebar (Bench, Tests, History, Board, Config) with a reserved "Cloud — Soon" slot for the upcoming cloud-input feature; History, Leaderboard, and Settings now open as sidebar-driven overlay panels instead of crowding the header
 
 ### 🔄 Changed
+
 - **Header decluttered**: the old 10+-button wrapping header is now a slim 48px `TopBar` (title + version, provider connection pill with status dot and model count, language, theme, refresh, settings). All result actions (Copy Report, PDF, Diff, Copy JSON, Export CSV) moved to a contextual `ResultToolbar` that only appears when there are results
 - **Settings live in a slide-over panel**: provider/connection, appearance, language, and advanced model controls (system prompt, temperature, top-p, context length) moved out of the stacked inline layout, giving model outputs the maximum vertical space
 - **Prompt dock restyled**: floating-card prompt box with `Ctrl+Enter` hint and a dedicated Run/Stop button
@@ -109,6 +146,7 @@ First stable release. The headline changes are a full **App Shell redesign** tha
 - Version centralized as before (`src/version.ts` ↔ `package.json` ↔ `tauri.conf.json` ↔ `Cargo.toml`), now at `1.0.0`
 
 ### 🐛 Fixed
+
 - Language modal opened from the header rendered clipped inside the header bar (missing backdrop and title). Root cause: the header's `backdrop-blur` creates a containing block for `fixed` descendants — the modal now renders via a React portal to `document.body`, so it always covers the viewport
 - Test Suite worker cell updates could target the wrong cell under concurrent callbacks — cell execution now carries its test index explicitly instead of a shared mutable ref
 
@@ -117,6 +155,7 @@ First stable release. The headline changes are a full **App Shell redesign** tha
 ## [0.3.0] - 2026-09-15
 
 ### ✨ Added
+
 - **Side-by-side diff view**: compare any two model outputs line-by-line, with similarity percentage, added/removed line counts, pair picker (for 3–4 model runs), and a toggle to hide unchanged lines — no new dependencies (custom LCS-based diff)
 - **Winner votes**: crown the best answer per run with a per-column vote button; the winner gets a highlighted column, a badge, and is remembered in history
 - **Model leaderboard**: aggregated per-model stats (run count, average TPS, win count, win rate) in a sortable sidebar panel, persisted in SQLite
@@ -124,12 +163,14 @@ First stable release. The headline changes are a full **App Shell redesign** tha
 - **Keyboard shortcuts**: `Ctrl+Enter` (or `Cmd+Enter`) to run, `Esc` to stop generation or close panels
 
 ### 🔄 Changed
+
 - **Unified TPS definition**: TPS now measures the generation phase only (excluding time-to-first-token) on every provider, matching the meaning of Ollama's `eval_count`/`eval_duration`. When a server doesn't report token usage (some LM Studio / llama.cpp setups), TPS is estimated from output length and clearly marked with `~` in columns, charts, history, and Markdown/PDF exports
 - **Settings now persist**: theme, language, provider, base URL, and advanced controls (system prompt, temperature, top-p, context length) survive app restarts via persisted store
 - **Database schema extended** (non-destructive, auto-migrated on launch): new `winner_model` column on `benchmark_runs`, plus `tps_estimated` and `token_source` on `benchmark_results`. Databases from v0.2.0 open without data loss
 - Version is now centralized in `src/version.ts` (kept in sync with `package.json`, `tauri.conf.json`, and `Cargo.toml`); app window title and default size updated (1280×800, min 1024×640)
 
 ### 🐛 Fixed
+
 - Run button could get stuck in the "running" state forever when any single model column errored — completion is now tracked per-slot (success, error, or stop), partial runs are always saved to history, and failed/stopped columns get a dedicated **Retry** button that re-runs only that slot
 - Switching providers no longer wipes a manually edited server URL unless the provider actually changed
 - `JSON.parse` on Ollama NDJSON streams is now guarded — a single malformed line no longer kills the whole stream
@@ -140,6 +181,7 @@ First stable release. The headline changes are a full **App Shell redesign** tha
 ## [0.2.0] - 2026-09-05
 
 ### ✨ Added
+
 - **Multi-provider support**: connect to [LM Studio](https://lmstudio.ai) or any `llama.cpp` server (OpenAI-compatible API) in addition to Ollama, with a provider/base-URL switcher in the header
 - **Compare 3–4 models simultaneously** (previously limited to 2), with dynamic add/remove model columns
 - **User-savable prompt presets**: save your own prompts alongside the built-in quick presets, with delete support
@@ -148,11 +190,13 @@ First stable release. The headline changes are a full **App Shell redesign** tha
 - Full English + Persian (Farsi) i18n coverage across the entire UI, including the history sidebar and export dialogs
 
 ### 🔄 Changed
+
 - **Database schema redesigned** to support an arbitrary number of models per run (`benchmark_runs` + `benchmark_results` tables replace the old fixed `model1`/`model2` `history` table). Existing history is automatically migrated on first launch.
 - History sidebar now respects the active light/dark theme (previously always dark)
 - Benchmark chart tooltips are now readable in all theme combinations
 
 ### 🐛 Fixed
+
 - Run/Stop button could get stuck in the "running" state after a completed or failed generation
 - Division-by-zero when calculating tokens/sec for near-instant responses
 - PDF export now shows clear loading and success feedback, preventing accidental duplicate downloads

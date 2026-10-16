@@ -137,7 +137,8 @@
     "empty": "No benchmarks recorded yet. Run your first comparison to see it here.",
     "runs": "runs",
     "wins": "wins",
-    "hint": "Ranked by Wilson win-rate score, then average speed. Failed runs are excluded."
+    "hint": "Ranked by Elo rating from pairwise votes, then average speed. Failed runs are excluded.",
+    "eloTitle": "Elo rating from pairwise votes"
   },
   "nav": {
     "bench": "Bench",
@@ -252,6 +253,15 @@
       "anthropic": "Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth."
     }
   },
+  "judge": {
+    "title": "LLM Judge",
+    "subtitle": "One model scores all outputs blind against a fixed rubric",
+    "judgeModel": "Judge model",
+    "run": "Judge",
+    "judging": "Judging…",
+    "pick": "Judge's pick",
+    "parseError": "Couldn't parse the verdict as JSON — read the raw response"
+  },
   "report": {
     "title": "📊 PromptDeck Benchmark Report",
     "prompt": "Prompt",
@@ -266,7 +276,10 @@
   "bench": {
     "localModels": "Local models",
     "noCloudKey": "No enabled API key for this cloud provider — add one on the Cloud page.",
-    "unknownProvider": "Unknown cloud provider."
+    "unknownProvider": "Unknown cloud provider.",
+    "blind": "Blind",
+    "blindTitle": "Blind mode: identities hidden for unbiased voting",
+    "blindName": "Model {{letter}}"
   },
   "testsuite": {
     "title": "Test Suite",
@@ -278,6 +291,18 @@
     "addPrompt": "Add",
     "removePrompt": "Remove",
     "promptPlaceholder": "Test prompt…",
+    "checkTitle": "Automatic output check",
+    "checkNone": "No check",
+    "checkContains": "Contains",
+    "checkRegex": "Regex",
+    "checkExact": "Exact",
+    "checkJson": "Valid JSON",
+    "checkTextPlaceholder": "Expected text…",
+    "checkPatternPlaceholder": "e.g. error \\d+",
+    "checkInvalid": "Invalid",
+    "checkPassed": "Check passed",
+    "checkFailed": "Check failed",
+    "passRateTitle": "Automatic checks passed",
     "models": "Models",
     "emptyModels": "No models installed — pull a model first, then select it here.",
     "needPrompt": "Add at least one non-empty test prompt to run.",

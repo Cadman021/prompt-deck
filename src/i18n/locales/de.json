@@ -76,7 +76,6 @@
     "timeHours": "vor {{count}} Std.",
     "timeDays": "vor {{count}} Tagen",
     "winnersOnly": "Nur Gewinner"
-
   },
   "export": {
     "noHistoryToExport": "Keine Verlaufsdaten zum Exportieren vorhanden.",
@@ -138,7 +137,8 @@
     "empty": "Noch keine Benchmarks aufgezeichnet. Führen Sie Ihren ersten Vergleich aus, um ihn hier zu sehen.",
     "runs": "Durchläufe",
     "wins": "Siege",
-    "hint": "Ranking nach Wilson-Gewinnrate, dann Durchschnittsgeschwindigkeit. Fehlgeschlagene Läufe zählen nicht."
+    "hint": "Ranking nach Elo-Wertung aus Direktvergleichen, dann Durchschnittsgeschwindigkeit. Fehlgeschlagene Läufe zählen nicht.",
+    "eloTitle": "Elo-Wertung aus Direktvergleichen"
   },
   "nav": {
     "bench": "Bench",
@@ -253,6 +253,15 @@
       "anthropic": "Offizielle Anthropic-API via OpenAI-SDK-Kompatibilität: Claude Opus, Sonnet und Haiku mit Bearer-Auth."
     }
   },
+  "judge": {
+    "title": "LLM-Juror",
+    "subtitle": "Ein Modell bewertet alle Ausgaben blind nach fester Rubrik",
+    "judgeModel": "Juror-Modell",
+    "run": "Bewerten",
+    "judging": "Wird bewertet…",
+    "pick": "Wahl des Jurors",
+    "parseError": "Urteil war kein JSON — Rohantwort lesen"
+  },
   "report": {
     "title": "📊 PromptDeck Benchmark-Bericht",
     "prompt": "Prompt",
@@ -267,7 +276,10 @@
   "bench": {
     "localModels": "Lokale Modelle",
     "noCloudKey": "Kein aktivierter API-Key für diesen Cloud-Anbieter — auf der Cloud-Seite hinzufügen.",
-    "unknownProvider": "Unbekannter Cloud-Anbieter."
+    "unknownProvider": "Unbekannter Cloud-Anbieter.",
+    "blind": "Blind",
+    "blindTitle": "Blind-Modus: Identitäten für unvoreingenommenes Voten verborgen",
+    "blindName": "Modell {{letter}}"
   },
   "testsuite": {
     "title": "Test-Suite",
@@ -279,6 +291,18 @@
     "addPrompt": "Hinzufügen",
     "removePrompt": "Entfernen",
     "promptPlaceholder": "Test-Prompt…",
+    "checkTitle": "Automatische Ausgabeprüfung",
+    "checkNone": "Keine Prüfung",
+    "checkContains": "Enthält",
+    "checkRegex": "Regex",
+    "checkExact": "Exakt",
+    "checkJson": "Gültiges JSON",
+    "checkTextPlaceholder": "Erwarteter Text…",
+    "checkPatternPlaceholder": "z. B. error \\d+",
+    "checkInvalid": "Ungültig",
+    "checkPassed": "Prüfung bestanden",
+    "checkFailed": "Prüfung fehlgeschlagen",
+    "passRateTitle": "Bestandene automatische Prüfungen",
     "models": "Modelle",
     "emptyModels": "Keine Modelle installiert — erst ein Modell laden, dann hier auswählen.",
     "needPrompt": "Mindestens einen nicht-leeren Test-Prompt hinzufügen.",

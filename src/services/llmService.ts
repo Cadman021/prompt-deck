@@ -30,7 +30,8 @@ async function getInstalledModels(config: ProviderConfig): Promise<OllamaModel[]
   } catch (error) {
     console.error('OpenAI-compatible server connection error:', error);
     throw new Error(
-      'Could not connect to the local server. Make sure LM Studio (or llama.cpp server) is running and the base URL is correct.'
+      'Could not connect to the local server. Make sure LM Studio (or llama.cpp server) is running and the base URL is correct.',
+      { cause: error }
     );
   }
   if (!response.ok) {
@@ -121,10 +122,10 @@ async function generateOpenAICompatibleStream(
       const totalDurationMs = Math.round(endTime - startTime);
       const ttftMs = firstTokenTime ? Math.round(firstTokenTime - startTime) : 0;
 
-          // Unit definition (same meaning as Ollama's eval_count/eval_duration):
-          // TPS measures the generation phase only, excluding time-to-first-token.
-          // Token source is exact when the server reports usage, otherwise a
-          // script-aware heuristic flagged as estimated so the UI can render `~`.
+      // Unit definition (same meaning as Ollama's eval_count/eval_duration):
+      // TPS measures the generation phase only, excluding time-to-first-token.
+      // Token source is exact when the server reports usage, otherwise a
+      // script-aware heuristic flagged as estimated so the UI can render `~`.
       const tokenSource = usageTokens != null ? 'server' : 'heuristic';
       const totalTokens = usageTokens ?? estimateTokens(fullText);
       const evalMs = Math.max(1, totalDurationMs - ttftMs);
@@ -191,8 +192,7 @@ async function generateOpenAICompatibleStream(
         usagePromptTokens = json.usage.prompt_tokens;
       }
       const deltaChoice = json.choices?.[0]?.delta as
-        | { content?: string; reasoning_content?: string }
-        | undefined;
+        { content?: string; reasoning_content?: string } | undefined;
       // Thinking tokens arrive before (and separately from) the answer on
       // reasoning models (R1/QwQ via OpenRouter-style gateways). TTFT counts
       // the very first token of either kind; the answer stream stays clean.
@@ -309,10 +309,17 @@ async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<Cl
       if (response.status === 401 || response.status === 403) {
         return { ok: false, modelsListed: true, error: 'Unauthorized — check the API key.' };
       }
-      if ((response.status === 404 || response.status === 405 || response.status === 501) && apiKey?.trim()) {
+      if (
+        (response.status === 404 || response.status === 405 || response.status === 501) &&
+        apiKey?.trim()
+      ) {
         return await probeKeyOnly(normalized, apiKey.trim());
       }
-      return { ok: false, modelsListed: true, error: (await httpError('Server error', response)).message };
+      return {
+        ok: false,
+        modelsListed: true,
+        error: (await httpError('Server error', response)).message,
+      };
     }
     const data = await response.json();
     const models = Array.isArray(data?.data) ? data.data : [];

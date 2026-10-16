@@ -4,6 +4,8 @@ import { DbService, BenchmarkResult } from '../services/dbService';
 interface CurrentBenchmarkData {
   prompt: string;
   results: BenchmarkResult[];
+  /** Live thinking traces (bench only — history never stored them). */
+  reasoningByModel?: Record<string, string>;
 }
 
 function formatTpsCell(r: BenchmarkResult): string {
@@ -41,12 +43,18 @@ export const generateMarkdownReport = (data: CurrentBenchmarkData): string => {
     : '';
 
   const outputSections = data.results
-    .map(
-      (r, i) => `
+    .map((r, i) => {
+      // Stored reasoning wins (history reloads); live runs also pass it via
+      // reasoningByModel for the current session.
+      const thinking = (r.reasoning || data.reasoningByModel?.[r.model] || '').trim();
+      const thinkingSection = thinking
+        ? `\n<details>\n<summary>Thinking</summary>\n\n${thinking}\n\n</details>\n`
+        : '';
+      return `
 ### 🤖 Model ${i + 1}: \`${r.model}\`
-${r.output || '_No output_'}
-`
-    )
+${thinkingSection}${r.output || '_No output_'}
+`;
+    })
     .join('\n---\n');
 
   const hasEstimated = data.results.some((r) => r.tpsEstimated);
@@ -115,7 +123,20 @@ export const exportHistoryAsCsv = async (): Promise<boolean> => {
     const history = await DbService.getHistory(0);
     if (!history || history.length === 0) return false;
 
-    const header = ['run_id', 'created_at', 'prompt', 'model', 'tps', 'tps_estimated', 'ttft_ms', 'prompt_tokens', 'completion_tokens', 'cost_usd', 'winner_model', 'output'];
+    const header = [
+      'run_id',
+      'created_at',
+      'prompt',
+      'model',
+      'tps',
+      'tps_estimated',
+      'ttft_ms',
+      'prompt_tokens',
+      'completion_tokens',
+      'cost_usd',
+      'winner_model',
+      'output',
+    ];
     const lines = [header.join(',')];
     for (const record of history) {
       for (const r of record.results) {

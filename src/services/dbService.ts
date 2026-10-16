@@ -1,6 +1,6 @@
 // src/services/dbService.ts
 import Database from '@tauri-apps/plugin-sql';
-import { wilsonLowerBound } from '../utils/stats';
+import { computeElo, ELO_INITIAL, wilsonLowerBound } from '../utils/stats';
 
 export interface BenchmarkResult {
   model: string;
@@ -14,6 +14,8 @@ export interface BenchmarkResult {
   completionTokens?: number | null;
   /** USD cost frozen at run time (needs exact tokens + pricing). */
   costUsd?: number | null;
+  /** Thinking trace for reasoning models (live runs only; can be long). */
+  reasoning?: string | null;
   /** Explicit run source ('local' | 'cloud'); null on pre-source rows. */
   source?: 'local' | 'cloud' | null;
   /** Cloud provider id when source === 'cloud'. */
@@ -43,8 +45,10 @@ export interface ModelStat {
   avgTps: number;
   wins: number;
   winRate: number; // 0..1
-  /** Wilson lower bound of the win rate — the ranking signal. */
+  /** Wilson lower bound of the win rate. */
   wilson: number; // 0..1
+  /** Elo rating from pairwise vote outcomes (1200 start). */
+  elo: number;
 }
 
 interface RawResultRow {
@@ -59,6 +63,7 @@ interface RawResultRow {
   cost_usd?: number | null;
   source?: string | null;
   provider_id?: string | null;
+  reasoning?: string | null;
 }
 
 interface RawRunRow {
@@ -70,7 +75,7 @@ interface RawRunRow {
 }
 
 /** Current schema version. Bump when appending to MIGRATIONS below. */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 // Retrospective versioning: v1 = winner votes + tps estimates, v2 = run
 // config + tokens + cost, v3 = explicit run source. Fresh installs get all
@@ -78,29 +83,36 @@ const SCHEMA_VERSION = 3;
 const MIGRATIONS: { version: number; sql: string }[] = [
   { version: 1, sql: `ALTER TABLE benchmark_runs ADD COLUMN winner_model TEXT` },
   { version: 1, sql: `ALTER TABLE benchmark_results ADD COLUMN tps_estimated INTEGER DEFAULT 0` },
-  { version: 1, sql: `ALTER TABLE benchmark_results ADD COLUMN token_source TEXT DEFAULT 'server'` },
+  {
+    version: 1,
+    sql: `ALTER TABLE benchmark_results ADD COLUMN token_source TEXT DEFAULT 'server'`,
+  },
   { version: 2, sql: `ALTER TABLE benchmark_runs ADD COLUMN run_config TEXT` },
   { version: 2, sql: `ALTER TABLE benchmark_results ADD COLUMN prompt_tokens INTEGER` },
   { version: 2, sql: `ALTER TABLE benchmark_results ADD COLUMN completion_tokens INTEGER` },
   { version: 2, sql: `ALTER TABLE benchmark_results ADD COLUMN cost_usd REAL` },
   { version: 3, sql: `ALTER TABLE benchmark_results ADD COLUMN source TEXT DEFAULT 'local'` },
   { version: 3, sql: `ALTER TABLE benchmark_results ADD COLUMN provider_id TEXT` },
+  { version: 4, sql: `ALTER TABLE benchmark_results ADD COLUMN reasoning TEXT` },
 ];
 
 export class DbService {
   private static db: Database | null = null;
 
+  private static async readUserVersion(db: Database): Promise<number> {
+    try {
+      const rows = await db.select<{ user_version: number }[]>('PRAGMA user_version');
+      return rows[0]?.user_version ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
   /** Applies pending migrations based on PRAGMA user_version. */
   private static async migrate(): Promise<void> {
     const db = this.db;
     if (!db) return;
-    let current = 0;
-    try {
-      const rows = await db.select<{ user_version: number }[]>('PRAGMA user_version');
-      current = rows[0]?.user_version ?? 0;
-    } catch {
-      current = 0;
-    }
+    const current = await DbService.readUserVersion(db);
     for (const m of MIGRATIONS) {
       if (m.version <= current) continue;
       try {
@@ -147,6 +159,7 @@ export class DbService {
         cost_usd REAL,
         source TEXT DEFAULT 'local',
         provider_id TEXT,
+        reasoning TEXT,
         FOREIGN KEY (run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE
       );
     `);
@@ -173,9 +186,19 @@ export class DbService {
 
     // --- One-time migration from the old fixed 2-column "history" table (pre-v0.2) ---
     try {
-      const oldRows = await this.db.select<any[]>(
-        `SELECT * FROM history`
-      );
+      interface LegacyHistoryRow {
+        prompt: string;
+        created_at: string;
+        model1: string;
+        tps1: number;
+        ttft1: number;
+        output1: string;
+        model2: string;
+        tps2: number;
+        ttft2: number;
+        output2: string;
+      }
+      const oldRows = await this.db.select<LegacyHistoryRow[]>(`SELECT * FROM history`);
       if (oldRows && oldRows.length > 0) {
         for (const row of oldRows) {
           const runResult = await this.db.execute(
@@ -228,7 +251,7 @@ export class DbService {
       for (let i = 0; i < results.length; i++) {
         const r = results[i];
         await db.execute(
-          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             runId,
             r.model,
@@ -243,6 +266,7 @@ export class DbService {
             r.costUsd ?? null,
             r.source ?? 'local',
             r.providerId ?? null,
+            r.reasoning || null,
           ]
         );
       }
@@ -279,7 +303,9 @@ export class DbService {
       params.push(pattern, pattern);
     }
     if (winnersOnly) {
-      clauses.push(`(benchmark_runs.winner_model IS NOT NULL AND benchmark_runs.winner_model != '')`);
+      clauses.push(
+        `(benchmark_runs.winner_model IS NOT NULL AND benchmark_runs.winner_model != '')`
+      );
     }
     return { clause: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '', params };
   }
@@ -320,7 +346,7 @@ export class DbService {
       const ids = runRows.map((r) => r.id);
       const placeholders = ids.map(() => '?').join(',');
       const resultRows = await db.select<(RawResultRow & { run_id: number })[]>(
-        `SELECT run_id, model, tps, ttft, output, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id FROM benchmark_results WHERE run_id IN (${placeholders}) ORDER BY run_id DESC, position ASC`,
+        `SELECT run_id, model, tps, ttft, output, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning FROM benchmark_results WHERE run_id IN (${placeholders}) ORDER BY run_id DESC, position ASC`,
         ids
       );
       const byRun = new Map<number, (RawResultRow & { run_id: number })[]>();
@@ -347,6 +373,7 @@ export class DbService {
           costUsd: r.cost_usd ?? null,
           source: r.source === 'cloud' ? 'cloud' : r.source === 'local' ? 'local' : null,
           providerId: r.provider_id ?? null,
+          reasoning: r.reasoning ?? null,
         })),
       }));
     } catch (error) {
@@ -374,6 +401,21 @@ export class DbService {
          GROUP BY winner_model`
       );
       const winMap = new Map(winRows.map((w) => [w.winner_model, w.wins]));
+      // Pairwise vote outcomes in chronological order for Elo: each voted
+      // run counts the winner as beating every other model in that run.
+      const matchRows = await db.select<{ run_id: number; winner: string; model: string }[]>(
+        `SELECT r.id as run_id, r.winner_model as winner, res.model as model
+         FROM benchmark_runs r JOIN benchmark_results res ON res.run_id = r.id
+         WHERE r.winner_model IS NOT NULL AND r.winner_model != ''
+         ORDER BY r.id ASC`
+      );
+      const matchesByRun = new Map<number, { winner: string; opponents: string[] }>();
+      for (const row of matchRows) {
+        const entry = matchesByRun.get(row.run_id) ?? { winner: row.winner, opponents: [] };
+        entry.opponents.push(row.model);
+        matchesByRun.set(row.run_id, entry);
+      }
+      const elo = computeElo([...matchesByRun.values()]);
       return rows.map((r) => {
         const wins = winMap.get(r.model) ?? 0;
         return {
@@ -383,6 +425,7 @@ export class DbService {
           wins,
           winRate: r.runs > 0 ? wins / r.runs : 0,
           wilson: wilsonLowerBound(wins, r.runs),
+          elo: Math.round(elo.get(r.model) ?? ELO_INITIAL),
         };
       });
     } catch (error) {
@@ -400,13 +443,21 @@ export class DbService {
     model: string,
     r: Pick<
       BenchmarkResult,
-      'output' | 'tps' | 'ttft' | 'tpsEstimated' | 'tokenSource' | 'promptTokens' | 'completionTokens' | 'costUsd'
+      | 'output'
+      | 'tps'
+      | 'ttft'
+      | 'tpsEstimated'
+      | 'tokenSource'
+      | 'promptTokens'
+      | 'completionTokens'
+      | 'costUsd'
+      | 'reasoning'
     >
   ): Promise<void> {
     try {
       const db = await this.init();
       await db.execute(
-        `UPDATE benchmark_results SET output = ?, tps = ?, ttft = ?, tps_estimated = ?, token_source = ?, prompt_tokens = ?, completion_tokens = ?, cost_usd = ? WHERE run_id = ? AND model = ?`,
+        `UPDATE benchmark_results SET output = ?, tps = ?, ttft = ?, tps_estimated = ?, token_source = ?, prompt_tokens = ?, completion_tokens = ?, cost_usd = ?, reasoning = ? WHERE run_id = ? AND model = ?`,
         [
           r.output || '',
           r.tps,
@@ -416,6 +467,7 @@ export class DbService {
           r.promptTokens ?? null,
           r.completionTokens ?? null,
           r.costUsd ?? null,
+          r.reasoning || null,
           runId,
           model,
         ]
@@ -456,8 +508,7 @@ export class DbService {
       for (const h of data.history) {
         const rec = h as HistoryRecord;
         if (typeof rec.prompt !== 'string' || !Array.isArray(rec.results)) continue;
-        const createdAt =
-          rec.created_at ?? new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const createdAt = rec.created_at ?? new Date().toISOString().slice(0, 19).replace('T', ' ');
         const runInsert = await db.execute(
           `INSERT INTO benchmark_runs (prompt, winner_model, run_config, created_at) VALUES (?, ?, ?, ?)`,
           [rec.prompt, rec.winnerModel ?? null, rec.runConfig ?? null, createdAt]
@@ -546,9 +597,7 @@ export class DbService {
   static async getUserPresets(): Promise<UserPreset[]> {
     try {
       const db = await this.init();
-      return await db.select<UserPreset[]>(
-        'SELECT * FROM user_presets ORDER BY id DESC'
-      );
+      return await db.select<UserPreset[]>('SELECT * FROM user_presets ORDER BY id DESC');
     } catch (error) {
       console.error('Failed to fetch presets:', error);
       return [];
@@ -558,10 +607,7 @@ export class DbService {
   static async savePreset(label: string, prompt: string): Promise<void> {
     try {
       const db = await this.init();
-      await db.execute(
-        'INSERT INTO user_presets (label, prompt) VALUES (?, ?)',
-        [label, prompt]
-      );
+      await db.execute('INSERT INTO user_presets (label, prompt) VALUES (?, ?)', [label, prompt]);
     } catch (error) {
       console.error('Failed to save preset:', error);
     }

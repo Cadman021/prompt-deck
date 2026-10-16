@@ -1,4 +1,3 @@
-
 <!--![PromptDeck Git](./docs/demo.gif) -->
 <!-- Retake recommended for v1.0.0: new App Shell + a Test Suite run. Keep filename docs/demo.gif -->
 
@@ -30,7 +29,10 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 - 🔁 **Repeat runs (1–5)** — medians reported with mean±stdev tooltips, so jitter doesn't decide the winner
 - 💰 **Cost tracking** — per-run cost in Bench columns, per-model totals in Test Suite, frozen into history and exports (shown only when exact server tokens + provider pricing are known — never guessed)
 - 🧠 **Thinking traces** — reasoning models show a collapsible Thinking block above the answer
-- 🏆 **Winner votes & leaderboard** — crown the best answer per run and track win rate plus average speed per model over time, Wilson-ranked so small samples can't dominate
+- 🏆 **Winner votes & leaderboard** — crown the best answer per run and track Elo ratings plus average speed per model over time (a 4-model win moves more points than head-to-head)
+- 🙈 **Blind voting** — hide model identities (columns, chart, diff) behind letter labels to vote without bias
+- ⚖️ **LLM judge** — one model scores all outputs blind against a fixed rubric (accuracy/completeness/clarity), with an advisory pick badge; the human still crowns
+- ✅ **Suite auto-checks** — per-test rules (contains/regex/exact/valid-JSON) with pass/fail badges and pass-rate summary
 
   ![Model Leaderboard](./docs/screenshot-leaderboard.png)
   <!-- Retake recommended: leaderboard panel now opens from the sidebar; capture with 2-3 models visible showing runs / avg TPS / wins. Keep filename docs/screenshot-leaderboard.png -->
@@ -81,6 +83,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
 - 📋 **One-click export** — copy a Markdown report or full JSON history to clipboard, or download history as CSV
 - 💾 **Backup & restore** — export/import the whole database (runs + presets) as JSON from the history sidebar
+- 🔑 **OS-keychain secrets** — cloud API keys live in the OS credential store (auto-migrated), never in plaintext files
 - 🔄 **Auto-update** — signed in-app updates from GitHub releases, with your consent — no manual downloads
 - 🔒 **Local by default, private always** — built with [Tauri](https://tauri.app), no telemetry; cloud calls happen only to providers you explicitly configure with your own API key
 
@@ -88,18 +91,18 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
 ## 🖥️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Shell | [Tauri 2](https://tauri.app) (Rust) |
-| Frontend | React + TypeScript + Vite |
-| Styling | Tailwind CSS v4 |
-| State | Zustand (persisted) |
-| Database | SQLite (via `tauri-plugin-sql`) |
-| Charts | Recharts |
+| Layer      | Technology                                        |
+| ---------- | ------------------------------------------------- |
+| Shell      | [Tauri 2](https://tauri.app) (Rust)               |
+| Frontend   | React + TypeScript + Vite                         |
+| Styling    | Tailwind CSS v4                                   |
+| State      | Zustand (persisted)                               |
+| Database   | SQLite (via `tauri-plugin-sql`)                   |
+| Charts     | Recharts                                          |
 | PDF Export | jsPDF + autotable (text) / html2canvas (fallback) |
-| Tests | Vitest (`npm test`) |
-| i18n | react-i18next |
-| Markdown | react-markdown + remark-gfm |
+| Tests      | Vitest (`npm test`)                               |
+| i18n       | react-i18next                                     |
+| Markdown   | react-markdown + remark-gfm                       |
 
 ---
 
@@ -115,6 +118,7 @@ Before running PromptDeck, make sure you have at least one local LLM backend run
 - **or a [`llama.cpp` server](https://github.com/ggerganov/llama.cpp)** — running with its OpenAI-compatible endpoint enabled
 
 You'll also need:
+
 1. **[Rust](https://www.rust-lang.org/tools/install)** (stable toolchain)
 2. **[Node.js](https://nodejs.org)** (v18+) and npm
 
@@ -135,6 +139,7 @@ npm run tauri dev
 ```
 
 To build a production binary for your OS:
+
 ```bash
 npm run tauri build
 ```
@@ -158,7 +163,7 @@ npm run tauri build
 - [x] Cloud providers — catalog, API keys, model picking, and benchmarking in Bench + Test Suite
 - [x] Cost estimation for cloud runs (per-run cost in Bench, totals in Test Suite; frozen into history)
 - [x] Signed in-app auto-updates from GitHub releases
-- [ ] OS-keychain storage for API keys (currently local persisted store)
+- [x] OS-keychain storage for API keys (auto-migrated, in-memory cache, silent fallback)
 - [x] Test Suite — batch execution with scoreboard matrix
 - [x] AMOLED Dark theme (+ Light / Dark)
 - [x] Side-by-side diff view between two model outputs

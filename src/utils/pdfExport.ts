@@ -10,6 +10,9 @@ import type { BenchmarkResult } from '../services/dbService';
  * keep using the image export below.
  */
 export function needsImageFallback(prompt: string, results: BenchmarkResult[]): boolean {
+  // Intentionally matches control + non-Latin code points (jsPDF fonts lack
+  // those glyphs).
+  // eslint-disable-next-line no-control-regex
   return /[^\u0000-\u024F]/.test(prompt + results.map((r) => r.output).join('\n'));
 }
 
@@ -27,7 +30,11 @@ export function mdToText(md: string): string {
     .replace(/^>\s?/gm, '')
     .replace(/^(\s*[-*+]|\s*\d+\.)\s+/gm, '• ')
     .replace(/^\|(.+)\|$/gm, (_row, cells: string) =>
-      cells.split('|').map((c) => c.trim()).filter(Boolean).join(' | ')
+      cells
+        .split('|')
+        .map((c) => c.trim())
+        .filter(Boolean)
+        .join(' | ')
     )
     .replace(/^[:|\- ]+$/gm, '')
     .split('\n')
@@ -45,7 +52,11 @@ function fmtCost(v: number | null | undefined): string {
  * Text-based PDF: selectable text, tiny file, real pagination. Latin-only
  * (see needsImageFallback); called synchronously, no DOM mount required.
  */
-export function exportReportAsPdfText(prompt: string, results: BenchmarkResult[]): void {
+export function exportReportAsPdfText(
+  prompt: string,
+  results: BenchmarkResult[],
+  reasoningByModel?: Record<string, string>
+): void {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const margin = 14;
@@ -87,7 +98,10 @@ export function exportReportAsPdfText(prompt: string, results: BenchmarkResult[]
   const hasCost = results.some((r) => r.costUsd != null);
   const head = ['Metric', ...results.map((r) => r.model)];
   const body: string[][] = [
-    ['TPS (tok/s)', ...results.map((r) => (r.tps ? `${r.tpsEstimated ? '~' : ''}${r.tps.toFixed(2)}` : 'N/A'))],
+    [
+      'TPS (tok/s)',
+      ...results.map((r) => (r.tps ? `${r.tpsEstimated ? '~' : ''}${r.tps.toFixed(2)}` : 'N/A')),
+    ],
     ['TTFT (ms)', ...results.map((r) => (r.ttft ? String(r.ttft) : 'N/A'))],
   ];
   if (hasTokens) {
@@ -120,6 +134,18 @@ export function exportReportAsPdfText(prompt: string, results: BenchmarkResult[]
     pdf.setTextColor(79, 70, 229);
     pdf.text(`Model ${i + 1}: ${r.model}`, margin, y, { maxWidth });
     y += 7;
+    const thinking = reasoningByModel?.[r.model]?.trim();
+    if (thinking) {
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(9);
+      pdf.setTextColor(120);
+      for (const line of pdf.splitTextToSize(`Thinking: ${thinking}`, maxWidth)) {
+        ensure(6);
+        pdf.text(line as string, margin, y);
+        y += 5;
+      }
+      y += 2;
+    }
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
     pdf.setTextColor(30);

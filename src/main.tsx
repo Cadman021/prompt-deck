@@ -10,9 +10,18 @@ import './App.css'
 applySettingsSideEffects(useSettingsStore.getState());
 useSettingsStore.subscribe((s) => applySettingsSideEffects(s));
 
-// Seed the secrets cache (currently from the store fields; a future OS-keychain
-// backend migrates here — see services/secrets.ts).
-initSecrets(useCloudStore.getState().keys);
+// Migrate plaintext store secrets into the OS keychain when available and
+// seed the in-memory read cache. Awaited before first render so cloud runs
+// never race an empty cache. Never throws (falls back to store fields).
+try {
+  await initSecrets(
+    () => useCloudStore.getState().keys,
+    (id, keyHint) =>
+      useCloudStore.getState().updateKey(id, { apiKey: '', storage: 'keychain', keyHint })
+  );
+} catch {
+  // Fallback path inside initSecrets already covered this.
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
