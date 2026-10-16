@@ -1,6 +1,6 @@
 // src/components/HistorySidebar.tsx
 import React, { useEffect, useState } from 'react';
-import { DbService, HistoryRecord } from '../services/dbService';
+import { DbService, HistoryRecord, type BenchmarkResult } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
 import { Crown, Download, Upload } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
@@ -92,10 +92,20 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const [showWinnersOnly, setShowWinnersOnly] = useState(false);
   const cloudCustom = useCloudStore((s) => s.customProviders);
 
-  /** Cloud `providerId/model` → short `model` for tight card rows. */
-  const shortName = (model: string): string => {
-    const parsed = parseQualified(model, cloudCustom);
-    return parsed.source.kind === 'cloud' ? parsed.model : model;
+  /**
+   * Short display name for tight card rows. Explicit `source`/`providerId`
+   * columns win (so a local `openai/gpt-oss-20b` is never mistaken for a
+   * cloud model); parseQualified stays only as the legacy-rows fallback.
+   */
+  const shortName = (r: BenchmarkResult): string => {
+    if (r.source === 'cloud' && r.providerId) {
+      const prefix = `cloud:${r.providerId}/`;
+      const raw = r.model.startsWith(prefix) ? r.model.slice(prefix.length) : r.model;
+      return raw;
+    }
+    if (r.source === 'local') return r.model;
+    const parsed = parseQualified(r.model, cloudCustom);
+    return parsed.source.kind === 'cloud' ? parsed.model : r.model;
   };
 
   const getRelativeLabel = (isoString: string): string => {
@@ -414,7 +424,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                             : ''
                         }
                       >
-                        {shortName(r.model).split(':')[0]}
+                        {shortName(r).split(':')[0]}
                       </span>
                       {i < record.results.length - 1 && (
                         <span className="text-indigo-500 dark:text-indigo-400 font-mono text-[10px] mx-1">

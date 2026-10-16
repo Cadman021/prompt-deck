@@ -65,6 +65,16 @@ jobs:
       # token (or Azure Trusted Signing); uncomment + configure once owned.
       # See https://v2.tauri.app/distribute/sign/windows/
 
+      - name: Extract release notes from CHANGELOG
+        # One shared source of truth: the CHANGELOG section for this tag.
+        # shell: bash keeps the heredoc working on all three OS runners.
+        shell: bash
+        run: |
+          BODY=$(node scripts/extract-notes.cjs "${{ github.ref_name }}")
+          echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
+          echo "$BODY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Build and release Tauri app
         uses: tauri-apps/tauri-action@v1
         env:
@@ -79,7 +89,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'PromptDeck ${{ github.ref_name }}'
-          releaseBody: 'See the assets below to download and install this version. Refer to CHANGELOG or Release Notes for details.'
+          releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

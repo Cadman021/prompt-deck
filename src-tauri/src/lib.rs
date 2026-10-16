@@ -1,17 +1,22 @@
 // src-tauri/src/lib.rs
 
+/// Service namespace is fixed in Rust on purpose: the frontend only ever
+/// supplies the key id (`account`), so JS cannot read/write arbitrary
+/// credential scopes even if the webview were compromised.
+const KEYCHAIN_SERVICE: &str = "promptdeck-cloud";
+
 /// OS keychain access for cloud API keys. Secrets never touch localStorage:
 /// the frontend keeps only an in-memory cache plus a last-4 fingerprint.
 #[tauri::command]
-fn keychain_set(service: String, account: String, password: String) -> Result<(), String> {
-    keyring::Entry::new(&service, &account)
+fn keychain_set(account: String, password: String) -> Result<(), String> {
+    keyring::Entry::new(KEYCHAIN_SERVICE, &account)
         .and_then(|entry| entry.set_password(&password))
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn keychain_get(service: String, account: String) -> Result<Option<String>, String> {
-    let entry = keyring::Entry::new(&service, &account).map_err(|e| e.to_string())?;
+fn keychain_get(account: String) -> Result<Option<String>, String> {
+    let entry = keyring::Entry::new(KEYCHAIN_SERVICE, &account).map_err(|e| e.to_string())?;
     match entry.get_password() {
         Ok(password) => Ok(Some(password)),
         Err(keyring::Error::NoEntry) => Ok(None),
@@ -20,8 +25,8 @@ fn keychain_get(service: String, account: String) -> Result<Option<String>, Stri
 }
 
 #[tauri::command]
-fn keychain_delete(service: String, account: String) -> Result<(), String> {
-    let entry = keyring::Entry::new(&service, &account).map_err(|e| e.to_string())?;
+fn keychain_delete(account: String) -> Result<(), String> {
+    let entry = keyring::Entry::new(KEYCHAIN_SERVICE, &account).map_err(|e| e.to_string())?;
     match entry.delete_password() {
         Ok(()) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()),

@@ -231,6 +231,10 @@
     "suggested": "Suggérés :",
     "modelsSelected": "modèles sélectionnés",
     "connectedCount": "Connecté",
+    "keychain": "Trousseau OS",
+    "localStorage": "Stockage local",
+    "keychainTitle": "Les clés API sont dans le trousseau du système",
+    "localStorageTitle": "Trousseau injoignable — clés API en stockage local",
     "info": {
       "openrouter": "Une clé pour des centaines de modèles. Beaucoup offrent des niveaux gratuits avec limites.",
       "deepseek": "API officielle DeepSeek : deepseek-chat (V3) et deepseek-reasoner (R1).",

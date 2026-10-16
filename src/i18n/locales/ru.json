@@ -231,6 +231,10 @@
     "suggested": "Рекомендуемые:",
     "modelsSelected": "моделей выбрано",
     "connectedCount": "Подключено",
+    "keychain": "Связка ключей ОС",
+    "localStorage": "Локальное хранилище",
+    "keychainTitle": "API-ключи хранятся в связке ключей ОС",
+    "localStorageTitle": "Связка недоступна — ключи остаются локально",
     "info": {
       "openrouter": "Один ключ для сотен моделей. У многих есть бесплатные тарифы с лимитами.",
       "deepseek": "Официальный API DeepSeek: deepseek-chat (V3) и deepseek-reasoner (R1).",

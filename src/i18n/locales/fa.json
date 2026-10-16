@@ -231,6 +231,10 @@
     "suggested": "پیشنهادی:",
     "modelsSelected": "مدل انتخاب شده",
     "connectedCount": "متصل",
+    "keychain": "کی‌چین سیستم",
+    "localStorage": "حافظه محلی",
+    "keychainTitle": "کلیدهای API در کی‌چین سیستم ذخیره می‌شوند",
+    "localStorageTitle": "کی‌چین در دسترس نیست — کلیدهای API در حافظه محلی می‌مانند",
     "info": {
       "openrouter": "یک کلید برای صدها مدل. خیلی‌ها سطح رایگان با محدودیت نرخ دارن.",
       "deepseek": "API رسمی DeepSeek: مدل deepseek-chat (V3) و deepseek-reasoner (R1).",

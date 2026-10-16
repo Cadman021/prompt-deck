@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # TypeScript majors break typescript-eslint (capped at the previous
+      # major). Revisit manually when the plugin catches up.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     groups:
       # All Tauri JS packages in one PR so they move together.
       # NOTE: groups are per-ecosystem — the matching cargo group still lands
@@ -12,7 +17,7 @@ updates:
       # blocks merging one side without the other.
       tauri:
         patterns:
-          - "@tauri-apps/*"
+          - '@tauri-apps/*'
   - package-ecosystem: cargo
     directory: /src-tauri
     schedule:
@@ -21,9 +26,9 @@ updates:
     groups:
       tauri:
         patterns:
-          - "tauri"
-          - "tauri-build"
-          - "tauri-plugin-*"
+          - 'tauri'
+          - 'tauri-build'
+          - 'tauri-plugin-*'
   - package-ecosystem: github-actions
     directory: /
     schedule:

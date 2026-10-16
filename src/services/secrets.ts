@@ -13,8 +13,6 @@
 
 import { invoke } from '@tauri-apps/api/core';
 
-export const KEYCHAIN_SERVICE = 'promptdeck-cloud';
-
 export interface SecretHolder {
   id: string;
   apiKey: string;
@@ -24,20 +22,21 @@ export interface SecretHolder {
 const cache = new Map<string, string>();
 let backend: 'keychain' | 'local' | null = null;
 
-/** Low-level keychain wrappers (throw when unavailable). */
+/**
+ * Low-level keychain wrappers (throw when unavailable). The credential
+ * service namespace is fixed in Rust (`promptdeck-cloud`); JS only ever
+ * passes the key id, so a compromised webview cannot touch other scopes.
+ */
 export async function keychainSet(account: string, password: string): Promise<void> {
-  await invoke('keychain_set', { service: KEYCHAIN_SERVICE, account, password });
+  await invoke('keychain_set', { account, password });
 }
 
 export async function keychainGet(account: string): Promise<string | null> {
-  return await invoke<string | null>('keychain_get', {
-    service: KEYCHAIN_SERVICE,
-    account,
-  });
+  return await invoke<string | null>('keychain_get', { account });
 }
 
 export async function keychainDelete(account: string): Promise<void> {
-  await invoke('keychain_delete', { service: KEYCHAIN_SERVICE, account });
+  await invoke('keychain_delete', { account });
 }
 
 /** Probe once whether the keychain backend answers. */
@@ -67,7 +66,9 @@ export interface MigrationIo {
  * results so the caller can report; keys that fail stay local and keep
  * working — migration never breaks a working setup.
  */
-export async function migrateToKeychain(io: MigrationIo): Promise<{ migrated: string[]; failed: string[] }> {
+export async function migrateToKeychain(
+  io: MigrationIo
+): Promise<{ migrated: string[]; failed: string[] }> {
   const migrated: string[] = [];
   const failed: string[] = [];
   for (const k of io.keys) {

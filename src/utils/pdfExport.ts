@@ -1,7 +1,6 @@
 // src/utils/pdfExport.ts
-import jsPDF from 'jspdf';
-import { autoTable } from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
+// jsPDF/html2canvas (~1MB combined) load lazily on first export so the main
+// chunk stays lean — neither is needed until the user hits Export PDF.
 import type { BenchmarkResult } from '../services/dbService';
 
 /**
@@ -52,11 +51,15 @@ function fmtCost(v: number | null | undefined): string {
  * Text-based PDF: selectable text, tiny file, real pagination. Latin-only
  * (see needsImageFallback); called synchronously, no DOM mount required.
  */
-export function exportReportAsPdfText(
+export async function exportReportAsPdfText(
   prompt: string,
   results: BenchmarkResult[],
   reasoningByModel?: Record<string, string>
-): void {
+): Promise<void> {
+  const [{ default: jsPDF }, { autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const margin = 14;
@@ -168,6 +171,10 @@ export function exportReportAsPdfText(
  * Returns a promise so the caller can show success/error feedback.
  */
 export const exportElementAsPdf = async (element: HTMLElement): Promise<void> => {
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,

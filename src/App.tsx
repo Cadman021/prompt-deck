@@ -289,19 +289,21 @@ export default function App() {
     // Persian/CJK/Cyrillic/emoji rendering (jsPDF fonts lack those glyphs).
     if (!needsImageFallback(prompt, results)) {
       setPdfState('exporting');
-      try {
-        const reasoningByModel: Record<string, string> = {};
-        for (const s of slots) {
-          if (s.reasoning?.trim()) reasoningByModel[slotQualified(s)] = s.reasoning;
-        }
-        exportReportAsPdfText(prompt, results, reasoningByModel);
-        setPdfState('done');
-        setTimeout(() => setPdfState('idle'), 2500);
-      } catch (err) {
-        console.error('PDF export failed:', err);
-        setError(t('app.pdfError', 'Failed to build the PDF file. Please try again.'));
-        setPdfState('idle');
+      const reasoningByModel: Record<string, string> = {};
+      for (const s of slots) {
+        if (s.reasoning?.trim()) reasoningByModel[slotQualified(s)] = s.reasoning;
       }
+      void exportReportAsPdfText(prompt, results, reasoningByModel).then(
+        () => {
+          setPdfState('done');
+          setTimeout(() => setPdfState('idle'), 2500);
+        },
+        (err: unknown) => {
+          console.error('PDF export failed:', err);
+          setError(t('app.pdfError', 'Failed to build the PDF file. Please try again.'));
+          setPdfState('idle');
+        }
+      );
       return;
     }
     setPdfState('exporting');

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- History cards use explicit `source`/`provider_id` columns (local `openai/*` models no longer misread as cloud)
+- Release notes drafted from CHANGELOG via `scripts/extract-notes.cjs`
+- Keychain service namespace fixed in Rust; secret-storage badge (OS keychain vs local) in Cloud header
+- TypeScript major updates ignored by Dependabot (incompatible with typescript-eslint 8)
+- jsPDF/html2canvas load lazily on export (main chunk 1.49MB → 1.06MB)
+
 ## [1.4.0] - 2026-10-16
 
 Quality-evaluation release: blind voting that actually works, automatic suite
@@ -24,9 +30,6 @@ checks, an LLM judge, OS-keychain secrets, and Elo rankings.
 - Release workflow: code-signing scaffolding (commented, awaiting certificates)
 
 ### 🐛 Fixed
-
-- `decodeValue` returning the raw JSON option for local models (picker stuck on first model)
-- Provider icon fallback tile rendering white-on-white
 
 ## [1.3.0] - 2026-10-13
 

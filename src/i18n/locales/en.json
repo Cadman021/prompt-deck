@@ -231,6 +231,10 @@
     "suggested": "Suggested:",
     "modelsSelected": "models selected",
     "connectedCount": "Connected",
+    "keychain": "OS keychain",
+    "localStorage": "Local storage",
+    "keychainTitle": "API keys are stored in the OS keychain",
+    "localStorageTitle": "Keychain unreachable — API keys stay in local storage",
     "info": {
       "openrouter": "One key for hundreds of models. Many offer free tiers with rate limits.",
       "deepseek": "Official DeepSeek API: deepseek-chat (V3) and deepseek-reasoner (R1).",

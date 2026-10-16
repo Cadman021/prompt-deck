@@ -7,19 +7,59 @@ import { Server, Search, Plus } from 'lucide-react';
 import { CLOUD_CATALOG, CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
 import { useCloudStore } from '../../store/useCloudStore';
 import { LLMService } from '../../services/llmService';
-import { cacheSecret, keychainDelete, secretFor } from '../../services/secrets';
+import { cacheSecret, currentBackend, keychainDelete, secretFor } from '../../services/secrets';
 import { ProviderIcon } from './ProviderIcon';
 import { ProviderDetailPage } from './ProviderDetailPage';
 
 type AnyDef = (CloudProviderDef | CustomProviderDef) & { isCustom: boolean };
 
 const slugify = (name: string): string =>
-  `custom-${name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'endpoint'}`;
+  `custom-${
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'endpoint'
+  }`;
+
+/**
+ * Shows where API-key secrets actually live. When the OS keychain is
+ * unreachable the app silently falls back to the local store — this badge
+ * makes that fallback visible instead of silent.
+ */
+const StorageBadge: React.FC = () => {
+  const { t } = useTranslation();
+  const [backend] = React.useState(() => currentBackend());
+  const keychain = backend === 'keychain';
+  return (
+    <span
+      className={`ms-2 font-mono text-[10px] px-1.5 py-0.5 rounded-full border ${
+        keychain
+          ? 'text-emerald-600 dark:text-emerald-300 border-emerald-500/40 bg-emerald-500/10'
+          : 'text-amber-600 dark:text-amber-300 border-amber-500/40 bg-amber-500/10'
+      }`}
+      title={
+        keychain
+          ? t('cloud.keychainTitle', 'API keys are stored in the OS keychain')
+          : t('cloud.localStorageTitle', 'Keychain unreachable — API keys stay in local storage')
+      }
+    >
+      {keychain ? t('cloud.keychain', 'OS keychain') : t('cloud.localStorage', 'Local storage')}
+    </span>
+  );
+};
 
 export const CloudProvidersView: React.FC = () => {
   const { t } = useTranslation();
-  const { keys, customProviders, addCustomProvider, removeCustomProvider, updateKey, setKnownModels, setModelPricing } =
-    useCloudStore();
+  const {
+    keys,
+    customProviders,
+    addCustomProvider,
+    removeCustomProvider,
+    updateKey,
+    setKnownModels,
+    setModelPricing,
+  } = useCloudStore();
 
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -44,9 +84,10 @@ export const CloudProvidersView: React.FC = () => {
   const freeDefs = useMemo(() => catalogDefs.filter((d) => d.freeTier), [catalogDefs]);
   const keyDefs = useMemo(() => catalogDefs.filter((d) => !d.freeTier), [catalogDefs]);
   const selectedDef: AnyDef | null =
-    [...customProviders.map((d) => ({ ...d, isCustom: true as const })),
-     ...CLOUD_CATALOG.map((d) => ({ ...d, isCustom: false as const }))]
-      .find((d) => d.id === selectedId) ?? null;
+    [
+      ...customProviders.map((d) => ({ ...d, isCustom: true as const })),
+      ...CLOUD_CATALOG.map((d) => ({ ...d, isCustom: false as const })),
+    ].find((d) => d.id === selectedId) ?? null;
 
   const healthyCount = keys.filter((k) => k.enabled && k.status === 'ok').length;
 
@@ -99,7 +140,9 @@ export const CloudProvidersView: React.FC = () => {
   const renderTestAll = (defs: AnyDef[]) => (
     <button
       onClick={() => void handleTestAll(defs)}
-      disabled={testingAll || !defs.some((d) => keys.some((k) => k.providerId === d.id && secretFor(k)))}
+      disabled={
+        testingAll || !defs.some((d) => keys.some((k) => k.providerId === d.id && secretFor(k)))
+      }
       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition disabled:opacity-50"
     >
       {testingAll ? (
@@ -134,7 +177,9 @@ export const CloudProvidersView: React.FC = () => {
         <ProviderIcon def={d} />
         <span className="min-w-0">
           <span className="block text-xs font-bold truncate">{d.name}</span>
-          <span className={`block text-[11px] font-medium truncate ${statusClass}`}>{statusText}</span>
+          <span className={`block text-[11px] font-medium truncate ${statusClass}`}>
+            {statusText}
+          </span>
         </span>
       </button>
     );
@@ -146,20 +191,20 @@ export const CloudProvidersView: React.FC = () => {
         def={selectedDef}
         isCustom={selectedDef.isCustom}
         onBack={() => setSelectedId(null)}
-          onDeleteCustom={
-            selectedDef.isCustom
-              ? (id) => {
-                  for (const k of keys.filter((kk) => kk.providerId === id)) {
-                    cacheSecret(k.id, null);
-                    void keychainDelete(k.id).catch(() => {
-                      // Absent key or no keychain — store removal is what matters.
-                    });
-                  }
-                  removeCustomProvider(id);
-                  setSelectedId(null);
+        onDeleteCustom={
+          selectedDef.isCustom
+            ? (id) => {
+                for (const k of keys.filter((kk) => kk.providerId === id)) {
+                  cacheSecret(k.id, null);
+                  void keychainDelete(k.id).catch(() => {
+                    // Absent key or no keychain — store removal is what matters.
+                  });
                 }
-              : undefined
-          }
+                removeCustomProvider(id);
+                setSelectedId(null);
+              }
+            : undefined
+        }
       />
     );
   }
@@ -181,6 +226,7 @@ export const CloudProvidersView: React.FC = () => {
                   ● {healthyCount} {t('cloud.connected', 'Connected')}
                 </span>
               )}
+              <StorageBadge />
             </p>
           </div>
         </div>
@@ -196,7 +242,10 @@ export const CloudProvidersView: React.FC = () => {
       </div>
 
       <p className="text-[11px] text-slate-400 dark:text-slate-500 -mt-3">
-        {t('cloud.benchHint', 'Connections are saved here first — using cloud models in Bench and Test Suite comes next.')}
+        {t(
+          'cloud.benchHint',
+          'Connections are saved here first — using cloud models in Bench and Test Suite comes next.'
+        )}
       </p>
 
       {/* Custom providers */}
@@ -261,7 +310,10 @@ export const CloudProvidersView: React.FC = () => {
 
         {customDefs.length === 0 && !showAdd ? (
           <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-400 dark:text-slate-500">
-            {t('cloud.noCustom', 'No custom providers — use the button above to add OpenAI-compatible endpoints.')}
+            {t(
+              'cloud.noCustom',
+              'No custom providers — use the button above to add OpenAI-compatible endpoints.'
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -294,7 +346,9 @@ export const CloudProvidersView: React.FC = () => {
             {keyDefs.map(renderCard)}
           </div>
           {keyDefs.length === 0 && (
-            <p className="text-xs text-slate-400 italic">{t('cloud.noMatch', 'No providers match your search.')}</p>
+            <p className="text-xs text-slate-400 italic">
+              {t('cloud.noMatch', 'No providers match your search.')}
+            </p>
           )}
         </section>
       )}

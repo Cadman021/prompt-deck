@@ -231,6 +231,10 @@
     "suggested": "Vorgeschlagen:",
     "modelsSelected": "Modelle ausgewählt",
     "connectedCount": "Verbunden",
+    "keychain": "OS-Keychain",
+    "localStorage": "Lokaler Speicher",
+    "keychainTitle": "API-Keys liegen in der OS-Keychain",
+    "localStorageTitle": "Keychain unerreichbar — API-Keys bleiben lokal gespeichert",
     "info": {
       "openrouter": "Ein Key für Hunderte Modelle. Viele mit kostenloser Stufe und Limits.",
       "deepseek": "Offizielle DeepSeek-API: deepseek-chat (V3) und deepseek-reasoner (R1).",

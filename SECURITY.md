@@ -8,8 +8,8 @@ trust seriously — thank you for reporting issues responsibly.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.x   | :white_check_mark: |
-| < 1.2.0 | :x:                |
+| 1.4.x   | :white_check_mark: |
+| < 1.4.0 | :x:                |
 
 Only the latest minor release receives security fixes. Please upgrade before
 reporting.
@@ -34,23 +34,23 @@ this is best-effort, but security reports jump to the front of the queue.
 
 Particularly in scope:
 
-* **API key handling** — cloud provider keys must never leave the device except
+- **API key handling** — cloud provider keys must never leave the device except
   to the configured provider, must never be logged, and must never appear in
   exports, history, or console output
-* **Tauri IPC / capabilities** — overly broad permissions, command injection,
+- **Tauri IPC / capabilities** — overly broad permissions, command injection,
   unvalidated input crossing the frontend↔Rust boundary
-* **Supply chain** — compromised or typosquatted dependencies (`npm`, `cargo`)
-* **Local data exposure** — SQLite history or settings readable by other origins
+- **Supply chain** — compromised or typosquatted dependencies (`npm`, `cargo`)
+- **Local data exposure** — SQLite history or settings readable by other origins
   or processes beyond normal OS user-data access
 
 Out of scope:
 
-* Upstream provider outages, rate limits, or geo-blocking (e.g. sanctioned
+- Upstream provider outages, rate limits, or geo-blocking (e.g. sanctioned
   regions) — these are network realities, not app vulnerabilities
-* Social engineering against users (e.g. tricking someone into pasting a key
+- Social engineering against users (e.g. tricking someone into pasting a key
   somewhere) — though UX improvements that prevent this are welcome as regular
   issues
-* Vulnerabilities in bundled third-party models or servers (Ollama, LM Studio…)
+- Vulnerabilities in bundled third-party models or servers (Ollama, LM Studio…)
 
 ## Known Limitation (not a vulnerability, but be aware)
 
