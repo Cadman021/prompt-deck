@@ -4,11 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- History cards use explicit `source`/`provider_id` columns (local `openai/*` models no longer misread as cloud)
-- Release notes drafted from CHANGELOG via `scripts/extract-notes.cjs`
-- Keychain service namespace fixed in Rust; secret-storage badge (OS keychain vs local) in Cloud header
-- TypeScript major updates ignored by Dependabot (incompatible with typescript-eslint 8)
-- jsPDF/html2canvas load lazily on export (main chunk 1.49MB → 1.06MB)
+Nothing yet — see `main` for work toward the next release.
 
 ## [1.4.0] - 2026-10-16
 
@@ -28,8 +24,14 @@ checks, an LLM judge, OS-keychain secrets, and Elo rankings.
 
 - ESLint (type-aware + react-hooks) + Prettier configs, zero warnings/errors enforced in CI
 - Release workflow: code-signing scaffolding (commented, awaiting certificates)
+- History cards use explicit `source`/`provider_id` columns (local `openai/*` models no longer misread as cloud)
+- TypeScript major updates ignored by Dependabot (incompatible with typescript-eslint 8)
+- jsPDF/html2canvas load lazily on export (main chunk 1.49MB → 1.06MB)
+- Release notes drafted from CHANGELOG via `scripts/extract-notes.cjs`
 
 ### 🐛 Fixed
+
+- Keychain service namespace fixed in Rust; secret-storage badge (OS keychain vs local) in Cloud header
 
 ## [1.3.0] - 2026-10-13
 
