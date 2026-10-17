@@ -33,8 +33,15 @@
     "copyReportTitle": "复制 Markdown 基准测试报告",
     "copyReport": "复制报告",
     "copyReportDone": "已复制！",
+    "verdictFastest": "最快",
+    "verdictLowestTtft": "最低 TTFT",
+    "verdictCheapest": "最便宜",
+    "verdictSlower": "最慢比最快慢 {{pct}}%",
     "copyOutput": "复制输出",
     "copyOutputDone": "已复制！",
+    "copyCode": "复制代码",
+    "copyCodeDone": "代码已复制",
+    "codePlain": "文本",
     "copyJsonTitle": "复制完整历史 JSON",
     "copyJson": "复制 JSON",
     "copyJsonDone": "JSON 已复制！",
@@ -153,6 +160,11 @@
     "providerTitle": "服务商与连接",
     "providerHint": "本地模型用 Ollama，LM Studio / llama.cpp 服务器用 OpenAI 兼容接口。",
     "serverUrl": "服务器基础 URL",
+    "detectServers": "检测本地服务器",
+    "detecting": "扫描中…",
+    "detectNone": "在常用端口上未找到本地服务器。",
+    "detectApplied": "已连接到 {{url}}",
+    "detectModels": "{{count}} 个模型",
     "resetTitle": "重置设置",
     "resetConfirm": "将服务商、连接和高级选项恢复为默认值？语言和主题保持不变。",
     "resetButton": "恢复默认设置"
@@ -283,7 +295,9 @@
     "unknownProvider": "未知的云服务商。",
     "blind": "盲测",
     "blindTitle": "盲测模式：隐藏身份以便公正投票",
-    "blindName": "模型{{letter}}"
+    "blindName": "模型{{letter}}",
+    "phasePreparing": "正在准备模型…",
+    "phaseGenerating": "生成中"
   },
   "testsuite": {
     "title": "测试套件",
@@ -320,6 +334,24 @@
     "clearResults": "清空结果",
     "copied": "已复制！",
     "totalCost": "总费用",
-    "totalCostTitle": "该模型本套件总费用"
+    "totalCostTitle": "该模型本套件总费用",
+    "exportSuite": "导出",
+    "exportTitle": "将此测试套件导出为 JSON",
+    "importSuite": "导入",
+    "importTitle": "导入共享的测试套件（JSON）",
+    "imported": "已导入 {{count}} 个测试。",
+    "importError": "导入失败 — 不是 PromptDeck 测试套件文件。"
+  },
+  "onboarding": {
+    "title": "连接到模型服务器",
+    "subtitle": "暂无可用模型 —— 启动本地服务器或添加云端服务商。",
+    "dismiss": "关闭",
+    "scanning": "正在扫描本地服务器…",
+    "found": "检测到本地服务器",
+    "none": "在端口 11434、1234 或 8080 上未发现本地服务器。请安装后重新扫描：",
+    "models": "{{count}} 个模型",
+    "ollama": "获取 Ollama",
+    "lmstudio": "获取 LM Studio",
+    "rescan": "重新扫描"
   }
 }

@@ -1,12 +1,105 @@
 // src/components/MarkdownRenderer.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from 'react-i18next';
+import { Copy } from 'lucide-react';
 import { openExternal } from '../utils/openExternal';
+import { toast } from '../store/useToastStore';
 
 interface MarkdownRendererProps {
   content: string;
+  /** While true, fenced code stays plain (no highlighting) to protect the run. */
+  streaming?: boolean;
 }
+
+// Above this size highlighting costs more than it's worth — keep it plain.
+const MAX_HIGHLIGHT_CHARS = 20000;
+
+type HighlighterComponent = React.ComponentType<Record<string, unknown>>;
+
+/**
+ * Fenced code block with a language label + one-click copy. Syntax highlighting
+ * is code-split and only kicks in after the stream finishes (and for reasonably
+ * sized blocks), so it never competes with local inference for CPU.
+ */
+const CodeBlock: React.FC<{
+  language: string;
+  code: string;
+  className?: string;
+  streaming?: boolean;
+}> = ({ language, code, className, streaming }) => {
+  const { t } = useTranslation();
+  const [Highlighter, setHighlighter] = useState<HighlighterComponent | null>(null);
+  const [theme, setTheme] = useState<Record<string, React.CSSProperties> | null>(null);
+  const tooBig = code.length > MAX_HIGHLIGHT_CHARS;
+
+  useEffect(() => {
+    if (streaming || tooBig || Highlighter) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [highlighterMod, styleMod] = await Promise.all([
+          import('react-syntax-highlighter'),
+          import('react-syntax-highlighter/dist/esm/styles/prism/one-dark'),
+        ]);
+        if (cancelled) return;
+        setHighlighter(() => highlighterMod.PrismAsyncLight as unknown as HighlighterComponent);
+        setTheme(styleMod.default as Record<string, React.CSSProperties>);
+      } catch {
+        // Offline or chunk load failed — plain code is a fine fallback.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [streaming, tooBig, Highlighter]);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    toast(t('app.copyCodeDone', 'Code copied'), 'success');
+  };
+
+  return (
+    <div
+      dir="ltr"
+      className="my-3 rounded-lg border border-slate-300 dark:border-slate-800 overflow-hidden"
+    >
+      <div className="flex items-center justify-between bg-slate-800 dark:bg-slate-900 px-3 py-1.5 border-b border-slate-700/60">
+        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+          {language || t('app.codePlain', 'text')}
+        </span>
+        <button
+          onClick={() => void handleCopy()}
+          title={t('app.copyCode', 'Copy code')}
+          className="flex items-center gap-1 text-[10px] font-medium text-slate-300 hover:text-white transition"
+        >
+          <Copy className="w-3 h-3" />
+          {t('app.copyCode', 'Copy code')}
+        </button>
+      </div>
+      {Highlighter && theme ? (
+        <Highlighter
+          language={language || 'text'}
+          style={theme}
+          PreTag="div"
+          customStyle={{
+            margin: 0,
+            padding: '0.75rem',
+            background: 'transparent',
+            fontSize: '0.75rem',
+          }}
+        >
+          {code}
+        </Highlighter>
+      ) : (
+        <pre className="bg-slate-900 dark:bg-slate-950 p-3 overflow-x-auto text-xs font-mono text-emerald-400">
+          <code className={className}>{code}</code>
+        </pre>
+      )}
+    </div>
+  );
+};
 
 /**
  * Remote images in model output are untrusted network requests (breaks the
@@ -41,12 +134,18 @@ const SafeImage: React.FC<{ src?: string; alt?: string }> = ({ src, alt }) => {
 // cost, so skip renders unless the content string itself changed.
 export const MarkdownRenderer = React.memo(function MarkdownRenderer({
   content,
+  streaming,
 }: MarkdownRendererProps) {
   return (
     <div className="markdown-body text-sm leading-relaxed text-slate-800 dark:text-slate-200 space-y-2">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          // Block code produces its own container in `code`, so flatten the
+          // default <pre> wrapper to avoid double chrome.
+          pre({ children }) {
+            return <>{children}</>;
+          },
           p({ children }) {
             return (
               <p dir="auto" className="my-1.5 leading-6 text-slate-700 dark:text-slate-300">
@@ -114,14 +213,7 @@ export const MarkdownRenderer = React.memo(function MarkdownRenderer({
             );
           },
 
-          code({
-            className,
-            children,
-            ...props
-          }: {
-            className?: string;
-            children?: React.ReactNode;
-          }) {
+          code({ className, children }: { className?: string; children?: React.ReactNode }) {
             const match = /language-(\w+)/.exec(className || '');
             const isInline = !match && !String(children).includes('\n');
 
@@ -130,7 +222,6 @@ export const MarkdownRenderer = React.memo(function MarkdownRenderer({
                 <code
                   dir="ltr"
                   className="bg-slate-200 text-amber-800 border border-slate-300 dark:bg-slate-800 dark:text-amber-300 dark:border-slate-700/60 px-1.5 py-0.5 rounded text-xs font-mono"
-                  {...props}
                 >
                   {children}
                 </code>
@@ -138,14 +229,12 @@ export const MarkdownRenderer = React.memo(function MarkdownRenderer({
             }
 
             return (
-              <pre
-                dir="ltr"
-                className="bg-slate-900 dark:bg-slate-950 p-3 rounded-lg border border-slate-300 dark:border-slate-800 overflow-x-auto text-xs font-mono my-3 text-emerald-400"
-              >
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              </pre>
+              <CodeBlock
+                language={match ? match[1] : ''}
+                code={String(children).replace(/\n$/, '')}
+                className={className}
+                streaming={streaming}
+              />
             );
           },
 

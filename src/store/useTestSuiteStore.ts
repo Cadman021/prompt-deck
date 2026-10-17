@@ -50,6 +50,7 @@ interface TestSuiteState {
   abortController: AbortController | null;
   setTests: (tests: string[]) => void;
   setCheck: (ti: number, check: OutputCheck) => void;
+  setChecks: (checks: Record<number, OutputCheck>) => void;
   setSelectedModels: (models: string[]) => void;
   toggleModel: (name: string) => void;
   patchCell: (ti: number, model: string, patch: Partial<SuiteCell>) => void;
@@ -76,6 +77,7 @@ export const useTestSuiteStore = create<TestSuiteState>()(
           checks:
             check.type === 'none' ? { ...s.checks, [ti]: NO_CHECK } : { ...s.checks, [ti]: check },
         })),
+      setChecks: (checks) => set({ checks }),
       setSelectedModels: (selectedModels) => set({ selectedModels }),
       toggleModel: (name) =>
         set((s) => ({

@@ -1,7 +1,7 @@
 {
   "name": "prompt-deck",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -27,6 +27,7 @@
     "react-dom": "^19.3.0",
     "react-i18next": "^17.0.16",
     "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.2",
     "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
     "zustand": "^5.0.15"
@@ -36,6 +37,7 @@
     "@tauri-apps/cli": "^2.12.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.6.1",
     "eslint": "^10.12.0",

@@ -1,6 +1,6 @@
 [package]
 name = "prompt-deck"
-version = "1.4.0"
+version = "1.5.0"
 description = "PromptDeck — local, private studio for prompting and benchmarking LLMs side-by-side"
 authors = ["Cadman021"]
 license = "GPL-3.0-only"

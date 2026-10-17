@@ -8,12 +8,7 @@ import { LLMService } from './llmService';
 import type { BenchmarkMetrics, PromptOptions } from '../types/ollama';
 import type { Provider } from '../store/useSettingsStore';
 import { mean, median, stdev } from '../utils/stats';
-import {
-  calcCost,
-  resolveCloudTarget,
-  type ModelSource,
-  type TargetConfig,
-} from './modelTarget';
+import { calcCost, resolveCloudTarget, type ModelSource, type TargetConfig } from './modelTarget';
 import { useCloudStore } from '../store/useCloudStore';
 
 export interface LocalEndpoint {
@@ -50,6 +45,8 @@ export function resolveRunEndpoint(
 export interface RunStreamCallbacks {
   onChunk?: (fullText: string) => void;
   onReasoning?: (fullReasoning: string) => void;
+  /** Fired once when the first token arrives — drives the pre-token phase UI. */
+  onFirstToken?: (ttftMs: number) => void;
   /**
    * Always called exactly once per stream (success, error, or abort).
    * `aborted` is true when the stop came from our own AbortController —
@@ -70,7 +67,10 @@ export interface CostInput {
 }
 
 /** Frozen run cost, or null when tokens/pricing are unknown. Never guesses. */
-export function runCost(pricing: Record<string, Record<string, { prompt: number; completion: number }>>, input: CostInput): number | null {
+export function runCost(
+  pricing: Record<string, Record<string, { prompt: number; completion: number }>>,
+  input: CostInput
+): number | null {
   if (!input.metrics || input.metrics.tokenSource !== 'server') return null;
   return calcCost(
     input.metrics.promptTokens,
@@ -113,6 +113,9 @@ export function runTargetStream(
       },
       onReasoning: (fullReasoning) => {
         cb.onReasoning?.(fullReasoning);
+      },
+      onFirstToken: (ttftMs) => {
+        cb.onFirstToken?.(ttftMs);
       },
       onComplete: (fullText, metrics) => {
         finish(fullText, metrics, null, false);
@@ -166,6 +169,7 @@ export function runRepeatedStream(
     runTargetStream(config, options, signal, {
       onChunk: cb.onChunk,
       onReasoning: cb.onReasoning,
+      onFirstToken: cb.onFirstToken,
       onDone: (output, metrics, error, aborted) => {
         if (aborted) {
           cb.onDone(lastOutput || output, lastMetrics, null, true);
@@ -183,18 +187,23 @@ export function runRepeatedStream(
         lastOutput = output;
         lastMetrics = metrics;
         if (index + 1 >= n) {
-          cb.onDone(lastOutput, {
-            ...metrics,
-            tps: median(tpsSamples),
-            tpsMean: mean(tpsSamples),
-            tpsStd: stdev(tpsSamples),
-            ttftMs: Math.round(median(ttftSamples)),
-            totalDurationMs,
-            totalTokens: promptTokens + completionTokens,
-            promptTokens,
-            completionTokens,
-            repeatCount: n,
-          }, null, false);
+          cb.onDone(
+            lastOutput,
+            {
+              ...metrics,
+              tps: median(tpsSamples),
+              tpsMean: mean(tpsSamples),
+              tpsStd: stdev(tpsSamples),
+              ttftMs: Math.round(median(ttftSamples)),
+              totalDurationMs,
+              totalTokens: promptTokens + completionTokens,
+              promptTokens,
+              completionTokens,
+              repeatCount: n,
+            },
+            null,
+            false
+          );
           return;
         }
         runOne(index + 1);

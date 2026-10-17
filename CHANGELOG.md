@@ -6,6 +6,41 @@ All notable changes to this project will be documented in this file.
 
 Nothing yet — see `main` for work toward the next release.
 
+## [1.5.0] - 2026-10-17
+
+Polish & reliability release: clearer first-run and streaming feedback, shareable
+test suites, sharper benchmark tables, and a roomier history panel.
+
+### ✨ Added
+
+- **Auto-detect local servers** — scans Ollama (`11434`), LM Studio (`1234`), and llama.cpp (`8080`) with one-click connect chips in Settings
+- **First-run onboarding card** (Bench) when no local or cloud model is available: live scan results plus one-click install links for Ollama / LM Studio
+- **Shareable test suites** — export a suite (prompts + auto-checks + selected models) to JSON and import it back (`suiteFile` format, versioned) so benchmarks are reproducible across machines
+- **Live streaming feedback** in each column: a phase strip (Preparing → Generating) with a running elapsed timer, a live `~tok/s` estimate, and a typing caret, so a slow first token never looks like a hang
+- **Bench verdict bar** — fastest / lowest-TTFT / cheapest model at a glance, plus the slowest model's deficit as a percentage
+- **Unified toast notifications** for copy, import, and export feedback (replaces the per-component "Copied!" states)
+- **Test Suite scoreboard upgrades** — heat-coloring by relative per-test speed, explicit `tok/s` units, and a 👑 fastest-per-test marker
+- **Highlighted code blocks** — language label plus a one-click copy button on every fenced block
+
+### 🔧 Changed
+
+- **History sidebar redesigned**: wider panel, roomier cards with wrapping model chips (no truncation), and Copy JSON / Export CSV / full-database backup & restore moved into the panel header
+- Result toolbar now holds per-run actions only (Copy Report, PDF, Diff); JSON/CSV export lives in the history panel
+- RTL-correct logical positions in the leaderboard and history panels (`start`/`end` with `border-s`/`border-e`)
+- Durations under a second now render in milliseconds; TTFT and total duration share one formatter
+- Tabular (fixed-width) numerals across metrics, leaderboard, history, and scoreboard so digits no longer jitter
+- Syntax highlighting is code-split and only runs after a stream finishes (and for blocks under 20k chars), so it never competes with local inference
+
+### 🐛 Fixed
+
+- Cloud results were briefly overwritten by a trailing animation frame — pending `requestAnimationFrame` writes are now cancelled on completion, so a finished cell can no longer flip back to "running"
+- `keyring` 4 renamed `delete_password` → `delete_credential` (build fix)
+
+### 📦 Dependencies
+
+- Added `react-syntax-highlighter` (lazy-loaded) for code highlighting
+- lucide-react `1.39` → `1.56`, i18next `26.4.3` → `26.4.4`, postcss `8.5.26` → `8.5.30`, TypeScript `5.8.3` → `5.9.3`, keyring `2` → `4`, serde_json `1.0.152` → `1.0.154`
+
 ## [1.4.0] - 2026-10-16
 
 Quality-evaluation release: blind voting that actually works, automatic suite

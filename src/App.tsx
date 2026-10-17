@@ -17,8 +17,9 @@ import {
 import { resolveRunEndpoint, runRepeatedStream } from './services/runTarget';
 import { HistorySidebar } from './components/HistorySidebar';
 import { ModelColumn } from './components/ModelColumn';
-import { generateMarkdownReport, copyHistoryAsJson, exportHistoryAsCsv } from './utils/exportUtils';
+import { generateMarkdownReport } from './utils/exportUtils';
 import { safeHost } from './utils/httpError';
+import { formatDurationMs } from './utils/timeUtils';
 import { rafBatch } from './utils/rafBatch';
 import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
@@ -35,8 +36,11 @@ import { UpdaterPrompt } from './components/UpdaterPrompt';
 import { JudgePanel } from './components/JudgePanel';
 import { ResultToolbar } from './components/layout/ResultToolbar';
 import { SettingsPanel } from './components/layout/SettingsPanel';
+import { Toaster } from './components/Toaster';
+import { OnboardingCard } from './components/OnboardingCard';
+import { toast } from './store/useToastStore';
 import './i18n/config';
-import { Play, Plus, Eye, EyeOff } from 'lucide-react';
+import { Play, Plus, Eye, EyeOff, Zap, Clock, DollarSign } from 'lucide-react';
 
 const MAX_MODELS = 4;
 const MIN_MODELS = 2;
@@ -52,6 +56,10 @@ interface Slot {
   metrics: BenchmarkMetrics | null;
   loading: boolean;
   error: string | null;
+  /** When this slot's stream began (ms epoch) — drives the cold-start timer. */
+  startedAt?: number | null;
+  /** When the first token arrived (ms epoch); null until then. */
+  firstTokenAt?: number | null;
 }
 
 const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot => ({
@@ -63,6 +71,8 @@ const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot =
   metrics: null,
   loading: false,
   error: null,
+  startedAt: null,
+  firstTokenAt: null,
 });
 
 /** Storage/display name: `providerId/model` for cloud, plain id for local. */
@@ -133,7 +143,8 @@ const RunModeToggle: React.FC = () => {
 
 export default function App() {
   const { t } = useTranslation();
-  const { provider, baseUrl, advancedConfig, setAdvancedConfig } = useSettingsStore();
+  const { provider, baseUrl, advancedConfig, setAdvancedConfig, setProvider, setBaseUrl } =
+    useSettingsStore();
   const blindMode = useSettingsStore((s) => s.blindMode);
   const setBlindMode = useSettingsStore((s) => s.setBlindMode);
   const blindLabelFor = (index: number): string =>
@@ -190,10 +201,8 @@ export default function App() {
   // Current run's history id (set after the run is saved) so votes persist
   const savedRunIdRef = useRef<number | null>(null);
 
-  const [copied, setCopied] = useState(false);
-  const [jsonState, setJsonState] = useState<'idle' | 'copied' | 'empty'>('idle');
-  const [csvState, setCsvState] = useState<'idle' | 'exporting' | 'done' | 'empty'>('idle');
   const [isLoading, setIsLoading] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [pdfState, setPdfState] = useState<'idle' | 'exporting' | 'done'>('idle');
@@ -239,21 +248,6 @@ export default function App() {
       finishedRefs.current[id] = true;
     });
   }, [t]);
-
-  const handleCopyJson = async () => {
-    const status = await copyHistoryAsJson();
-    // 'error' (clipboard denied) surfaces as empty feedback, same as CSV.
-    setJsonState(status === 'ok' ? 'copied' : 'empty');
-    setTimeout(() => setJsonState('idle'), 2000);
-  };
-
-  const handleExportCsv = async () => {
-    if (csvState === 'exporting') return;
-    setCsvState('exporting');
-    const ok = await exportHistoryAsCsv();
-    setCsvState(ok ? 'done' : 'empty');
-    setTimeout(() => setCsvState('idle'), 2500);
-  };
 
   // The hidden PDF source mounts only for the duration of an export — it
   // used to live mounted (re-rendering on every stream chunk for nothing).
@@ -365,8 +359,7 @@ export default function App() {
     }));
     const report = generateMarkdownReport({ prompt, results });
     await navigator.clipboard.writeText(report);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    toast(t('app.copyReportDone'), 'success');
   };
 
   const loadModels = async () => {
@@ -562,6 +555,14 @@ export default function App() {
             );
           });
         },
+        onFirstToken: () => {
+          // First repeat only — later repeats must not reset the phase timer.
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.id === slot.id && s.firstTokenAt == null ? { ...s, firstTokenAt: Date.now() } : s
+            )
+          );
+        },
         onDone: (_output, metrics, error, aborted) => {
           // Abort-triggered endings arrive after Stop already finished the slot.
           if (aborted) {
@@ -617,6 +618,8 @@ export default function App() {
         metrics: null,
         loading: true,
         error: null,
+        startedAt: Date.now(),
+        firstTokenAt: null,
       }));
     });
     setIsLoading(true);
@@ -732,7 +735,16 @@ export default function App() {
     setSlots((prev) =>
       prev.map((s) =>
         s.id === id
-          ? { ...s, output: '', reasoning: '', metrics: null, error: null, loading: true }
+          ? {
+              ...s,
+              output: '',
+              reasoning: '',
+              metrics: null,
+              error: null,
+              loading: true,
+              startedAt: Date.now(),
+              firstTokenAt: null,
+            }
           : s
       )
     );
@@ -843,6 +855,45 @@ export default function App() {
 
   const hasOutput = slots.some((s) => s.output);
 
+  // Post-run verdict: the headline winners so the user doesn't have to scan
+  // every column. Only ranks slots that actually finished with metrics.
+  const verdict = useMemo(() => {
+    const done = slots.filter((s) => s.output && !s.error && s.metrics && (s.metrics.tps || 0) > 0);
+    if (done.length === 0) return null;
+    const fastest = done.reduce((a, b) => ((b.metrics!.tps || 0) > (a.metrics!.tps || 0) ? b : a));
+    const slowest = done.reduce((a, b) => ((b.metrics!.tps || 0) < (a.metrics!.tps || 0) ? b : a));
+    const withTtft = done.filter((s) => (s.metrics!.ttftMs || 0) > 0);
+    const lowestTtft = withTtft.length
+      ? withTtft.reduce((a, b) =>
+          (b.metrics!.ttftMs || Infinity) < (a.metrics!.ttftMs || Infinity) ? b : a
+        )
+      : null;
+    const priced = slots
+      .map((s) => {
+        if (s.source.kind !== 'cloud' || !s.metrics || s.metrics.tokenSource !== 'server') {
+          return null;
+        }
+        const cost = calcCost(
+          s.metrics.promptTokens,
+          s.metrics.completionTokens,
+          (cloudPricing[s.source.providerId] ?? {})[s.model]
+        );
+        return cost == null ? null : { slot: s, cost };
+      })
+      .filter((x): x is { slot: (typeof slots)[number]; cost: number } => x !== null);
+    const cheapest = priced.length ? priced.reduce((a, b) => (b.cost < a.cost ? b : a)) : null;
+    const spread =
+      done.length > 1
+        ? Math.round((1 - (slowest.metrics!.tps || 0) / (fastest.metrics!.tps || 1)) * 100)
+        : 0;
+    return { fastest, lowestTtft, cheapest, spread, count: done.length };
+  }, [slots, cloudPricing]);
+
+  const shortModel = (name: string): string => {
+    const parts = name.split('/');
+    return parts[parts.length - 1];
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased overflow-hidden">
       <AppSidebar activeView={activeView} onNavigate={handleSidebarNavigate} />
@@ -854,6 +905,7 @@ export default function App() {
       />
       <Leaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
       <UpdaterPrompt />
+      <Toaster />
       <SettingsPanel
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -871,23 +923,66 @@ export default function App() {
         />
 
         {activePage === 'bench' && (
-          <ResultToolbar
-            hasOutput={hasOutput}
-            canShowDiff={canShowDiff}
-            diffActive={diffPair !== null}
-            onToggleDiff={() => {
-              setDiffPair(diffPair ? null : [comparableSlots[0].id, comparableSlots[1].id]);
-            }}
-            copied={copied}
-            onCopyReport={handleCopyReport}
-            pdfState={pdfState}
-            onExportPdf={handleExportPdf}
-            jsonState={jsonState}
-            onCopyJson={handleCopyJson}
-            csvState={csvState}
-            onExportCsv={handleExportCsv}
-            slotsLabel={`${slots.length}/${MAX_MODELS} models`}
-          />
+          <>
+            <ResultToolbar
+              hasOutput={hasOutput}
+              canShowDiff={canShowDiff}
+              diffActive={diffPair !== null}
+              onToggleDiff={() => {
+                setDiffPair(diffPair ? null : [comparableSlots[0].id, comparableSlots[1].id]);
+              }}
+              onCopyReport={handleCopyReport}
+              pdfState={pdfState}
+              onExportPdf={handleExportPdf}
+              slotsLabel={`${slots.length}/${MAX_MODELS} models`}
+            />
+
+            {verdict && !isLoading && (
+              <div className="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 text-[11px]">
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                  <Zap className="w-3 h-3" />
+                  {t('app.verdictFastest', 'Fastest')}:{' '}
+                  <strong className="font-semibold">
+                    {shortModel(slotQualified(verdict.fastest))}
+                  </strong>
+                  <span className="font-mono tabular-nums opacity-80">
+                    {verdict.fastest.metrics?.tps} tok/s
+                  </span>
+                </span>
+                {verdict.lowestTtft && (
+                  <span className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
+                    <Clock className="w-3 h-3" />
+                    {t('app.verdictLowestTtft', 'Lowest TTFT')}:{' '}
+                    <strong className="font-semibold">
+                      {shortModel(slotQualified(verdict.lowestTtft))}
+                    </strong>
+                    <span className="font-mono tabular-nums opacity-80">
+                      {formatDurationMs(verdict.lowestTtft.metrics?.ttftMs ?? 0)}
+                    </span>
+                  </span>
+                )}
+                {verdict.cheapest && (
+                  <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                    <DollarSign className="w-3 h-3" />
+                    {t('app.verdictCheapest', 'Cheapest')}:{' '}
+                    <strong className="font-semibold">
+                      {shortModel(slotQualified(verdict.cheapest.slot))}
+                    </strong>
+                    <span className="font-mono tabular-nums opacity-80">
+                      {formatCost(verdict.cheapest.cost)}
+                    </span>
+                  </span>
+                )}
+                {verdict.spread > 0 && (
+                  <span className="text-slate-400 dark:text-slate-500">
+                    {t('app.verdictSlower', 'slowest {{pct}}% slower than fastest', {
+                      pct: verdict.spread,
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {error && (
@@ -905,6 +1000,16 @@ export default function App() {
               )}
             </span>
           </div>
+        )}
+
+        {activePage === 'bench' && !hasAnySource && !loadingModels && !onboardingDismissed && (
+          <OnboardingCard
+            onConnect={(nextProvider, nextBaseUrl) => {
+              setProvider(nextProvider);
+              setBaseUrl(nextBaseUrl);
+            }}
+            onDismiss={() => setOnboardingDismissed(true)}
+          />
         )}
 
         {activePage === 'tests' ? (
@@ -932,6 +1037,9 @@ export default function App() {
                     reasoning={slot.reasoning}
                     metrics={slot.metrics}
                     error={slot.error}
+                    loading={slot.loading}
+                    streamStartedAt={slot.startedAt}
+                    firstTokenAt={slot.firstTokenAt}
                     canRemove={slots.length > MIN_MODELS}
                     isWinner={
                       winnerModel !== null &&

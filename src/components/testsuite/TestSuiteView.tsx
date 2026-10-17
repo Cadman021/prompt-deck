@@ -10,8 +10,9 @@ import {
   Plus,
   Trash2,
   Download,
+  Upload,
+  Share2,
   Copy,
-  Check,
   Crown,
   X,
   FlaskConical,
@@ -25,8 +26,11 @@ import { buildCloudGroups, calcCost, formatCost, parseQualified } from '../../se
 import { resolveRunEndpoint, runRepeatedStream } from '../../services/runTarget';
 import { DbService, type BenchmarkResult } from '../../services/dbService';
 import { safeHost } from '../../utils/httpError';
-import { rafBatch } from '../../utils/rafBatch';
+import { rafBatch, cancelRafBatch } from '../../utils/rafBatch';
 import { NO_CHECK, evalCheck, isValidCheck, type CheckType } from '../../utils/checks';
+import { buildSuiteFile, parseSuiteFile } from '../../utils/suiteFile';
+import { formatDurationMs } from '../../utils/timeUtils';
+import { toast } from '../../store/useToastStore';
 import { APP_VERSION } from '../../version';
 import { OllamaModel, BenchmarkMetrics } from '../../types/ollama';
 import { MarkdownRenderer } from '../MarkdownRenderer';
@@ -34,6 +38,14 @@ import { MarkdownRenderer } from '../MarkdownRenderer';
 const MAX_TESTS = 10;
 const STORAGE_KEY = 'promptdeck-test-suite';
 const MODEL_COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
+
+// Green→red ratio background for the scoreboard (relative to each row's best
+// tps), so "who is fastest here" reads at a glance even without the crown.
+const heatBackground = (ratio: number): string => {
+  const clamped = Math.max(0, Math.min(1, ratio));
+  const hue = 140 * clamped;
+  return `hsla(${hue}, 70%, 45%, 0.18)`;
+};
 
 /** One-time import of the pre-store plain-array format. */
 function loadStoredTests(): string[] | null {
@@ -96,7 +108,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
   const progress = useTestSuiteStore((s) => s.progress);
   const setProgress = useTestSuiteStore((s) => s.setProgress);
   const [detail, setDetail] = useState<{ ti: number; model: string } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const suiteFileRef = useRef<HTMLInputElement>(null);
 
   // One-time seed: default prompts (+ legacy plain-array import), then the
   // first two installed models when nothing is selected yet.
@@ -176,6 +188,11 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
         {
           onChunk: (fullText) => {
             rafBatch(`${ti}:${target}`, () => {
+              // A late frame must never resurrect a finished cell: if the run
+              // already finalized (its frame can lag one tick behind onDone),
+              // only mirror the text while the cell is still running.
+              const cell = useTestSuiteStore.getState().results[ti]?.[target];
+              if (cell && cell.status !== 'running') return;
               updateCell(ti, target, { status: 'running', output: fullText });
             });
           },
@@ -185,6 +202,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             });
           },
           onDone: (output, metrics, error, aborted) => {
+            // Cancel any pending frame first, then write the terminal state.
+            cancelRafBatch(`${ti}:${target}`);
+            cancelRafBatch(`${ti}:${target}:reasoning`);
             if (aborted) {
               updateCell(ti, target, {
                 status: 'error',
@@ -374,6 +394,22 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     return map;
   }, [activeTests, selectedModels, results]);
 
+  // Best tps per test row — the heatmap denominator (green = row best).
+  const rowBestTps = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const { index } of activeTests) {
+      let best = 0;
+      for (const m of selectedModels) {
+        const cell = results[index]?.[m];
+        if (cell?.status === 'done' && cell.metrics && cell.metrics.tps > best) {
+          best = cell.metrics.tps;
+        }
+      }
+      map[index] = best;
+    }
+    return map;
+  }, [activeTests, selectedModels, results]);
+
   const summary = useMemo(() => {
     return selectedModels.map((m) => {
       const cells = activeTests
@@ -457,8 +493,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
   const handleCopyMarkdown = async () => {
     if (!hasAnyResult) return;
     await navigator.clipboard.writeText(buildMarkdown());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    toast(t('testsuite.copied', 'Copied!'), 'success');
   };
 
   const handleExportCsv = () => {
@@ -491,8 +526,62 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     URL.revokeObjectURL(url);
   };
 
-  const detailCell = detail ? results[detail.ti]?.[detail.model] : undefined;
+  // Shareable definition (prompts + checks + models) — no results. Lets users
+  // hand a suite to a teammate as a small, versioned JSON file.
+  const handleExportSuite = () => {
+    const s = useTestSuiteStore.getState();
+    const file = buildSuiteFile({
+      tests: s.tests,
+      checks: s.checks,
+      selectedModels: s.selectedModels,
+    });
+    const blob = new Blob([JSON.stringify(file, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'promptdeck-test-suite.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
+  const handleImportSuite = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const parsed = parseSuiteFile(await file.text());
+      if (!parsed.ok) {
+        toast(
+          t('testsuite.importError', 'Import failed — not a PromptDeck test suite file.'),
+          'error'
+        );
+        return;
+      }
+      const nextTests = parsed.def.tests.slice(0, MAX_TESTS);
+      const s = useTestSuiteStore.getState();
+      s.setTests(nextTests.length > 0 ? nextTests : ['']);
+      s.setChecks(parsed.def.checks);
+      if (parsed.def.selectedModels.length > 0) s.setSelectedModels(parsed.def.selectedModels);
+      // Imported prompts don't match any previous output keys — start clean.
+      s.clearResults();
+      toast(
+        t('testsuite.imported', 'Imported {{count}} tests.', { count: nextTests.length }),
+        'success'
+      );
+    } catch (error) {
+      console.error('Suite import failed:', error);
+      toast(
+        t('testsuite.importError', 'Import failed — not a PromptDeck test suite file.'),
+        'error'
+      );
+    }
+  };
+
+  const detailCell = detail ? results[detail.ti]?.[detail.model] : undefined;
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-4">
       {/* Header */}
@@ -518,12 +607,8 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                 onClick={handleCopyMarkdown}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
               >
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-                <span>{copied ? t('testsuite.copied', 'Copied!') : 'Markdown'}</span>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Markdown</span>
               </button>
               <button
                 onClick={handleExportCsv}
@@ -551,6 +636,29 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             </button>
           ) : (
             <>
+              <button
+                onClick={() => suiteFileRef.current?.click()}
+                title={t('testsuite.importTitle', 'Import a shared test suite (JSON)')}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{t('testsuite.importSuite', 'Import')}</span>
+              </button>
+              <input
+                ref={suiteFileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={handleImportSuite}
+              />
+              <button
+                onClick={handleExportSuite}
+                title={t('testsuite.exportTitle', 'Export this test suite as JSON')}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>{t('testsuite.exportSuite', 'Export')}</span>
+              </button>
               <button
                 onClick={handleRetryFailed}
                 disabled={!hasErrorCells}
@@ -795,6 +903,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                           {displayName(m).split(':')[0]}
                         </span>
                       </span>
+                      <span className="block text-[9px] font-normal text-slate-400 dark:text-slate-500">
+                        tok/s
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -814,6 +925,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                     {selectedModels.map((m) => {
                       const c = results[index]?.[m];
                       const isWinner = winners[index] === m;
+                      const done = c?.status === 'done' && c.metrics;
+                      const bestTps = rowBestTps[index] ?? 0;
+                      const ratio = done && bestTps > 0 ? (c!.metrics!.tps || 0) / bestTps : 0;
                       return (
                         <td key={m} className="px-2 py-1.5 text-center">
                           <button
@@ -821,7 +935,12 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                               c && c.status !== 'idle' && setDetail({ ti: index, model: m })
                             }
                             disabled={!c || c.status === 'idle'}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-mono transition ${
+                            style={
+                              done && !isWinner
+                                ? { backgroundColor: heatBackground(ratio) }
+                                : undefined
+                            }
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-mono tabular-nums transition ${
                               !c || c.status === 'idle'
                                 ? 'text-slate-300 dark:text-slate-600'
                                 : c.status === 'running'
@@ -830,7 +949,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                                     ? 'text-rose-500 bg-rose-500/10 hover:bg-rose-500/20'
                                     : isWinner
                                       ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 ring-1 ring-emerald-500/40 hover:bg-emerald-500/20 font-bold'
-                                      : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/40'
                             }`}
                             title={[
                               c?.error || c?.output?.slice(0, 200) || '',
@@ -873,7 +992,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   </tr>
                 ))}
                 {/* Summary: avg TPS + wins */}
-                <tr className="bg-slate-50 dark:bg-slate-800/40 font-mono">
+                <tr className="bg-slate-50 dark:bg-slate-800/40 font-mono tabular-nums">
                   <td className="px-3 py-2 font-sans font-semibold text-slate-500 dark:text-slate-400">
                     {t('testsuite.average', 'Avg tok/s · wins')}
                   </td>
@@ -956,7 +1075,8 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   {detailCell.metrics && (
                     <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-300">
                       {detailCell.metrics.tpsEstimated ? '~' : ''}
-                      {detailCell.metrics.tps} tok/s · {detailCell.metrics.ttftMs}ms TTFT
+                      {detailCell.metrics.tps} tok/s · {formatDurationMs(detailCell.metrics.ttftMs)}{' '}
+                      TTFT
                     </span>
                   )}
                   <button

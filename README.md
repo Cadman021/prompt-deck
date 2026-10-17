@@ -1,5 +1,4 @@
-<!--![PromptDeck Git](./docs/demo.gif) -->
-<!-- Retake recommended for v1.0.0: new App Shell + a Test Suite run. Keep filename docs/demo.gif -->
+<!--![PromptDeck Gif](./docs/demo.gif) -->
 
 # 🚀 PromptDeck
 
@@ -17,6 +16,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 ## ✨ Features
 
 - 🧭 **App Shell workspace** — icon-rail sidebar (Bench, Tests, Cloud, History, Board, Config) plus a slim 48px TopBar with a provider connection pill (status dot, server URL, model count). Result actions live in a contextual toolbar that only appears when there are results, so model outputs always get maximum space
+- 🔎 **Auto-detect & first-run onboarding** — PromptDeck scans the usual local ports (Ollama `11434`, LM Studio `1234`, llama.cpp `8080`) and offers one-click connect; when nothing is found, an onboarding card links straight to the Ollama / LM Studio installers
 - ☁️ **Cloud providers** — manage OpenAI-compatible endpoints 9Router-style: curated catalog of 19 providers (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini, Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, Anthropic) split into Free Tier / API Key sections, custom endpoints, named API keys per provider with direct key-creation links, and a detail page with connection testing plus model picking (search, per-model 1-token probe, enable toggles)
 
   ![Cloud Providers](./docs/screenshot-cloud.png)
@@ -37,7 +37,8 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   ![Model Leaderboard](./docs/screenshot-leaderboard.png)
   <!-- Retake recommended: leaderboard panel now opens from the sidebar; capture with 2-3 models visible showing runs / avg TPS / wins. Keep filename docs/screenshot-leaderboard.png -->
 
-- 🧪 **Test Suite (batch execution)** — run a list of 1–10 test prompts across all selected models sequentially and compare them in a scoreboard matrix: per-cell TPS, 👑 crown for the fastest model on each test, average-TPS + wins summary, click-to-read full outputs, Markdown copy, and CSV download
+- 🧪 **Test Suite (batch execution)** — run a list of 1–10 test prompts across all selected models sequentially and compare them in a scoreboard matrix: per-cell `tok/s`, 👑 crown for the fastest model on each test, heat-colored cells (relative speed per test), average-TPS + wins summary, click-to-read full outputs, Markdown copy, and CSV download
+- 🧩 **Shareable test suites** — export a suite (prompts + auto-checks + selected models) to a JSON file and import one back, so benchmarks are reproducible across machines
 
   ![Test Suite Scoreboard](./docs/screenshot-testsuite.png)
   <!-- NEW IMAGE for v1.0.0: open the Tests page (flask icon in sidebar), run a suite with 2+ models, capture the scoreboard table with crowns + summary row. Save exactly as docs/screenshot-testsuite.png -->
@@ -48,17 +49,20 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   ![Benchmark Chart](./docs/screenshot-chart.png)
   <!-- Optional retake: TPS/TTFT comparison bar charts (estimated bars render slightly faded) -->
 
+- 📡 **Live streaming feedback** — while a model runs, a phase strip shows Preparing → Generating with a running elapsed timer, a live `~tok/s` estimate, and a typing caret, so a slow first token never looks like a hang
+- 🏁 **Bench verdict bar** — as soon as a run finishes, see the fastest, lowest-TTFT, and cheapest model at a glance, along with how much slower the slowest was (as a percentage)
 - 🔍 **Side-by-side diff view** — compare any two outputs line-by-line with similarity percentage and added/removed counts
 
   ![Diff View](./docs/screenshot-diff.png)
   <!-- Retake recommended: run a comparison, click Diff in the result toolbar, capture the diff panel with red/green lines. Keep filename docs/screenshot-diff.png -->
 
-- 🕘 **Local history** — every benchmark run is saved to SQLite and browsable from a sidebar, with winner crowns, `~` markers for estimated TPS, and full theme support
+- 🕘 **Local history** — every benchmark run is saved to SQLite and browsed from a roomier sidebar: model chips (no truncation), winner crowns, `~` markers for estimated TPS, and header actions for Copy JSON, Export CSV, and full-database backup / restore
 
   ![History Sidebar](./docs/screenshot-history.png)
   <!-- History sidebar in light/dark mode -->
 
 - 📝 **Markdown rendering** — model outputs render with full GFM support (tables, code blocks, etc.)
+- 💻 **Highlighted code blocks** — fenced code gets a language label, a one-click copy button, and syntax highlighting that loads only _after_ the stream ends, so it never competes with local inference
 - 💾 **Savable prompt presets** — save your own frequently-used prompts alongside the built-in quick presets
 
   ![Prompt Presets](./docs/screenshot-presets.png)
@@ -81,7 +85,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
   ![Language Picker](./docs/screenshot-language.png)
   <!-- NEW IMAGE for v1.0.0: click the language button in the TopBar, capture the centered Select Language modal. Save exactly as docs/screenshot-language.png -->
 
-- 📋 **One-click export** — copy a Markdown report or full JSON history to clipboard, or download history as CSV
+- 📋 **One-click export** — copy a Markdown report from the result toolbar, or grab the full JSON history / CSV from the history panel header
 - 💾 **Backup & restore** — export/import the whole database (runs + presets) as JSON from the history sidebar
 - 🔑 **OS-keychain secrets** — cloud API keys live in the OS credential store (auto-migrated), never in plaintext files
 - 🔄 **Auto-update** — signed in-app updates from GitHub releases, with your consent — no manual downloads
@@ -103,6 +107,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 | Tests      | Vitest (`npm test`)                               |
 | i18n       | react-i18next                                     |
 | Markdown   | react-markdown + remark-gfm                       |
+| Code       | react-syntax-highlighter (lazy-loaded)            |
 
 ---
 
@@ -148,7 +153,7 @@ npm run tauri build
 
 ## 📸 How it works
 
-1. Launch the app and pick your provider (Ollama, LM Studio, or llama.cpp) from the Config panel — PromptDeck auto-detects available models
+1. Launch the app — it scans for local servers automatically (and also lets you pick a provider in the Config panel) and lists the available models; if nothing is running, an onboarding card helps you start one
 2. For cloud models, open the **Cloud** page, add an API key on a provider, refresh its models, and enable the ones you want to use
 3. On the **Bench** page, add up to 4 model columns (local and cloud mixable), write a prompt (or pick/save a preset)
 4. Hit **Run** (or `Ctrl+Enter`) — all selected models stream their responses live
@@ -168,6 +173,10 @@ npm run tauri build
 - [x] AMOLED Dark theme (+ Light / Dark)
 - [x] Side-by-side diff view between two model outputs
 - [x] Export benchmark history as CSV
+- [x] Auto-detect local servers + first-run onboarding card
+- [x] Shareable test suites (JSON export / import)
+- [x] Live streaming phase, timer, and live tok/s
+- [x] Syntax-highlighted, copyable code blocks
 
 Contributions and ideas are very welcome — see [Contributing](#-contributing) below.
 

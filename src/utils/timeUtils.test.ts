@@ -1,6 +1,6 @@
 // Unit tests for relative-time buckets.
 import { describe, expect, it } from 'vitest';
-import { formatRelativeTime } from './timeUtils';
+import { formatDurationMs, formatRelativeTime } from './timeUtils';
 
 const isoAgo = (ms: number): string => new Date(Date.now() - ms).toISOString();
 
@@ -28,5 +28,31 @@ describe('formatRelativeTime', () => {
   it('never returns NaN on garbage input', () => {
     const r = formatRelativeTime('not-a-date');
     expect(r).toEqual({ kind: 'date', date: '' });
+  });
+});
+
+describe('formatDurationMs', () => {
+  it('keeps sub-second values in milliseconds', () => {
+    expect(formatDurationMs(0)).toBe('0ms');
+    expect(formatDurationMs(7)).toBe('7ms');
+    expect(formatDurationMs(820)).toBe('820ms');
+    expect(formatDurationMs(999)).toBe('999ms');
+  });
+
+  it('switches to seconds at one second', () => {
+    expect(formatDurationMs(1000)).toBe('1.0s');
+    expect(formatDurationMs(38180)).toBe('38.2s');
+    expect(formatDurationMs(59940)).toBe('59.9s');
+  });
+
+  it('uses minutes past a minute', () => {
+    expect(formatDurationMs(60_000)).toBe('1m 0s');
+    expect(formatDurationMs(125_000)).toBe('2m 5s');
+  });
+
+  it('guards against negative / non-finite input', () => {
+    expect(formatDurationMs(-5)).toBe('0ms');
+    expect(formatDurationMs(Number.NaN)).toBe('0ms');
+    expect(formatDurationMs(Number.POSITIVE_INFINITY)).toBe('0ms');
   });
 });

@@ -15,3 +15,14 @@ export function rafBatch(key: string, fn: () => void): void {
     })
   );
 }
+
+/**
+ * Drops a queued update for `key` so a stale frame (e.g. the last stream
+ * chunk) can't fire after a terminal write and overwrite newer state.
+ */
+export function cancelRafBatch(key: string): void {
+  const id = pending.get(key);
+  if (id === undefined) return;
+  pending.delete(key);
+  cancelAnimationFrame(id);
+}

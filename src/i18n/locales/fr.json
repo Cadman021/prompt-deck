@@ -33,8 +33,15 @@
     "copyReportTitle": "Copier le rapport de benchmark en Markdown",
     "copyReport": "Copier le rapport",
     "copyReportDone": "Copié !",
+    "verdictFastest": "Plus rapide",
+    "verdictLowestTtft": "TTFT le plus bas",
+    "verdictCheapest": "Moins cher",
+    "verdictSlower": "le plus lent {{pct}}% plus lent que le plus rapide",
     "copyOutput": "Copier la sortie",
     "copyOutputDone": "Copié !",
+    "copyCode": "Copier le code",
+    "copyCodeDone": "Code copié",
+    "codePlain": "texte",
     "copyJsonTitle": "Copier tout l'historique en JSON",
     "copyJson": "Copier JSON",
     "copyJsonDone": "JSON copié !",
@@ -153,6 +160,11 @@
     "providerTitle": "Fournisseur & Connexion",
     "providerHint": "Ollama pour les modèles locaux, compatible OpenAI pour un serveur LM Studio / llama.cpp.",
     "serverUrl": "URL de base du serveur",
+    "detectServers": "Détecter les serveurs locaux",
+    "detecting": "Analyse…",
+    "detectNone": "Aucun serveur local trouvé sur les ports habituels.",
+    "detectApplied": "Connecté à {{url}}",
+    "detectModels": "{{count}} modèles",
     "resetTitle": "Réinitialiser les réglages",
     "resetConfirm": "Réinitialiser le fournisseur, la connexion et les options avancées ? La langue et le thème sont conservés.",
     "resetButton": "Réinitialiser par défaut"
@@ -283,7 +295,9 @@
     "unknownProvider": "Fournisseur cloud inconnu.",
     "blind": "Aveugle",
     "blindTitle": "Mode aveugle : identités masquées pour un vote impartial",
-    "blindName": "Modèle {{letter}}"
+    "blindName": "Modèle {{letter}}",
+    "phasePreparing": "Préparation du modèle…",
+    "phaseGenerating": "Génération"
   },
   "testsuite": {
     "title": "Suite de tests",
@@ -320,6 +334,24 @@
     "clearResults": "Effacer les résultats",
     "copied": "Copié !",
     "totalCost": "Coût total",
-    "totalCostTitle": "Coût total de la suite pour ce modèle"
+    "totalCostTitle": "Coût total de la suite pour ce modèle",
+    "exportSuite": "Exporter",
+    "exportTitle": "Exporter cette suite de tests en JSON",
+    "importSuite": "Importer",
+    "importTitle": "Importer une suite de tests partagée (JSON)",
+    "imported": "{{count}} tests importés.",
+    "importError": "Échec de l'import — ce n'est pas un fichier de suite PromptDeck."
+  },
+  "onboarding": {
+    "title": "Se connecter à un serveur de modèles",
+    "subtitle": "Aucun modèle disponible — démarrez un serveur local ou ajoutez un fournisseur cloud.",
+    "dismiss": "Masquer",
+    "scanning": "Recherche de serveurs locaux…",
+    "found": "Serveurs locaux détectés",
+    "none": "Aucun serveur local trouvé sur les ports 11434, 1234 ou 8080. Installez-en un, puis relancez la recherche :",
+    "models": "{{count}} modèles",
+    "ollama": "Obtenir Ollama",
+    "lmstudio": "Obtenir LM Studio",
+    "rescan": "Rechercher à nouveau"
   }
 }

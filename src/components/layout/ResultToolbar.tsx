@@ -1,21 +1,19 @@
 // src/components/layout/ResultToolbar.tsx
+// Per-run actions only (deliberately): Copy Report · PDF · Diff. Whole-history
+// data actions (Copy JSON, Export CSV, backup) live in the History sidebar so
+// the two scopes don't sit side by side and confuse.
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileDown, Check, GitCompare, Download, RefreshCw } from 'lucide-react';
+import { FileDown, Check, GitCompare, RefreshCw } from 'lucide-react';
 
 interface ResultToolbarProps {
   hasOutput: boolean;
   canShowDiff: boolean;
   diffActive: boolean;
   onToggleDiff: () => void;
-  copied: boolean;
   onCopyReport: () => void;
   pdfState: 'idle' | 'exporting' | 'done';
   onExportPdf: () => void;
-  jsonState: 'idle' | 'copied' | 'empty';
-  onCopyJson: () => void;
-  csvState: 'idle' | 'exporting' | 'done' | 'empty';
-  onExportCsv: () => void;
   slotsLabel: string;
 }
 
@@ -24,14 +22,9 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
   canShowDiff,
   diffActive,
   onToggleDiff,
-  copied,
   onCopyReport,
   pdfState,
   onExportPdf,
-  jsonState,
-  onCopyJson,
-  csvState,
-  onExportCsv,
   slotsLabel,
 }) => {
   const { t } = useTranslation();
@@ -54,8 +47,7 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
             className={`${btn} bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/80`}
             title={t('app.copyReportTitle')}
           >
-            {copied ? <Check className="w-3.5 h-3.5" /> : null}
-            <span>{copied ? t('app.copyReportDone') : t('app.copyReport')}</span>
+            <span>{t('app.copyReport')}</span>
           </button>
 
           <button
@@ -89,40 +81,6 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
           <span>{t('diff.toggle')}</span>
         </button>
       )}
-
-      <div className="flex-1" />
-
-      <button
-        onClick={onCopyJson}
-        className={`${btn} bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700`}
-        title={t('app.copyJsonTitle')}
-      >
-        <span>
-          {jsonState === 'copied'
-            ? t('app.copyJsonDone')
-            : jsonState === 'empty'
-              ? t('app.exportCsvEmpty')
-              : t('app.copyJson')}
-        </span>
-      </button>
-
-      <button
-        onClick={onExportCsv}
-        disabled={csvState === 'exporting'}
-        className={`${btn} bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-60`}
-        title={t('app.exportCsvTitle')}
-      >
-        <Download className="w-3.5 h-3.5" />
-        <span>
-          {csvState === 'exporting'
-            ? t('app.exportCsvWorking')
-            : csvState === 'done'
-              ? t('app.exportCsvDone')
-              : csvState === 'empty'
-                ? t('app.exportCsvEmpty')
-                : t('app.exportCsv')}
-        </span>
-      </button>
     </div>
   );
 };

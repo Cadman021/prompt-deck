@@ -2,11 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { DbService, HistoryRecord, type BenchmarkResult } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
-import { Crown, Download, Upload } from 'lucide-react';
+import { Clock, Crown, Download, Upload, Trash2, X, Copy, FileText } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useCloudStore } from '../store/useCloudStore';
 import { formatCost, parseQualified } from '../services/modelTarget';
+import { copyHistoryAsJson, exportHistoryAsCsv } from '../utils/exportUtils';
+import { toast } from '../store/useToastStore';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -69,7 +71,7 @@ const HistoryMetaLine: React.FC<{
   const age = record.created_at ? getRelativeLabel(record.created_at) : '';
   if (!stats && !age) return null;
   return (
-    <div className="text-[10px] font-mono truncate">
+    <div className="text-[11px] font-mono tabular-nums truncate">
       {stats && <span className="text-emerald-600 dark:text-emerald-400">{stats}</span>}
       {stats && age ? (
         <span className="text-slate-400 dark:text-slate-500"> · {age}</span>
@@ -79,6 +81,9 @@ const HistoryMetaLine: React.FC<{
     </div>
   );
 };
+
+const iconBtn =
+  'p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   isOpen,
@@ -187,12 +192,6 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   };
 
   const fileRef = React.useRef<HTMLInputElement>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  const flashNotice = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(null), 3000);
-  };
 
   const handleExportDb = async () => {
     try {
@@ -208,7 +207,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Backup export failed:', error);
-      flashNotice(t('history.importError', 'Backup failed.'));
+      toast(t('history.importError', 'Backup failed.'), 'error');
     }
   };
 
@@ -219,13 +218,27 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     try {
       const text = await file.text();
       const runs = await DbService.importDatabase(text);
-      flashNotice(t('history.imported', 'Imported {{count}} runs.', { count: runs }));
+      toast(t('history.imported', 'Imported {{count}} runs.', { count: runs }), 'success');
       const q = appliedQuery;
       await loadPage(0, q, showWinnersOnly, false);
     } catch (error) {
       console.error('Backup import failed:', error);
-      flashNotice(t('history.importError', 'Backup failed.'));
+      toast(t('history.importError', 'Backup failed.'), 'error');
     }
+  };
+
+  // Whole-history data actions — moved here from the run toolbar, since they
+  // operate on every saved run rather than the current comparison.
+  const handleCopyJson = async () => {
+    const status = await copyHistoryAsJson();
+    if (status === 'ok') toast(t('app.copyJsonDone', 'Copied!'), 'success');
+    else toast(t('app.exportCsvEmpty', 'Nothing to export.'), 'info');
+  };
+
+  const handleExportCsv = async () => {
+    const ok = await exportHistoryAsCsv();
+    if (ok) toast(t('app.exportCsvDone', 'Exported'), 'success');
+    else toast(t('app.exportCsvEmpty', 'Nothing to export.'), 'info');
   };
 
   // Filtering already happened in SQL (search text + winners toggle), so
@@ -237,37 +250,37 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl flex flex-col border-r border-slate-200 dark:border-slate-800 transition-all duration-300">
+      <div className="fixed inset-y-0 start-0 z-50 w-[28rem] max-w-[92vw] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl flex flex-col border-e border-slate-200 dark:border-slate-800">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-indigo-500 dark:text-indigo-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0">
+            <Clock className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
             <h2 className="font-bold text-lg">{t('history.title')}</h2>
+            {totalCount > 0 && (
+              <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                {totalCount}
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
+            <button onClick={handleCopyJson} title={t('app.copyJsonTitle')} className={iconBtn}>
+              <Copy className="w-4 h-4" />
+            </button>
+            <button onClick={handleExportCsv} title={t('app.exportCsvTitle')} className={iconBtn}>
+              <FileText className="w-4 h-4" />
+            </button>
+            <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
             <button
               onClick={handleExportDb}
               title={t('history.exportDb', 'Export full backup (JSON)')}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 rounded transition-colors"
+              className={iconBtn}
             >
               <Download className="w-4 h-4" />
             </button>
             <button
               onClick={() => fileRef.current?.click()}
               title={t('history.importDb', 'Import backup (JSON)')}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 rounded transition-colors"
+              className={iconBtn}
             >
               <Upload className="w-4 h-4" />
             </button>
@@ -282,37 +295,20 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <button
                 onClick={() => setConfirmClear(true)}
                 title={t('history.clearAllTitle')}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-rose-500 dark:text-red-400 hover:text-rose-600 dark:hover:text-red-300 rounded transition-colors"
+                className={`${iconBtn} text-rose-500 dark:text-red-400 hover:text-rose-600 dark:hover:text-red-300`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+            <button onClick={onClose} className={iconBtn}>
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Search Bar */}
         {records.length > 0 && (
-          <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+          <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-1.5">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -343,12 +339,6 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           </div>
         )}
 
-        {notice && (
-          <div className="px-4 py-1.5 text-[11px] text-center bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-b border-indigo-500/20">
-            {notice}
-          </div>
-        )}
-
         <ConfirmModal
           isOpen={confirmClear}
           title={t('history.clearAllTitle')}
@@ -358,7 +348,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
         />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50 dark:bg-slate-900">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50 dark:bg-slate-900">
           {loading ? (
             <div className="text-center text-slate-500 dark:text-slate-400 py-8 text-sm">
               {t('history.loading')}
@@ -375,12 +365,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                   onSelectRecord(record);
                   onClose();
                 }}
-                title={[record.prompt, configSummary(record.runConfig)].filter(Boolean).join('\n')}
-                className="group p-3 rounded-lg bg-white dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:border-indigo-400 dark:hover:border-indigo-500/50 cursor-pointer transition-all relative shadow-sm dark:shadow-none"
+                title={configSummary(record.runConfig)}
+                className="group p-3 rounded-xl bg-white dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:border-indigo-400 dark:hover:border-indigo-500/50 cursor-pointer transition-all relative shadow-sm dark:shadow-none"
               >
-                <div className="flex justify-between items-center gap-2">
+                <div className="flex items-start justify-between gap-2">
                   <p
-                    className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate"
+                    className="text-[13px] text-slate-800 dark:text-slate-200 font-medium line-clamp-2 leading-snug"
                     dir="auto"
                     title={record.prompt}
                   >
@@ -389,53 +379,37 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                   <button
                     onClick={(e) => record.id && handleDelete(e, record.id)}
                     title={t('history.deleteRecordTitle')}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 dark:text-slate-400 hover:text-rose-500 dark:hover:text-red-400 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
+                    aria-label={t('history.deleteRecordTitle')}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 dark:hover:text-red-400 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
                   >
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                {/* Models — single truncated line with short names */}
-                <div
-                  className="text-[11px] text-slate-500 dark:text-slate-400 truncate"
-                  title={record.results.map((r) => r.model).join(' vs ')}
-                >
-                  {record.results.map((r, i) => (
-                    <span key={i}>
-                      {record.winnerModel === r.model && (
-                        <Crown className="w-3 h-3 inline-block -mt-0.5 me-0.5 text-amber-500" />
-                      )}
+                {/* Models — wrapping chips, winners highlighted (no truncation) */}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {record.results.map((r, i) => {
+                    const isWinner = record.winnerModel === r.model;
+                    return (
                       <span
-                        className={
-                          record.winnerModel === r.model
-                            ? 'text-amber-600 dark:text-amber-300 font-semibold'
-                            : ''
-                        }
+                        key={i}
+                        title={r.model}
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-mono max-w-full ${
+                          isWinner
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-semibold border border-amber-300/60 dark:border-amber-700/60'
+                            : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300'
+                        }`}
                       >
-                        {shortName(r).split(':')[0]}
+                        {isWinner && <Crown className="w-3 h-3 shrink-0" />}
+                        <span className="truncate">{shortName(r).split(':')[0]}</span>
                       </span>
-                      {i < record.results.length - 1 && (
-                        <span className="text-indigo-500 dark:text-indigo-400 font-mono text-[10px] mx-1">
-                          {t('history.vs')}
-                        </span>
-                      )}
-                    </span>
-                  ))}
+                    );
+                  })}
                 </div>
 
-                <HistoryMetaLine record={record} getRelativeLabel={getRelativeLabel} />
+                <div className="mt-2">
+                  <HistoryMetaLine record={record} getRelativeLabel={getRelativeLabel} />
+                </div>
               </div>
             ))
           )}

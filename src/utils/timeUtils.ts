@@ -1,5 +1,4 @@
 // src/utils/timeUtils.ts
-
 export type RelativeTime =
   | { kind: 'now' }
   | { kind: 'minutes'; count: number }
@@ -13,9 +12,7 @@ export type RelativeTime =
 const SQLITE_TIMESTAMP = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
 
 const parseTimestamp = (value: string): number => {
-  const normalized = SQLITE_TIMESTAMP.test(value)
-    ? `${value.replace(' ', 'T')}Z`
-    : value;
+  const normalized = SQLITE_TIMESTAMP.test(value) ? `${value.replace(' ', 'T')}Z` : value;
   return new Date(normalized).getTime();
 };
 
@@ -41,4 +38,20 @@ export const formatRelativeTime = (value: string): RelativeTime => {
   if (hours < 24) return { kind: 'hours', count: hours };
   if (days < 7) return { kind: 'days', count: days };
   return { kind: 'date', date: new Date(time).toLocaleDateString() };
+};
+
+/**
+ * Formats a millisecond duration for display. Sub-second values stay in ms
+ * ("820ms"); anything longer switches to seconds with one decimal ("38.2s") so
+ * a cold-start TTFT of 38180ms reads as "38.2s" instead of a wall of digits.
+ * Runs over a minute fall back to "1m 5s" to stay compact.
+ */
+export const formatDurationMs = (ms: number): string => {
+  if (!Number.isFinite(ms) || ms <= 0) return '0ms';
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = Math.round(seconds % 60);
+  return `${minutes}m ${rest}s`;
 };

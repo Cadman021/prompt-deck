@@ -33,8 +33,15 @@
     "copyReportTitle": "Copy benchmark report as Markdown",
     "copyReport": "Copy Report",
     "copyReportDone": "Copied!",
+    "verdictFastest": "Fastest",
+    "verdictLowestTtft": "Lowest TTFT",
+    "verdictCheapest": "Cheapest",
+    "verdictSlower": "slowest {{pct}}% slower than fastest",
     "copyOutput": "Copy Output",
     "copyOutputDone": "Copied!",
+    "copyCode": "Copy code",
+    "copyCodeDone": "Code copied",
+    "codePlain": "text",
     "copyJsonTitle": "Copy full history as JSON",
     "copyJson": "Copy JSON",
     "copyJsonDone": "JSON Copied!",
@@ -153,6 +160,11 @@
     "providerTitle": "Provider & Connection",
     "providerHint": "Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server.",
     "serverUrl": "Server base URL",
+    "detectServers": "Detect local servers",
+    "detecting": "Scanning…",
+    "detectNone": "No local servers found on the usual ports.",
+    "detectApplied": "Connected to {{url}}",
+    "detectModels": "{{count}} models",
     "resetTitle": "Reset Settings",
     "resetConfirm": "Reset provider, connection and advanced options to their defaults? Language and theme are kept.",
     "resetButton": "Reset to defaults"
@@ -283,7 +295,9 @@
     "unknownProvider": "Unknown cloud provider.",
     "blind": "Blind",
     "blindTitle": "Blind mode: identities hidden for unbiased voting",
-    "blindName": "Model {{letter}}"
+    "blindName": "Model {{letter}}",
+    "phasePreparing": "Preparing model…",
+    "phaseGenerating": "Generating"
   },
   "testsuite": {
     "title": "Test Suite",
@@ -320,6 +334,24 @@
     "clearResults": "Clear results",
     "copied": "Copied!",
     "totalCost": "Total cost",
-    "totalCostTitle": "Total suite cost for this model"
+    "totalCostTitle": "Total suite cost for this model",
+    "exportSuite": "Export",
+    "exportTitle": "Export this test suite as JSON",
+    "importSuite": "Import",
+    "importTitle": "Import a shared test suite (JSON)",
+    "imported": "Imported {{count}} tests.",
+    "importError": "Import failed — not a PromptDeck test suite file."
+  },
+  "onboarding": {
+    "title": "Connect to a model server",
+    "subtitle": "No models available yet — start a local server or add a cloud provider.",
+    "dismiss": "Dismiss",
+    "scanning": "Scanning for local servers…",
+    "found": "Local servers detected",
+    "none": "No local server found on ports 11434, 1234 or 8080. Install one, then scan again:",
+    "models": "{{count}} models",
+    "ollama": "Get Ollama",
+    "lmstudio": "Get LM Studio",
+    "rescan": "Scan again"
   }
 }

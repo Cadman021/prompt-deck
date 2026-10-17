@@ -33,8 +33,15 @@
     "copyReportTitle": "Benchmark-Bericht als Markdown kopieren",
     "copyReport": "Bericht kopieren",
     "copyReportDone": "Kopiert!",
+    "verdictFastest": "Schnellste",
+    "verdictLowestTtft": "Niedrigste TTFT",
+    "verdictCheapest": "Günstigste",
+    "verdictSlower": "langsamste {{pct}}% langsamer als schnellste",
     "copyOutput": "Ausgabe kopieren",
     "copyOutputDone": "Kopiert!",
+    "copyCode": "Code kopieren",
+    "copyCodeDone": "Code kopiert",
+    "codePlain": "Text",
     "copyJsonTitle": "Vollständigen Verlauf als JSON kopieren",
     "copyJson": "JSON kopieren",
     "copyJsonDone": "JSON kopiert!",
@@ -153,6 +160,11 @@
     "providerTitle": "Provider & Verbindung",
     "providerHint": "Ollama für lokale Modelle, OpenAI-kompatibel für LM Studio / llama.cpp Server.",
     "serverUrl": "Server-Basis-URL",
+    "detectServers": "Lokale Server erkennen",
+    "detecting": "Suche läuft…",
+    "detectNone": "Keine lokalen Server auf den üblichen Ports gefunden.",
+    "detectApplied": "Verbunden mit {{url}}",
+    "detectModels": "{{count}} Modelle",
     "resetTitle": "Einstellungen zurücksetzen",
     "resetConfirm": "Provider, Verbindung und erweiterte Optionen auf Standardwerte zurücksetzen? Sprache und Design bleiben erhalten.",
     "resetButton": "Auf Standard zurücksetzen"
@@ -283,7 +295,9 @@
     "unknownProvider": "Unbekannter Cloud-Anbieter.",
     "blind": "Blind",
     "blindTitle": "Blind-Modus: Identitäten für unvoreingenommenes Voten verborgen",
-    "blindName": "Modell {{letter}}"
+    "blindName": "Modell {{letter}}",
+    "phasePreparing": "Modell wird vorbereitet…",
+    "phaseGenerating": "Generiert"
   },
   "testsuite": {
     "title": "Test-Suite",
@@ -320,6 +334,24 @@
     "clearResults": "Ergebnisse löschen",
     "copied": "Kopiert!",
     "totalCost": "Gesamtkosten",
-    "totalCostTitle": "Gesamtkosten der Suite für dieses Modell"
+    "totalCostTitle": "Gesamtkosten der Suite für dieses Modell",
+    "exportSuite": "Exportieren",
+    "exportTitle": "Diese Test-Suite als JSON exportieren",
+    "importSuite": "Importieren",
+    "importTitle": "Geteilte Test-Suite importieren (JSON)",
+    "imported": "{{count}} Tests importiert.",
+    "importError": "Import fehlgeschlagen — keine PromptDeck-Test-Suite-Datei."
+  },
+  "onboarding": {
+    "title": "Mit einem Modellserver verbinden",
+    "subtitle": "Noch keine Modelle verfügbar — starte einen lokalen Server oder füge einen Cloud-Anbieter hinzu.",
+    "dismiss": "Ausblenden",
+    "scanning": "Lokale Server werden gesucht…",
+    "found": "Lokale Server erkannt",
+    "none": "Kein lokaler Server auf Port 11434, 1234 oder 8080 gefunden. Installiere einen und suche erneut:",
+    "models": "{{count}} Modelle",
+    "ollama": "Ollama holen",
+    "lmstudio": "LM Studio holen",
+    "rescan": "Erneut suchen"
   }
 }

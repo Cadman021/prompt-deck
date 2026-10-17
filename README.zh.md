@@ -13,6 +13,7 @@
 ## ✨ 功能
 
 - 🧭 **App Shell 工作区** — 图标侧边栏（Bench、Tests、Cloud、History、Board、Config）+ 48px 顶栏（服务商连接状态、服务器 URL、模型数量）。结果操作只在有结果时出现在上下文工具栏，模型输出永远拥有最大空间
+- 🔎 **自动探测与首次引导** — PromptDeck 自动扫描常见本地端口（Ollama `11434`、LM Studio `1234`、llama.cpp `8080`）并支持一键连接；若未发现任何服务，引导卡片会直接给出 Ollama / LM Studio 安装链接
 - ☁️ **云服务商** — 9Router 风格管理 OpenAI 兼容端点：19 个精选服务商（OpenRouter、DeepSeek、Groq、Together AI、OpenAI、xAI Grok、Kimi、NVIDIA NIM、Ollama Cloud、Gemini、Kilo Gateway、Bazaarlink、BytePlus ModelArk、Poolside、Agnes、Xiaomi MiMo、Mistral、B.AI、Anthropic），分免费套餐 / API Key 分区，自定义端点，每个服务商可存多个命名 API Key（附直达 Key 申请链接），详情页可测试连接、挑选模型（搜索、单模型 1-token 探测、启用开关）
 
   ![Cloud Providers](./docs/screenshot-cloud.png)
@@ -30,7 +31,8 @@
 
   ![Model Leaderboard](./docs/screenshot-leaderboard.png)
 
-- 🧪 **测试套件（批量执行）** — 把 1–10 个测试提示词依次跑遍所有选中模型，用记分板矩阵对比：每格 TPS、每项最快者 👑、平均 TPS + 最快次数汇总、点击查看完整输出、复制 Markdown、下载 CSV。测试结果会存入历史记录
+- 🧪 **测试套件（批量执行）** — 把 1–10 个测试提示词依次跑遍所有选中模型，用记分板矩阵对比：每格 `tok/s`、每项最快者 👑、按相对速度热力着色、平均 TPS + 最快次数汇总、点击查看完整输出、复制 Markdown、下载 CSV。测试结果会存入历史记录
+- 🧩 **可分享的测试套件** — 把套件（提示词 + 自动检查 + 选中模型）导出为 JSON 并导入回来，让基准测试可跨机器复现
 
   ![Test Suite Scoreboard](./docs/screenshot-testsuite.png)
 
@@ -39,15 +41,18 @@
 
   ![Benchmark Chart](./docs/screenshot-chart.png)
 
+- 📡 **实时生成反馈** — 运行时显示阶段条（准备中 → 生成中）、实时计时、实时 `~tok/s` 估算和闪烁光标，让较慢的首 token 不再像卡死
+- 🏁 **Bench 结论条** — 运行结束后立即看到最快、TTFT 最低、最省的模型，以及最慢者慢多少（百分比）
 - 🔍 **并排 Diff** — 逐行对比任意两个输出，含相似度百分比和增删行数
 
   ![Diff View](./docs/screenshot-diff.png)
 
-- 🕘 **本地历史** — 每次基准测试存入 SQLite，可在侧边栏浏览：优胜者皇冠、估算 TPS 的 `~` 标记、相对时间、单次最佳速度和费用汇总，支持全文搜索和 Winners 筛选
+- 🕘 **本地历史** — 每次基准测试存入 SQLite，更宽敞的侧边栏：模型芯片不截断、优胜者皇冠、估算 TPS 的 `~` 标记、单次最佳速度和费用汇总，支持全文搜索和 Winners 筛选，Copy JSON / Export CSV / 全库备份与恢复都在面板顶部
 
   ![History Sidebar](./docs/screenshot-history.png)
 
 - 📝 **Markdown 渲染** — 模型输出完整支持 GFM（表格、代码块等）；远程图片默认不加载、链接用外部浏览器打开
+- 💻 **代码高亮** — 代码块带语言标签、一键复制按钮，以及仅在流式输出*结束后*才加载的语法高亮，绝不与本地推理争抢资源
 - 💾 **可保存的提示词预设** — 收藏常用提示词，与内置快捷提示词并列
 
   ![Prompt Presets](./docs/screenshot-presets.png)
@@ -66,7 +71,7 @@
 
   ![Language Picker](./docs/screenshot-language.png)
 
-- 📋 **一键导出** — 复制 Markdown 报告或完整 JSON 历史，或下载 CSV（含 token 和费用列）
+- 📋 **一键导出** — 结果工具栏复制 Markdown 报告，历史面板顶部获取完整 JSON 历史 / CSV
 - 💾 **备份与恢复** — 在历史侧边栏把整个数据库（运行记录 + 预设）导出/导入为 JSON
 - 🔑 **系统钥匙串** — 云 API Key 存在系统凭据库（自动迁移），不再是明文文件
 - 🔄 **自动更新** — 从 GitHub releases 签名更新，经你确认后下载安装重启
@@ -87,6 +92,7 @@
 | PDF 导出 | jsPDF + autotable（文本）/ html2canvas（兜底） |
 | i18n     | react-i18next                                  |
 | Markdown | react-markdown + remark-gfm                    |
+| 代码     | react-syntax-highlighter（懒加载）             |
 | 测试     | Vitest (`npm test`)                            |
 
 ---
@@ -133,7 +139,7 @@ npm run tauri build
 
 ## 📸 使用流程
 
-1. 启动应用，在 Config 面板选择服务商（Ollama、LM Studio 或 llama.cpp）—— PromptDeck 会自动发现可用模型
+1. 启动应用——它会自动扫描本地服务器（也可在 Config 面板选择服务商）并列出可用模型；若什么都没运行，引导卡片会帮你启动一个
 2. 云端模型：打开 **Cloud** 页面，给服务商添加 API Key，刷新模型列表，启用想用的模型
 3. 在 **Bench** 页面添加最多 4 个模型列（本地和云端可混搭），写提示词（或选用/保存预设）
 4. 点击 **Run**（或 `Ctrl+Enter`）——所有选中模型实时流式输出
@@ -152,6 +158,10 @@ npm run tauri build
 - [x] AMOLED 深色主题（+ 浅色 / 深色）
 - [x] 双输出并排 Diff
 - [x] 基准历史导出 CSV
+- [x] 自动探测本地服务器 + 首次引导卡片
+- [x] 可分享的测试套件（JSON 导出 / 导入）
+- [x] 流式阶段、计时与实时 tok/s
+- [x] 语法高亮且可复制的代码块
 - [x] API Key 存入系统钥匙串（自动迁移、内存缓存、静默兜底）
 - [ ] 云端运行费用/用量统计
 

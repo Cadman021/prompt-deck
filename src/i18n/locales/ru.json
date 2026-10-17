@@ -33,8 +33,15 @@
     "copyReportTitle": "Скопировать отчёт бенчмарка в Markdown",
     "copyReport": "Копировать отчёт",
     "copyReportDone": "Скопировано!",
+    "verdictFastest": "Быстрейшая",
+    "verdictLowestTtft": "Наименьший TTFT",
+    "verdictCheapest": "Дешевейшая",
+    "verdictSlower": "медленнейшая на {{pct}}% медленнее быстрейшей",
     "copyOutput": "Копировать вывод",
     "copyOutputDone": "Скопировано!",
+    "copyCode": "Копировать код",
+    "copyCodeDone": "Код скопирован",
+    "codePlain": "текст",
     "copyJsonTitle": "Скопировать всю историю в JSON",
     "copyJson": "Копировать JSON",
     "copyJsonDone": "JSON скопирован!",
@@ -153,6 +160,11 @@
     "providerTitle": "Провайдер и подключение",
     "providerHint": "Ollama для локальных моделей, OpenAI-совместимый для сервера LM Studio / llama.cpp.",
     "serverUrl": "Базовый URL сервера",
+    "detectServers": "Найти локальные серверы",
+    "detecting": "Поиск…",
+    "detectNone": "Локальные серверы на обычных портах не найдены.",
+    "detectApplied": "Подключено к {{url}}",
+    "detectModels": "моделей: {{count}}",
     "resetTitle": "Сбросить настройки",
     "resetConfirm": "Сбросить провайдера, подключение и расширенные параметры к значениям по умолчанию? Язык и тема сохраняются.",
     "resetButton": "Сбросить по умолчанию"
@@ -283,7 +295,9 @@
     "unknownProvider": "Неизвестный cloud-провайдер.",
     "blind": "Слепая",
     "blindTitle": "Слепой режим: личности скрыты для честного голосования",
-    "blindName": "Модель {{letter}}"
+    "blindName": "Модель {{letter}}",
+    "phasePreparing": "Подготовка модели…",
+    "phaseGenerating": "Генерация"
   },
   "testsuite": {
     "title": "Тест-сьют",
@@ -320,6 +334,24 @@
     "clearResults": "Очистить результаты",
     "copied": "Скопировано!",
     "totalCost": "Итого",
-    "totalCostTitle": "Суммарная стоимость сьюта для этой модели"
+    "totalCostTitle": "Суммарная стоимость сьюта для этой модели",
+    "exportSuite": "Экспорт",
+    "exportTitle": "Экспортировать этот сьют тестов в JSON",
+    "importSuite": "Импорт",
+    "importTitle": "Импортировать общий сьют тестов (JSON)",
+    "imported": "Импортировано тестов: {{count}}.",
+    "importError": "Не удалось импортировать — это не файл сьюта PromptDeck."
+  },
+  "onboarding": {
+    "title": "Подключиться к серверу моделей",
+    "subtitle": "Модели пока недоступны — запустите локальный сервер или добавьте облачного провайдера.",
+    "dismiss": "Скрыть",
+    "scanning": "Поиск локальных серверов…",
+    "found": "Обнаружены локальные серверы",
+    "none": "Локальный сервер не найден на портах 11434, 1234 или 8080. Установите его и повторите поиск:",
+    "models": "моделей: {{count}}",
+    "ollama": "Скачать Ollama",
+    "lmstudio": "Скачать LM Studio",
+    "rescan": "Искать снова"
   }
 }

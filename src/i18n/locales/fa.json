@@ -33,8 +33,15 @@
     "copyReportTitle": "کپی گزارش بنچمارک به فرمت Markdown",
     "copyReport": "کپی گزارش",
     "copyReportDone": "کپی شد!",
+    "verdictFastest": "سریع‌ترین",
+    "verdictLowestTtft": "کمترین TTFT",
+    "verdictCheapest": "ارزان‌ترین",
+    "verdictSlower": "کندترین {{pct}}٪ کندتر از سریع‌ترین",
     "copyOutput": "کپی خروجی",
     "copyOutputDone": "کپی شد!",
+    "copyCode": "کپی کد",
+    "copyCodeDone": "کد کپی شد",
+    "codePlain": "متن",
     "copyJsonTitle": "کپی JSON کامل تاریخچه در کلیپ‌بورد",
     "copyJson": "کپی JSON",
     "copyJsonDone": "JSON کپی شد!",
@@ -153,6 +160,11 @@
     "providerTitle": "ارائه‌دهنده و اتصال",
     "providerHint": "Ollama برای مدل‌های لوکال، OpenAI-compatible برای سرور LM Studio / llama.cpp.",
     "serverUrl": "آدرس پایه سرور",
+    "detectServers": "شناسایی سرورهای لوکال",
+    "detecting": "در حال جست‌وجو…",
+    "detectNone": "سرور لوکالی روی پورت‌های معمول پیدا نشد.",
+    "detectApplied": "به {{url}} متصل شد",
+    "detectModels": "{{count}} مدل",
     "resetTitle": "بازنشانی تنظیمات",
     "resetConfirm": "ارائه‌دهنده، اتصال و گزینه‌های پیشرفته به پیش‌فرض بازگردند؟ زبان و تم حفظ می‌شوند.",
     "resetButton": "بازنشانی به پیش‌فرض"
@@ -283,7 +295,9 @@
     "unknownProvider": "ارائه‌دهنده ابری ناشناس.",
     "blind": "کور",
     "blindTitle": "حالت کور: هویت‌ها برای رأی بی‌طرفانه پنهان است",
-    "blindName": "مدل {{letter}}"
+    "blindName": "مدل {{letter}}",
+    "phasePreparing": "در حال آماده‌سازی مدل…",
+    "phaseGenerating": "در حال تولید"
   },
   "testsuite": {
     "title": "تست‌سوئیت",
@@ -320,6 +334,24 @@
     "clearResults": "پاک کردن نتایج",
     "copied": "کپی شد!",
     "totalCost": "هزینه کل",
-    "totalCostTitle": "هزینه کل سوئیت برای این مدل"
+    "totalCostTitle": "هزینه کل سوئیت برای این مدل",
+    "exportSuite": "خروجی",
+    "exportTitle": "ذخیره این تست‌سوئیت به‌صورت JSON",
+    "importSuite": "ورودی",
+    "importTitle": "بارگذاری تست‌سوئیت اشتراکی (JSON)",
+    "imported": "{{count}} تست درون‌ریزی شد.",
+    "importError": "درون‌ریزی ناموفق — فایل تست‌سوئیت PromptDeck نیست."
+  },
+  "onboarding": {
+    "title": "به یک سرور مدل وصل شوید",
+    "subtitle": "هنوز مدلی موجود نیست — یک سرور محلی را اجرا کنید یا ارائه‌دهنده ابری اضافه کنید.",
+    "dismiss": "بستن",
+    "scanning": "در حال جست‌وجوی سرورهای محلی…",
+    "found": "سرورهای محلی پیدا شد",
+    "none": "سرور محلی روی پورت‌های 11434، 1234 یا 8080 پیدا نشد. یکی را نصب کنید و دوباره جست‌وجو کنید:",
+    "models": "{{count}} مدل",
+    "ollama": "دریافت Ollama",
+    "lmstudio": "دریافت LM Studio",
+    "rescan": "جست‌وجوی مجدد"
   }
 }
