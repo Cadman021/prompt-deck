@@ -21,7 +21,7 @@
     "html2canvas": "^1.4.1",
     "i18next": "^26.4.4",
     "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.8",
+    "jspdf-autotable": "^5.0.9",
     "lucide-react": "^1.56.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
