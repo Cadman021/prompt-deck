@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 - **Context sweep** — runs one model against the same prompt at 2K…64K context windows (neutral filler, fixed 256-token answers) and charts tok/s and TTFT against window size, with the percentage drop versus the smallest window
 - **Cloud spend dashboard** — new Spend page with total cost, average per run, a 30-day cost trend, and per-provider / per-model breakdowns built from the cost frozen into each run (local runs and runs without exact tokens stay out)
 
+### 🐛 Fixed
+
+- **Overscroll "slack" at the window edges**: dragging with a touchpad or touchscreen bounced/slid the whole page and revealed a gap behind the app. WebView2 swipe-navigation and elastic overscroll are now disabled, the document can no longer scroll, and inner panes contain their own overscroll
+
 ### 🔧 Changed
 
 - **Heavy views are code-split**: History, Leaderboard, Settings, Diff, Test Suite, Cloud, Spend, the context sweep and the results chart now load on demand — the startup bundle dropped from ~1.1 MB to ~275 KB, so the Bench paints sooner on launch

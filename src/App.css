@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* Force Tailwind v4 to use class-based dark mode instead of media query */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -6,6 +6,26 @@
 @layer base {
   :root {
     color-scheme: light dark;
+  }
+
+  /* Desktop shell: the window is the viewport. Without this, a touch/trackpad
+     drag at the edge rubber-bands the whole page and reveals the canvas gap. */
+  html,
+  body,
+  #root {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  /* Inner panes stop the gesture at their own edge instead of chaining it
+     (and the resulting glow/bounce) up to the shell. */
+  .overflow-y-auto,
+  .overflow-auto {
+    overscroll-behavior: contain;
   }
 
   /* AMOLED theme builds on dark mode: pure-black canvas, neon accents. */
@@ -21,21 +41,21 @@
 
   /* Push the slate surfaces down to true/pure black. Attribute selectors
      match the compiled `dark:bg-…` utilities regardless of escaping. */
-  .amoled [class*="dark:bg-slate-950"] {
+  .amoled [class*='dark:bg-slate-950'] {
     background-color: #000 !important;
   }
-  .amoled [class*="dark:bg-slate-900"] {
+  .amoled [class*='dark:bg-slate-900'] {
     background-color: #111111 !important;
   }
-  .amoled [class*="dark:bg-slate-800"] {
+  .amoled [class*='dark:bg-slate-800'] {
     background-color: #1e1e1e !important;
   }
-  .amoled [class*="dark:border-slate-800"],
-  .amoled [class*="dark:border-slate-700"] {
+  .amoled [class*='dark:border-slate-800'],
+  .amoled [class*='dark:border-slate-700'] {
     border-color: #212123 !important;
   }
-  .amoled [class*="dark:text-slate-100"],
-  .amoled [class*="dark:text-slate-200"] {
+  .amoled [class*='dark:text-slate-100'],
+  .amoled [class*='dark:text-slate-200'] {
     color: #ffffff !important;
   }
 
@@ -57,6 +77,8 @@
   .amoled input:focus,
   .amoled textarea:focus,
   .amoled select:focus {
-    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.7), 0 0 14px rgba(34, 211, 238, 0.35);
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.7),
+      0 0 14px rgba(34, 211, 238, 0.35);
   }
 }
