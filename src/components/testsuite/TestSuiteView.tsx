@@ -721,7 +721,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               const check = checks[i] ?? NO_CHECK;
               const valid = isValidCheck(check);
               const setType = (type: CheckType) =>
-                setCheck(i, { type, pattern: type === 'json' ? '' : check.pattern });
+                setCheck(i, {
+                  type,
+                  pattern: type === 'json' || type === 'schema' ? '' : check.pattern,
+                });
               return (
                 <div key={i} className="space-y-1.5">
                   <div className="flex gap-2 items-start">
@@ -767,8 +770,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                       <option value="regex">{t('testsuite.checkRegex', 'Regex')}</option>
                       <option value="exact">{t('testsuite.checkExact', 'Exact')}</option>
                       <option value="json">{t('testsuite.checkJson', 'Valid JSON')}</option>
+                      <option value="schema">{t('testsuite.checkSchema', 'JSON Schema')}</option>
                     </select>
-                    {check.type !== 'none' && check.type !== 'json' && (
+                    {check.type !== 'none' && check.type !== 'json' && check.type !== 'schema' && (
                       <input
                         value={check.pattern}
                         onChange={(e) => setCheck(i, { type: check.type, pattern: e.target.value })}
@@ -780,6 +784,25 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                         }
                         dir="auto"
                         className={`flex-1 min-w-0 p-1.5 rounded-lg text-[11px] font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                          valid
+                            ? 'border-slate-200 dark:border-slate-700/60'
+                            : 'border-rose-400 text-rose-500'
+                        }`}
+                      />
+                    )}
+                    {check.type === 'schema' && (
+                      <textarea
+                        value={check.pattern}
+                        onChange={(e) => setCheck(i, { type: check.type, pattern: e.target.value })}
+                        disabled={running}
+                        rows={3}
+                        spellCheck={false}
+                        dir="ltr"
+                        placeholder={t(
+                          'testsuite.checkSchemaPlaceholder',
+                          '{"type":"object","required":["answer"],"properties":{"answer":{"type":"string"}}}'
+                        )}
+                        className={`flex-1 min-w-0 p-1.5 rounded-lg text-[11px] font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y ${
                           valid
                             ? 'border-slate-200 dark:border-slate-700/60'
                             : 'border-rose-400 text-rose-500'

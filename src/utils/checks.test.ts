@@ -23,6 +23,20 @@ describe('evalCheck', () => {
     expect(evalCheck('{"a":1}', { type: 'json', pattern: '' })).toBe(true);
     expect(evalCheck('{oops', { type: 'json', pattern: '' })).toBe(false);
   });
+
+  it('evaluates JSON Schema checks', () => {
+    const schema = JSON.stringify({
+      type: 'object',
+      required: ['answer'],
+      properties: { answer: { type: 'string' } },
+    });
+    expect(evalCheck('{"answer":"yes"}', { type: 'schema', pattern: schema })).toBe(true);
+    expect(evalCheck('{"answer":1}', { type: 'schema', pattern: schema })).toBe(false);
+    expect(evalCheck('not json', { type: 'schema', pattern: schema })).toBe(false);
+    // An unparseable schema cannot be evaluated.
+    expect(evalCheck('{"answer":"yes"}', { type: 'schema', pattern: '{oops' })).toBeNull();
+    expect(evalCheck('{"answer":"yes"}', { type: 'schema', pattern: '' })).toBeNull();
+  });
 });
 
 describe('isValidCheck', () => {
@@ -33,5 +47,8 @@ describe('isValidCheck', () => {
     expect(isValidCheck({ type: 'regex', pattern: '' })).toBe(false);
     expect(isValidCheck({ type: 'regex', pattern: '([' })).toBe(false);
     expect(isValidCheck({ type: 'regex', pattern: 'a+' })).toBe(true);
+    expect(isValidCheck({ type: 'schema', pattern: '{"type":"object"}' })).toBe(true);
+    expect(isValidCheck({ type: 'schema', pattern: '' })).toBe(false);
+    expect(isValidCheck({ type: 'schema', pattern: '{oops' })).toBe(false);
   });
 });

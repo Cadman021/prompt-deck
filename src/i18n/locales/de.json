@@ -52,6 +52,27 @@
     "exportCsvEmpty": "Kein Verlauf!",
     "retry": "Wiederholen"
   },
+  "sweep": {
+    "title": "Kontext-Sweep",
+    "short": "Sweep",
+    "subtitle": "Gleiches Modell, gleicher Prompt, wachsender Kontext: sehen Sie, wo die Geschwindigkeit einbricht.",
+    "model": "Modell",
+    "sizes": "Kontextgrößen",
+    "hint": "Jeder Schritt sendet ca. 90 % des Fensters als neutralen Fülltext plus Ihren Prompt, mit maximal 256 Antwort-Tokens. Ein anderes Fenster kann ein lokales Modell neu laden, daher enthält der erste TTFT je Größe die Ladezeit.",
+    "run": "Sweep starten",
+    "stop": "Stoppen",
+    "progress": "{{done}}/{{total}} · {{size}}",
+    "context": "Kontext",
+    "tps": "tok/s",
+    "ttft": "TTFT",
+    "promptTokens": "Prompt-Tok",
+    "drop": "vs. kleinste",
+    "empty": "Starten Sie einen Sweep, um zu sehen, wie die Geschwindigkeit bei längeren Kontexten hält.",
+    "failed": "fehlgeschlagen",
+    "close": "Schließen",
+    "noPrompt": "Geben Sie zuerst im Bench einen Prompt ein.",
+    "noModels": "Keine Modelle verfügbar."
+  },
   "metrics": {
     "tps": "Tok/s",
     "ttft": "TTFT",
@@ -82,7 +103,9 @@
     "timeMinutes": "vor {{count}} Min.",
     "timeHours": "vor {{count}} Std.",
     "timeDays": "vor {{count}} Tagen",
-    "winnersOnly": "Nur Gewinner"
+"winnersOnly": "Nur Gewinner",
+    "rerun": "Erneut ausführen",
+    "rerunTitle": "Mit gleichem Prompt und gleichen Einstellungen erneut ausführen"
   },
   "export": {
     "noHistoryToExport": "Keine Verlaufsdaten zum Exportieren vorhanden.",
@@ -297,7 +320,11 @@
     "blindTitle": "Blind-Modus: Identitäten für unvoreingenommenes Voten verborgen",
     "blindName": "Modell {{letter}}",
     "phasePreparing": "Modell wird vorbereitet…",
-    "phaseGenerating": "Generiert"
+"phaseGenerating": "Generiert",
+    "params": "Parameter",
+    "paramsTitle": "Parameter pro Modell (leere Felder nutzen die globalen Werte)",
+    "paramsReset": "Global verwenden",
+    "inherit": "global"
   },
   "testsuite": {
     "title": "Test-Suite",
@@ -314,7 +341,9 @@
     "checkContains": "Enthält",
     "checkRegex": "Regex",
     "checkExact": "Exakt",
-    "checkJson": "Gültiges JSON",
+"checkJson": "Gültiges JSON",
+    "checkSchema": "JSON-Schema",
+    "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Erwarteter Text…",
     "checkPatternPlaceholder": "z. B. error \\d+",
     "checkInvalid": "Ungültig",

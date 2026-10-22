@@ -52,6 +52,27 @@
     "exportCsvEmpty": "Pas d'historique !",
     "retry": "Réessayer"
   },
+  "sweep": {
+    "title": "Balayage de contexte",
+    "short": "Balayage",
+    "subtitle": "Même modèle, même prompt, contexte croissant : voyez où la vitesse chute.",
+    "model": "Modèle",
+    "sizes": "Tailles de contexte",
+    "hint": "Chaque étape envoie ~90 % de la fenêtre en texte neutre plus votre prompt, avec une réponse limitée à 256 tokens. Changer la fenêtre peut recharger un modèle local : le premier TTFT de chaque taille inclut donc le chargement.",
+    "run": "Lancer le balayage",
+    "stop": "Arrêter",
+    "progress": "{{done}}/{{total}} · {{size}}",
+    "context": "Contexte",
+    "tps": "tok/s",
+    "ttft": "TTFT",
+    "promptTokens": "tokens prompt",
+    "drop": "vs plus petite",
+    "empty": "Lancez un balayage pour voir comment la vitesse tient sur des contextes plus longs.",
+    "failed": "échec",
+    "close": "Fermer",
+    "noPrompt": "Saisissez d abord un prompt dans Bench.",
+    "noModels": "Aucun modèle disponible."
+  },
   "metrics": {
     "tps": "tok/s",
     "ttft": "TTFT",
@@ -82,7 +103,9 @@
     "timeMinutes": "il y a {{count}} min",
     "timeHours": "il y a {{count}} h",
     "timeDays": "il y a {{count}} j",
-    "winnersOnly": "Gagnants uniquement"
+"winnersOnly": "Gagnants uniquement",
+    "rerun": "Relancer",
+    "rerunTitle": "Relancer avec le même prompt et les mêmes réglages"
   },
   "export": {
     "noHistoryToExport": "Aucun enregistrement à exporter.",
@@ -297,7 +320,11 @@
     "blindTitle": "Mode aveugle : identités masquées pour un vote impartial",
     "blindName": "Modèle {{letter}}",
     "phasePreparing": "Préparation du modèle…",
-    "phaseGenerating": "Génération"
+"phaseGenerating": "Génération",
+    "params": "Paramètres",
+    "paramsTitle": "Paramètres par modèle (les champs vides utilisent les valeurs globales)",
+    "paramsReset": "Utiliser les valeurs globales",
+    "inherit": "global"
   },
   "testsuite": {
     "title": "Suite de tests",
@@ -314,7 +341,9 @@
     "checkContains": "Contient",
     "checkRegex": "Regex",
     "checkExact": "Exact",
-    "checkJson": "JSON valide",
+"checkJson": "JSON valide",
+    "checkSchema": "Schéma JSON",
+    "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Texte attendu…",
     "checkPatternPlaceholder": "ex. error \\d+",
     "checkInvalid": "Invalide",

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### ✨ Added
+
+- **Per-model generation parameters** — any Bench column can override temperature, top-p and max output tokens from the column header (a dot marks overridden columns; unset fields still inherit the global Advanced settings), so one model can be compared against itself at different temperatures
+- **Re-run from History** — a run can be started again straight from its history card, restoring the prompt, columns, global sampling settings and per-model overrides that produced it
+- **JSON Schema checks** for Test Suite outputs (alongside exact/contains/regex/JSON), with path-level errors and a compact validator covering `type`, `required`, `properties`, `items`, `enum`, `const`, bounds and `allOf`/`anyOf`/`oneOf`/`not`
+- **Context sweep** — runs one model against the same prompt at 2K…64K context windows (neutral filler, fixed 256-token answers) and charts tok/s and TTFT against window size, with the percentage drop versus the smallest window
+
 ### 🔧 Changed
 
 - **Tauri version gate moved from CI to the release workflow**: Dependabot still opens the npm and Rust halves of a Tauri bump as separate PRs, so gating every PR made both halves permanently red and mutually blocked. A mismatch now only fails at tag time — which is where `tauri build` would actually break

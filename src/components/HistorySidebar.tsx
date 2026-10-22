@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { DbService, HistoryRecord, type BenchmarkResult } from '../services/dbService';
 import { useTranslation } from 'react-i18next';
-import { Clock, Crown, Download, Upload, Trash2, X, Copy, FileText } from 'lucide-react';
+import { Clock, Crown, Download, Upload, Trash2, X, Copy, FileText, RotateCcw } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { formatRelativeTime } from '../utils/timeUtils';
 import { useCloudStore } from '../store/useCloudStore';
@@ -14,6 +14,8 @@ interface HistorySidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectRecord: (record: HistoryRecord) => void;
+  /** Restore the run's prompt/columns/settings and start it again. */
+  onRerun?: (record: HistoryRecord) => void;
 }
 
 /** Human-readable run-config summary for the card tooltip (technical values, no i18n). */
@@ -30,6 +32,7 @@ const configSummary = (runConfig?: string | null): string => {
       serverDefaults?: boolean;
       seed?: number;
       maxTokens?: number;
+      slotParams?: Record<string, unknown>;
       appVersion?: string;
     };
     const parts: string[] = [];
@@ -44,6 +47,8 @@ const configSummary = (runConfig?: string | null): string => {
     }
     if (c.seed != null) parts.push(`seed ${c.seed}`);
     if (c.maxTokens != null) parts.push(`max ${c.maxTokens} tok`);
+    const perModel = c.slotParams ? Object.keys(c.slotParams).length : 0;
+    if (perModel > 0) parts.push(`${perModel} per-model`);
     if (c.appVersion) parts.push(`v${c.appVersion}`);
     return parts.join(' · ');
   } catch {
@@ -89,6 +94,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   isOpen,
   onClose,
   onSelectRecord,
+  onRerun,
 }) => {
   const { t } = useTranslation();
   const [records, setRecords] = useState<HistoryRecord[]>([]);
@@ -376,14 +382,30 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                   >
                     {record.prompt}
                   </p>
-                  <button
-                    onClick={(e) => record.id && handleDelete(e, record.id)}
-                    title={t('history.deleteRecordTitle')}
-                    aria-label={t('history.deleteRecordTitle')}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 dark:hover:text-red-400 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {onRerun && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRerun(record);
+                          onClose();
+                        }}
+                        title={t('history.rerunTitle', 'Re-run with the same prompt and settings')}
+                        aria-label={t('history.rerun', 'Re-run')}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-500 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => record.id && handleDelete(e, record.id)}
+                      title={t('history.deleteRecordTitle')}
+                      aria-label={t('history.deleteRecordTitle')}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 dark:hover:text-red-400 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Models — wrapping chips, winners highlighted (no truncation) */}

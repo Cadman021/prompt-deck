@@ -1,7 +1,19 @@
 // src/components/ModelColumn.tsx
 import React from 'react';
-import { Cpu, Zap, Clock, Cloud, EyeOff, X, RotateCcw, ThumbsUp, Crown, Copy } from 'lucide-react';
-import { OllamaModel, BenchmarkMetrics } from '../types/ollama';
+import {
+  Cpu,
+  Zap,
+  Clock,
+  Cloud,
+  EyeOff,
+  X,
+  RotateCcw,
+  ThumbsUp,
+  Crown,
+  Copy,
+  SlidersHorizontal,
+} from 'lucide-react';
+import { OllamaModel, BenchmarkMetrics, GenerationOverrides, hasOverrides } from '../types/ollama';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { ModelSource, CloudGroup } from '../services/modelTarget';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +51,11 @@ interface ModelColumnProps {
   costLabel?: string | null;
   /** Blind voting: show this label instead of any model identity. */
   blindLabel?: string | null;
+  /** Per-model overrides; omitted fields inherit `defaults`. */
+  params?: GenerationOverrides;
+  /** Global Advanced values, shown when a field is not overridden. */
+  defaults?: { temperature: number; top_p: number; maxTokens: number | null };
+  onParamsChange?: (params: GenerationOverrides) => void;
   onSourceChange: (source: ModelSource, name: string) => void;
   onRemove?: () => void;
   onRetry?: () => void;
@@ -91,11 +108,26 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   isWinner,
   costLabel,
   blindLabel,
+  params,
+  defaults,
+  onParamsChange,
   onRetry,
   onVote,
 }) => {
   const { t } = useTranslation();
   const color = COLUMN_COLORS[index % COLUMN_COLORS.length];
+  const [paramsOpen, setParamsOpen] = React.useState(false);
+  const overridden = hasOverrides(params);
+
+  const setParam = <K extends keyof GenerationOverrides>(
+    key: K,
+    value: GenerationOverrides[K]
+  ): void => {
+    const next: GenerationOverrides = { ...(params ?? {}) };
+    if (value === undefined) delete next[key];
+    else next[key] = value;
+    onParamsChange?.(next);
+  };
 
   // Live phase clock: only ticks while streaming, so idle columns cost nothing.
   const [tick, setTick] = React.useState(() => Date.now());
@@ -197,6 +229,23 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           </select>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {onParamsChange && (
+            <button
+              onClick={() => setParamsOpen((v) => !v)}
+              aria-pressed={paramsOpen}
+              title={t('bench.paramsTitle', 'Per-model parameters (unset fields use global)')}
+              className={`relative p-1 rounded transition shrink-0 ${
+                paramsOpen || overridden
+                  ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'
+                  : 'text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              {overridden && (
+                <span className="absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />
+              )}
+            </button>
+          )}
           {output && !error && (
             <button
               onClick={handleCopy}
@@ -230,6 +279,98 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           )}
         </div>
       </div>
+
+      {paramsOpen && onParamsChange && (
+        <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-[11px] space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-600 dark:text-slate-300">
+              {t('bench.params', 'Parameters')}
+            </span>
+            <button
+              onClick={() => onParamsChange({})}
+              disabled={!overridden}
+              className="text-[10px] text-indigo-500 hover:underline disabled:opacity-40 disabled:no-underline"
+            >
+              {t('bench.paramsReset', 'Use global')}
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2">
+            <span
+              className={`w-14 shrink-0 ${
+                params?.temperature !== undefined
+                  ? 'text-indigo-500 font-semibold'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('advanced.temperature')}
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1.5"
+              step="0.05"
+              value={params?.temperature ?? defaults?.temperature ?? 0.7}
+              onChange={(e) => setParam('temperature', parseFloat(e.target.value))}
+              className="flex-1 min-w-0 accent-indigo-500 cursor-pointer"
+            />
+            <span className="w-9 text-end font-mono tabular-nums text-indigo-500">
+              {(params?.temperature ?? defaults?.temperature ?? 0.7).toFixed(2)}
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span
+              className={`w-14 shrink-0 ${
+                params?.top_p !== undefined
+                  ? 'text-indigo-500 font-semibold'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('advanced.topP')}
+            </span>
+            <input
+              type="range"
+              min="0.1"
+              max="1"
+              step="0.05"
+              value={params?.top_p ?? defaults?.top_p ?? 0.9}
+              onChange={(e) => setParam('top_p', parseFloat(e.target.value))}
+              className="flex-1 min-w-0 accent-indigo-500 cursor-pointer"
+            />
+            <span className="w-9 text-end font-mono tabular-nums text-indigo-500">
+              {(params?.top_p ?? defaults?.top_p ?? 0.9).toFixed(2)}
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span
+              className={`w-14 shrink-0 ${
+                params?.maxTokens !== undefined && params.maxTokens !== null
+                  ? 'text-indigo-500 font-semibold'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {t('advanced.maxTokens')}
+            </span>
+            <input
+              type="number"
+              min="1"
+              value={params?.maxTokens ?? ''}
+              placeholder={String(defaults?.maxTokens ?? t('bench.inherit', 'global'))}
+              onChange={(e) =>
+                setParam(
+                  'maxTokens',
+                  e.target.value === ''
+                    ? undefined
+                    : Math.max(1, Math.floor(Number(e.target.value) || 0))
+                )
+              }
+              className="flex-1 min-w-0 p-1 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </label>
+        </div>
+      )}
 
       {isWinner && (
         <div className="px-3 py-1 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/50 text-[11px] font-semibold text-amber-600 dark:text-amber-300 flex items-center gap-1">

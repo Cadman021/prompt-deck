@@ -52,6 +52,27 @@
     "exportCsvEmpty": "No history!",
     "retry": "Retry"
   },
+  "sweep": {
+    "title": "Context sweep",
+    "short": "Sweep",
+    "subtitle": "Same model, same prompt, growing context: see where generation speed drops.",
+    "model": "Model",
+    "sizes": "Context sizes",
+    "hint": "Each step sends ~90% of the window as neutral filler plus your prompt, with a 256-token answer cap. Changing the window can make a local server reload the model, so the first TTFT at each size includes load time.",
+    "run": "Run sweep",
+    "stop": "Stop",
+    "progress": "{{done}}/{{total}} · {{size}}",
+    "context": "Context",
+    "tps": "tok/s",
+    "ttft": "TTFT",
+    "promptTokens": "prompt tok",
+    "drop": "vs smallest",
+    "empty": "Run a sweep to see how speed holds up at longer contexts.",
+    "failed": "failed",
+    "close": "Close",
+    "noPrompt": "Type a prompt in the Bench first.",
+    "noModels": "No models available."
+  },
   "metrics": {
     "tps": "tok/s",
     "ttft": "TTFT",
@@ -82,7 +103,9 @@
     "timeMinutes": "{{count}}m ago",
     "timeHours": "{{count}}h ago",
     "timeDays": "{{count}}d ago",
-    "winnersOnly": "Winners only"
+"winnersOnly": "Winners only",
+    "rerun": "Re-run",
+    "rerunTitle": "Re-run with the same prompt and settings"
   },
   "export": {
     "noHistoryToExport": "No history records to export.",
@@ -297,7 +320,11 @@
     "blindTitle": "Blind mode: identities hidden for unbiased voting",
     "blindName": "Model {{letter}}",
     "phasePreparing": "Preparing model…",
-    "phaseGenerating": "Generating"
+"phaseGenerating": "Generating",
+    "params": "Parameters",
+    "paramsTitle": "Per-model parameters (unset fields use global)",
+    "paramsReset": "Use global",
+    "inherit": "global"
   },
   "testsuite": {
     "title": "Test Suite",
@@ -314,7 +341,9 @@
     "checkContains": "Contains",
     "checkRegex": "Regex",
     "checkExact": "Exact",
-    "checkJson": "Valid JSON",
+"checkJson": "Valid JSON",
+    "checkSchema": "JSON Schema",
+    "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Expected text…",
     "checkPatternPlaceholder": "e.g. error \\d+",
     "checkInvalid": "Invalid",

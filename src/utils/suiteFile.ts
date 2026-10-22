@@ -25,7 +25,7 @@ export interface SuiteFile extends SuiteDefinition {
   exportedAt: string;
 }
 
-const CHECK_TYPES: readonly CheckType[] = ['none', 'contains', 'regex', 'exact', 'json'];
+const CHECK_TYPES: readonly CheckType[] = ['none', 'contains', 'regex', 'exact', 'json', 'schema'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

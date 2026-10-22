@@ -52,6 +52,27 @@
     "exportCsvEmpty": "没有历史记录！",
     "retry": "重试"
   },
+  "sweep": {
+    "title": "上下文扫描",
+    "short": "扫描",
+    "subtitle": "同一模型、同一提示词、逐步增大的上下文:观察生成速度从哪里下降。",
+    "model": "模型",
+    "sizes": "上下文大小",
+    "hint": "每一步会把约 90% 的窗口作为中性填充文本连同你的提示词发送,回答上限为 256 个 token。改变窗口可能让本地服务器重新加载模型,因此每个大小的首个 TTFT 包含加载时间。",
+    "run": "开始扫描",
+    "stop": "停止",
+    "progress": "{{done}}/{{total}} · {{size}}",
+    "context": "上下文",
+    "tps": "tok/s",
+    "ttft": "TTFT",
+    "promptTokens": "提示词 token",
+    "drop": "相对最小",
+    "empty": "运行一次扫描,看看速度在更长上下文中能保持多少。",
+    "failed": "失败",
+    "close": "关闭",
+    "noPrompt": "请先在 Bench 中输入提示词。",
+    "noModels": "没有可用模型。"
+  },
   "metrics": {
     "tps": "tok/s",
     "ttft": "TTFT",
@@ -82,7 +103,9 @@
     "timeMinutes": "{{count}}分钟前",
     "timeHours": "{{count}}小时前",
     "timeDays": "{{count}}天前",
-    "winnersOnly": "仅显示胜者"
+"winnersOnly": "仅显示胜者",
+    "rerun": "重新运行",
+    "rerunTitle": "使用相同提示词和设置重新运行"
   },
   "export": {
     "noHistoryToExport": "没有可导出的历史记录。",
@@ -297,7 +320,11 @@
     "blindTitle": "盲测模式：隐藏身份以便公正投票",
     "blindName": "模型{{letter}}",
     "phasePreparing": "正在准备模型…",
-    "phaseGenerating": "生成中"
+"phaseGenerating": "生成中",
+    "params": "参数",
+    "paramsTitle": "按模型设置参数(留空则使用全局值)",
+    "paramsReset": "使用全局",
+    "inherit": "全局"
   },
   "testsuite": {
     "title": "测试套件",
@@ -314,7 +341,9 @@
     "checkContains": "包含",
     "checkRegex": "正则",
     "checkExact": "精确",
-    "checkJson": "有效 JSON",
+"checkJson": "有效 JSON",
+    "checkSchema": "JSON Schema",
+    "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "期望文本…",
     "checkPatternPlaceholder": "例如 error \\d+",
     "checkInvalid": "无效",

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LLMService } from './services/llmService';
-import { OllamaModel, BenchmarkMetrics } from './types/ollama';
+import { OllamaModel, BenchmarkMetrics, GenerationOverrides, hasOverrides } from './types/ollama';
 import { useSettingsStore } from './store/useSettingsStore';
 import { useCloudStore } from './store/useCloudStore';
 import { APP_VERSION } from './version';
@@ -38,9 +38,10 @@ import { ResultToolbar } from './components/layout/ResultToolbar';
 import { SettingsPanel } from './components/layout/SettingsPanel';
 import { Toaster } from './components/Toaster';
 import { OnboardingCard } from './components/OnboardingCard';
+import { ContextSweep } from './components/ContextSweep';
 import { toast } from './store/useToastStore';
 import './i18n/config';
-import { Play, Plus, Eye, EyeOff, Zap, Clock, DollarSign } from 'lucide-react';
+import { Play, Plus, Eye, EyeOff, Zap, Clock, DollarSign, Activity } from 'lucide-react';
 
 const MAX_MODELS = 4;
 const MIN_MODELS = 2;
@@ -60,6 +61,8 @@ interface Slot {
   startedAt?: number | null;
   /** When the first token arrived (ms epoch); null until then. */
   firstTokenAt?: number | null;
+  /** Per-model generation overrides; unset fields fall back to Advanced settings. */
+  params?: GenerationOverrides;
 }
 
 const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot => ({
@@ -78,6 +81,30 @@ const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot =
 /** Storage/display name: `providerId/model` for cloud, plain id for local. */
 const slotQualified = (s: Pick<Slot, 'source' | 'model'>): string =>
   qualifiedName(s.source, s.model);
+
+/** The `run_config` JSON snapshot saved with every run (see `finalizeRun`). */
+interface SavedRunConfig {
+  system?: string;
+  temperature?: number;
+  top_p?: number;
+  num_ctx?: number;
+  serverDefaults?: boolean;
+  seed?: number | null;
+  maxTokens?: number | null;
+  repeats?: number;
+  slotParams?: Record<string, GenerationOverrides>;
+}
+
+/** Tolerant parse: history rows from older versions may lack a config. */
+const parseRunConfig = (json?: string | null): SavedRunConfig => {
+  if (!json) return {};
+  try {
+    const parsed = JSON.parse(json) as unknown;
+    return parsed && typeof parsed === 'object' ? (parsed as SavedRunConfig) : {};
+  } catch {
+    return {};
+  }
+};
 
 /** Blind voting toggle: enabling hides identities AND shuffles columns, so no
  * positional knowledge survives; voting reveals again. Disabled mid-run. */
@@ -157,6 +184,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSweepOpen, setIsSweepOpen] = useState(false);
 
   // Dynamic list of model comparison slots (2 to MAX_MODELS)
   const [slots, setSlots] = useState<Slot[]>([createSlot(), createSlot()]);
@@ -446,49 +474,73 @@ export default function App() {
     }
   };
 
-  const handleSelectHistoryRecord = (record: HistoryRecord) => {
+  /**
+   * Rebuilds the columns for a saved run and restores the sampling settings
+   * that produced it (global Advanced config + per-model overrides), so the
+   * restored view — and a re-run — reproduces the original conditions.
+   */
+  const restoreHistoryRecord = (record: HistoryRecord): Slot[] => {
+    const cfg = parseRunConfig(record.runConfig);
+    const next = { ...advancedConfig };
+    if (cfg.system !== undefined) next.system = cfg.system;
+    if (cfg.temperature !== undefined) next.temperature = cfg.temperature;
+    if (cfg.top_p !== undefined) next.top_p = cfg.top_p;
+    if (cfg.num_ctx !== undefined) next.num_ctx = cfg.num_ctx;
+    if (cfg.serverDefaults !== undefined) next.serverDefaults = cfg.serverDefaults;
+    if (cfg.seed !== undefined) next.seed = cfg.seed;
+    if (cfg.maxTokens !== undefined) next.maxTokens = cfg.maxTokens;
+    if (cfg.repeats !== undefined) next.repeats = cfg.repeats;
+    setAdvancedConfig(next);
+
     setPrompt(record.prompt);
     setWinnerModel(record.winnerModel ?? null);
     setDiffPair(null);
     savedRunIdRef.current = record.id ?? null;
-    setSlots(
-      record.results.map((r) => {
-        // Explicit source wins (stored since the source/provider_id columns
-        // landed); otherwise fall back to qualified-name parsing for legacy rows.
-        let parsed: { source: ModelSource; model: string };
-        if (r.source === 'cloud' && r.providerId) {
-          const prefix = `cloud:${r.providerId}/`;
-          parsed = {
-            source: { kind: 'cloud', providerId: r.providerId },
-            model: r.model.startsWith(prefix) ? r.model.slice(prefix.length) : r.model,
-          };
-        } else if (r.source === 'local') {
-          parsed = { source: { kind: 'local' }, model: r.model };
-        } else {
-          parsed = parseQualified(r.model, cloudCustom);
-        }
-        const knownLocal =
-          parsed.source.kind === 'local' && models.some((m) => m.name === parsed.model);
-        return {
-          ...createSlot(
-            knownLocal || parsed.source.kind === 'cloud' ? parsed.model : '',
-            parsed.source
-          ),
-          output: r.output,
-          reasoning: r.reasoning || '',
-          metrics: {
-            tps: r.tps,
-            ttftMs: r.ttft,
-            totalDurationMs: 0,
-            totalTokens: (r.promptTokens ?? 0) + (r.completionTokens ?? 0),
-            tpsEstimated: r.tpsEstimated ?? false,
-            tokenSource: r.tokenSource === 'heuristic' ? 'heuristic' : 'server',
-            promptTokens: r.promptTokens ?? undefined,
-            completionTokens: r.completionTokens ?? undefined,
-          },
+
+    return record.results.map((r) => {
+      // Explicit source wins (stored since the source/provider_id columns
+      // landed); otherwise fall back to qualified-name parsing for legacy rows.
+      let parsed: { source: ModelSource; model: string };
+      if (r.source === 'cloud' && r.providerId) {
+        const prefix = `cloud:${r.providerId}/`;
+        parsed = {
+          source: { kind: 'cloud', providerId: r.providerId },
+          model: r.model.startsWith(prefix) ? r.model.slice(prefix.length) : r.model,
         };
-      })
-    );
+      } else if (r.source === 'local') {
+        parsed = { source: { kind: 'local' }, model: r.model };
+      } else {
+        parsed = parseQualified(r.model, cloudCustom);
+      }
+      const knownLocal =
+        parsed.source.kind === 'local' && models.some((m) => m.name === parsed.model);
+      const savedParams = cfg.slotParams?.[r.model];
+      return {
+        ...createSlot(
+          knownLocal || parsed.source.kind === 'cloud' ? parsed.model : '',
+          parsed.source
+        ),
+        output: r.output,
+        reasoning: r.reasoning || '',
+        params: savedParams && hasOverrides(savedParams) ? { ...savedParams } : undefined,
+        metrics: {
+          tps: r.tps,
+          ttftMs: r.ttft,
+          totalDurationMs: 0,
+          totalTokens: (r.promptTokens ?? 0) + (r.completionTokens ?? 0),
+          tpsEstimated: r.tpsEstimated ?? false,
+          tokenSource: r.tokenSource === 'heuristic' ? 'heuristic' : 'server',
+          promptTokens: r.promptTokens ?? undefined,
+          completionTokens: r.completionTokens ?? undefined,
+        },
+      };
+    });
+  };
+
+  const handleSelectHistoryRecord = (record: HistoryRecord) => {
+    const restored = restoreHistoryRecord(record);
+    slotsRef.current = restored;
+    setSlots(restored);
   };
 
   /** Runs a single slot; shared by full runs and per-slot retry. */
@@ -504,8 +556,17 @@ export default function App() {
         return;
       }
 
+      // Read settings at call time (not from the render closure): History's
+      // "Re-run" updates the store and starts a run in the same tick, so a
+      // captured config would still be the previous one.
+      const settings = useSettingsStore.getState();
+      const adv = settings.advancedConfig;
+
       // Resolve the endpoint: local settings or a stored cloud API key.
-      const resolved = resolveRunEndpoint(slot.source, slot.model, { provider, baseUrl });
+      const resolved = resolveRunEndpoint(slot.source, slot.model, {
+        provider: settings.provider,
+        baseUrl: settings.baseUrl,
+      });
       if ('error' in resolved) {
         const msg =
           resolved.error === 'noCloudKey'
@@ -523,19 +584,24 @@ export default function App() {
         return;
       }
 
+      // Per-model overrides win over the global Advanced settings. A slot with
+      // no override keeps the existing `serverDefaults` behaviour unchanged.
+      const ov = slot.params;
+      const overridden = hasOverrides(ov);
+      const useServerDefaults = !!adv.serverDefaults && !overridden;
       const options = {
         model: resolved.run.model,
         prompt: currentPrompt,
-        system: advancedConfig.system,
-        temperature: advancedConfig.temperature,
-        top_p: advancedConfig.top_p,
-        num_ctx: advancedConfig.num_ctx,
-        serverDefaults: advancedConfig.serverDefaults,
-        seed: advancedConfig.seed,
-        maxTokens: advancedConfig.maxTokens,
+        system: adv.system,
+        temperature: useServerDefaults ? undefined : (ov?.temperature ?? adv.temperature),
+        top_p: useServerDefaults ? undefined : (ov?.top_p ?? adv.top_p),
+        num_ctx: useServerDefaults ? undefined : (ov?.num_ctx ?? adv.num_ctx),
+        serverDefaults: useServerDefaults,
+        seed: adv.seed,
+        maxTokens: ov?.maxTokens ?? adv.maxTokens,
       };
 
-      runRepeatedStream(resolved.run.config, options, signal, advancedConfig.repeats ?? 1, {
+      runRepeatedStream(resolved.run.config, options, signal, adv.repeats ?? 1, {
         onChunk: (fullText) => {
           outputRefs.current[slot.id] = fullText;
           // One render per frame max — refs stay exact, paint stays cheap.
@@ -589,137 +655,173 @@ export default function App() {
         },
       });
     },
-    [provider, baseUrl, advancedConfig, t]
+    [t]
   );
 
-  const handleRunComparison = useCallback(() => {
-    if (!prompt.trim() || isLoading) return;
+  /**
+   * Starts a run. Called by the Run button (current prompt + columns) and by
+   * History's "Re-run" (explicit prompt + restored columns), which is why the
+   * inputs can be passed in instead of read from state.
+   */
+  const startRun = useCallback(
+    (override?: { prompt: string; slots: Slot[] }) => {
+      const promptText = (override?.prompt ?? prompt).trim();
+      if (!promptText || isLoading) return;
 
-    // Blind runs shuffle column order first, so positions carry no meaning.
-    if (blindMode) shuffleSlots();
-
-    const currentPrompt = prompt;
-    outputRefs.current = {};
-    reasoningRefs.current = {};
-    metricsRefs.current = {};
-    savedRunIdRef.current = null;
-    setWinnerModel(null);
-    setDiffPair(null);
-
-    const runnable = slotsRef.current.filter((s) => s.model);
-    if (runnable.length === 0) return;
-
-    setSlots((prev) => {
-      finishedRefs.current = Object.fromEntries(prev.map((s) => [s.id, !s.model]));
-      return prev.map((s) => ({
-        ...s,
-        output: '',
-        reasoning: '',
-        metrics: null,
-        loading: true,
-        error: null,
-        startedAt: Date.now(),
-        firstTokenAt: null,
-      }));
-    });
-    setIsLoading(true);
-
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-
-    const finalizeRun = (): void => {
-      const snapshot = slotsRef.current;
-      const cloud = useCloudStore.getState();
-      const settings = useSettingsStore.getState();
-      // Reproducibility snapshot: sampling params + endpoint host + app
-      // version. Never includes secrets (no API keys).
-      const host = safeHost(settings.baseUrl);
-      const runConfig = JSON.stringify({
-        provider: settings.provider,
-        host,
-        runMode: settings.runMode,
-        system: settings.advancedConfig.system || undefined,
-        temperature: settings.advancedConfig.serverDefaults
-          ? undefined
-          : settings.advancedConfig.temperature,
-        top_p: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.top_p,
-        num_ctx: settings.advancedConfig.serverDefaults
-          ? undefined
-          : settings.advancedConfig.num_ctx,
-        serverDefaults: settings.advancedConfig.serverDefaults || undefined,
-        seed: settings.advancedConfig.seed ?? undefined,
-        maxTokens: settings.advancedConfig.maxTokens ?? undefined,
-        repeats: settings.advancedConfig.repeats ?? 1,
-        appVersion: APP_VERSION,
-      });
-      const results: BenchmarkResult[] = snapshot.map((s) => {
-        const m = metricsRefs.current[s.id];
-        // Freeze the run cost: exact server tokens × current pricing, else null.
-        let costUsd: number | null = null;
-        if (s.source.kind === 'cloud' && m?.tokenSource === 'server') {
-          costUsd = calcCost(
-            m.promptTokens,
-            m.completionTokens,
-            (cloud.modelPricing[s.source.providerId] ?? {})[s.model]
-          );
-        }
-        return {
-          model: slotQualified(s),
-          output: outputRefs.current[s.id] || s.output || '',
-          tps: m?.tps || 0,
-          ttft: m?.ttftMs || 0,
-          tpsEstimated: m?.tpsEstimated,
-          tokenSource: m?.tokenSource,
-          promptTokens: m?.promptTokens ?? null,
-          completionTokens: m?.completionTokens ?? null,
-          costUsd,
-          source: s.source.kind,
-          providerId: s.source.kind === 'cloud' ? s.source.providerId : null,
-          reasoning: reasoningRefs.current[s.id]?.trim() ? reasoningRefs.current[s.id] : null,
-        };
-      });
-      void DbService.saveHistory(currentPrompt, results, null, runConfig).then((runId) => {
-        // Remember the new run id so a later vote updates the same row.
-        // The id comes straight from the insert — no history re-read, no race.
-        savedRunIdRef.current = runId;
-      });
-    };
-
-    let finalized = false;
-    const markFinished = (id: string) => {
-      finishedRefs.current[id] = true;
-      if (!Object.values(finishedRefs.current).every(Boolean) || finalized) return;
-      finalized = true;
-      // All slots finished (success, error or stop) — finalize once.
-      setIsLoading(false);
-      // Read synchronously from refs instead of setState-inside-setState.
-      finalizeRun();
-    };
-
-    // Defer stream startup so the reset render commits first.
-    setTimeout(() => {
-      if (useSettingsStore.getState().runMode === 'sequential') {
-        // One slot at a time: local models share one GPU/server, so parallel
-        // runs contaminate each other's TPS. Partial results still save on Stop.
-        void (async () => {
-          for (const slot of runnable) {
-            if (signal.aborted) break;
-
-            await new Promise<void>((resolve) => {
-              runSlot(slot, currentPrompt, signal, () => resolve());
-            });
-          }
-          Object.keys(finishedRefs.current).forEach((id) => {
-            finishedRefs.current[id] = true;
-          });
-          setIsLoading(false);
-          finalizeRun();
-        })();
-        return;
+      if (override) {
+        // Restored columns are authoritative for this run — the state update
+        // that renders them lands in the same batch, so write the ref now or
+        // `runnable` below would still see the previous columns.
+        slotsRef.current = override.slots;
+        setSlots(override.slots);
+      } else if (blindMode) {
+        // Blind runs shuffle column order first, so positions carry no meaning.
+        shuffleSlots();
       }
-      runnable.forEach((slot) => runSlot(slot, currentPrompt, signal, markFinished));
-    }, 0);
-  }, [prompt, isLoading, runSlot, blindMode, shuffleSlots]);
+
+      const currentPrompt = promptText;
+      outputRefs.current = {};
+      reasoningRefs.current = {};
+      metricsRefs.current = {};
+      savedRunIdRef.current = null;
+      setWinnerModel(null);
+      setDiffPair(null);
+
+      const runnable = slotsRef.current.filter((s) => s.model);
+      if (runnable.length === 0) return;
+
+      setSlots((prev) => {
+        finishedRefs.current = Object.fromEntries(prev.map((s) => [s.id, !s.model]));
+        return prev.map((s) => ({
+          ...s,
+          output: '',
+          reasoning: '',
+          metrics: null,
+          loading: true,
+          error: null,
+          startedAt: Date.now(),
+          firstTokenAt: null,
+        }));
+      });
+      setIsLoading(true);
+
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
+
+      const finalizeRun = (): void => {
+        const snapshot = slotsRef.current;
+        const cloud = useCloudStore.getState();
+        const settings = useSettingsStore.getState();
+        // Reproducibility snapshot: sampling params + endpoint host + app
+        // version. Never includes secrets (no API keys).
+        const host = safeHost(settings.baseUrl);
+        // Per-model overrides, keyed by the same qualified name used in results.
+        // Only columns that actually override something are recorded.
+        const slotParams: Record<string, GenerationOverrides> = {};
+        for (const s of snapshot) {
+          if (hasOverrides(s.params))
+            slotParams[slotQualified(s)] = s.params as GenerationOverrides;
+        }
+        const runConfig = JSON.stringify({
+          provider: settings.provider,
+          host,
+          runMode: settings.runMode,
+          system: settings.advancedConfig.system || undefined,
+          temperature: settings.advancedConfig.serverDefaults
+            ? undefined
+            : settings.advancedConfig.temperature,
+          top_p: settings.advancedConfig.serverDefaults ? undefined : settings.advancedConfig.top_p,
+          num_ctx: settings.advancedConfig.serverDefaults
+            ? undefined
+            : settings.advancedConfig.num_ctx,
+          serverDefaults: settings.advancedConfig.serverDefaults || undefined,
+          seed: settings.advancedConfig.seed ?? undefined,
+          maxTokens: settings.advancedConfig.maxTokens ?? undefined,
+          repeats: settings.advancedConfig.repeats ?? 1,
+          slotParams: Object.keys(slotParams).length > 0 ? slotParams : undefined,
+          appVersion: APP_VERSION,
+        });
+        const results: BenchmarkResult[] = snapshot.map((s) => {
+          const m = metricsRefs.current[s.id];
+          // Freeze the run cost: exact server tokens × current pricing, else null.
+          let costUsd: number | null = null;
+          if (s.source.kind === 'cloud' && m?.tokenSource === 'server') {
+            costUsd = calcCost(
+              m.promptTokens,
+              m.completionTokens,
+              (cloud.modelPricing[s.source.providerId] ?? {})[s.model]
+            );
+          }
+          return {
+            model: slotQualified(s),
+            output: outputRefs.current[s.id] || s.output || '',
+            tps: m?.tps || 0,
+            ttft: m?.ttftMs || 0,
+            tpsEstimated: m?.tpsEstimated,
+            tokenSource: m?.tokenSource,
+            promptTokens: m?.promptTokens ?? null,
+            completionTokens: m?.completionTokens ?? null,
+            costUsd,
+            source: s.source.kind,
+            providerId: s.source.kind === 'cloud' ? s.source.providerId : null,
+            reasoning: reasoningRefs.current[s.id]?.trim() ? reasoningRefs.current[s.id] : null,
+          };
+        });
+        void DbService.saveHistory(currentPrompt, results, null, runConfig).then((runId) => {
+          // Remember the new run id so a later vote updates the same row.
+          // The id comes straight from the insert — no history re-read, no race.
+          savedRunIdRef.current = runId;
+        });
+      };
+
+      let finalized = false;
+      const markFinished = (id: string) => {
+        finishedRefs.current[id] = true;
+        if (!Object.values(finishedRefs.current).every(Boolean) || finalized) return;
+        finalized = true;
+        // All slots finished (success, error or stop) — finalize once.
+        setIsLoading(false);
+        // Read synchronously from refs instead of setState-inside-setState.
+        finalizeRun();
+      };
+
+      // Defer stream startup so the reset render commits first.
+      setTimeout(() => {
+        if (useSettingsStore.getState().runMode === 'sequential') {
+          // One slot at a time: local models share one GPU/server, so parallel
+          // runs contaminate each other's TPS. Partial results still save on Stop.
+          void (async () => {
+            for (const slot of runnable) {
+              if (signal.aborted) break;
+
+              await new Promise<void>((resolve) => {
+                runSlot(slot, currentPrompt, signal, () => resolve());
+              });
+            }
+            Object.keys(finishedRefs.current).forEach((id) => {
+              finishedRefs.current[id] = true;
+            });
+            setIsLoading(false);
+            finalizeRun();
+          })();
+          return;
+        }
+        runnable.forEach((slot) => runSlot(slot, currentPrompt, signal, markFinished));
+      }, 0);
+    },
+    [prompt, isLoading, runSlot, blindMode, shuffleSlots]
+  );
+
+  /** Run button / Ctrl+Enter: current prompt and columns. */
+  const handleRunComparison = useCallback(() => startRun(), [startRun]);
+
+  /** History card "Re-run": restore the saved run, then start it immediately. */
+  const handleRerunHistoryRecord = (record: HistoryRecord) => {
+    const restored = restoreHistoryRecord(record);
+    slotsRef.current = restored;
+    setSlots(restored);
+    startRun({ prompt: record.prompt, slots: restored });
+  };
 
   /** Re-runs a single failed/stopped slot without touching the others. */
   const handleRetrySlot = (id: string) => {
@@ -902,8 +1004,16 @@ export default function App() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onSelectRecord={handleSelectHistoryRecord}
+        onRerun={handleRerunHistoryRecord}
       />
       <Leaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+      <ContextSweep
+        isOpen={isSweepOpen}
+        onClose={() => setIsSweepOpen(false)}
+        prompt={prompt}
+        models={models}
+        cloudGroups={cloudGroups}
+      />
       <UpdaterPrompt />
       <Toaster />
       <SettingsPanel
@@ -1048,6 +1158,21 @@ export default function App() {
                     }
                     costLabel={slotCost(slot, slot.metrics)}
                     blindLabel={blindMode && slot.model ? blindLabelFor(index) : null}
+                    params={slot.params}
+                    defaults={{
+                      temperature: advancedConfig.temperature ?? 0.7,
+                      top_p: advancedConfig.top_p ?? 0.9,
+                      maxTokens: advancedConfig.maxTokens ?? null,
+                    }}
+                    onParamsChange={(next) =>
+                      setSlots((prev) =>
+                        prev.map((s) =>
+                          s.id === slot.id
+                            ? { ...s, params: hasOverrides(next) ? next : undefined }
+                            : s
+                        )
+                      )
+                    }
                     onSourceChange={(source, name) =>
                       setSlots((prev) =>
                         prev.map((s) => (s.id === slot.id ? { ...s, source, model: name } : s))
@@ -1158,6 +1283,15 @@ export default function App() {
                       {t('app.runHint')}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => setIsSweepOpen(true)}
+                        disabled={isLoading || !prompt.trim() || !hasAnySource}
+                        title={t('sweep.title', 'Context sweep')}
+                        className="flex items-center gap-1 px-2 py-1 text-[10px] font-mono rounded-lg border border-transparent bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 disabled:opacity-50 transition shrink-0"
+                      >
+                        <Activity className="w-3 h-3" />
+                        {t('sweep.short', 'Sweep')}
+                      </button>
                       <RunModeToggle />
                       <BlindToggle
                         disabled={isLoading}

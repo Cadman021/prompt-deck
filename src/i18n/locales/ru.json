@@ -52,6 +52,27 @@
     "exportCsvEmpty": "Нет истории!",
     "retry": "Повторить"
   },
+  "sweep": {
+    "title": "Прогон по контексту",
+    "short": "Прогон",
+    "subtitle": "Та же модель, тот же запрос, растущий контекст: видно, где падает скорость.",
+    "model": "Модель",
+    "sizes": "Размеры контекста",
+    "hint": "На каждом шаге отправляется ~90 % окна нейтрального текста плюс ваш запрос, ответ ограничен 256 токенами. Смена окна может перезагрузить локальную модель, поэтому первый TTFT на каждом размере включает загрузку.",
+    "run": "Запустить прогон",
+    "stop": "Остановить",
+    "progress": "{{done}}/{{total}} · {{size}}",
+    "context": "Контекст",
+    "tps": "ток/с",
+    "ttft": "TTFT",
+    "promptTokens": "токены запроса",
+    "drop": "к меньшему",
+    "empty": "Запустите прогон, чтобы увидеть, как скорость держится на длинном контексте.",
+    "failed": "ошибка",
+    "close": "Закрыть",
+    "noPrompt": "Сначала введите запрос в Bench.",
+    "noModels": "Нет доступных моделей."
+  },
   "metrics": {
     "tps": "ток/с",
     "ttft": "TTFT",
@@ -82,7 +103,9 @@
     "timeMinutes": "{{count}} мин. назад",
     "timeHours": "{{count}} ч. назад",
     "timeDays": "{{count}} дн. назад",
-    "winnersOnly": "Только победители"
+"winnersOnly": "Только победители",
+    "rerun": "Запустить снова",
+    "rerunTitle": "Запустить снова с тем же запросом и настройками"
   },
   "export": {
     "noHistoryToExport": "Нет записей истории для экспорта.",
@@ -297,7 +320,11 @@
     "blindTitle": "Слепой режим: личности скрыты для честного голосования",
     "blindName": "Модель {{letter}}",
     "phasePreparing": "Подготовка модели…",
-    "phaseGenerating": "Генерация"
+"phaseGenerating": "Генерация",
+    "params": "Параметры",
+    "paramsTitle": "Параметры для модели (пустые поля берутся из общих настроек)",
+    "paramsReset": "Использовать общие",
+    "inherit": "общие"
   },
   "testsuite": {
     "title": "Тест-сьют",
@@ -314,7 +341,9 @@
     "checkContains": "Содержит",
     "checkRegex": "Регекс",
     "checkExact": "Точно",
-    "checkJson": "Валидный JSON",
+"checkJson": "Валидный JSON",
+    "checkSchema": "Схема JSON",
+    "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Ожидаемый текст…",
     "checkPatternPlaceholder": "напр. error \\d+",
     "checkInvalid": "Невалидно",

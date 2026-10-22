@@ -13,6 +13,29 @@ export interface OllamaModel {
   };
 }
 
+/**
+ * Per-slot overrides for generation settings. Every field is optional: unset
+ * fields inherit the global Advanced settings, so a column only needs to list
+ * what actually differs (e.g. two copies of one model at different temps).
+ */
+export interface GenerationOverrides {
+  temperature?: number;
+  top_p?: number;
+  maxTokens?: number | null;
+  num_ctx?: number;
+}
+
+/** True when the slot has no override at all (renders as "using global"). */
+export function hasOverrides(o: GenerationOverrides | null | undefined): boolean {
+  if (!o) return false;
+  return (
+    o.temperature !== undefined ||
+    o.top_p !== undefined ||
+    (o.maxTokens !== undefined && o.maxTokens !== null) ||
+    o.num_ctx !== undefined
+  );
+}
+
 export interface PromptOptions {
   model: string;
   prompt: string;
@@ -28,8 +51,8 @@ export interface PromptOptions {
 export type TokenSource = 'server' | 'heuristic';
 
 export interface BenchmarkMetrics {
-  ttftMs: number;           // Time To First Token (ms)
-  tps: number;              // Tokens Per Second (generation phase only)
+  ttftMs: number; // Time To First Token (ms)
+  tps: number; // Tokens Per Second (generation phase only)
   totalDurationMs: number;
   totalTokens: number;
   evalDurationMs?: number;

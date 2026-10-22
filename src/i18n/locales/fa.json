@@ -52,6 +52,27 @@
     "exportCsvEmpty": "تاریخچه‌ای نیست!",
     "retry": "تلاش مجدد"
   },
+  "sweep": {
+    "title": "سنجش طول کانتکست",
+    "short": "اسکن",
+    "subtitle": "همان مدل، همان پرامپت، کانتکست بزرگ‌تر: ببینید سرعت تولید از کجا افت می‌کند.",
+    "model": "مدل",
+    "sizes": "اندازه‌های کانتکست",
+    "hint": "هر مرحله حدود ۹۰٪ پنجره را متن پرکنندهٔ خنثی به‌علاوهٔ پرامپت شما می‌فرستد و پاسخ را به ۲۵۶ توکن محدود می‌کند. تغییر پنجره ممکن است سرور محلی را به بارگذاری مجدد مدل وادار کند، بنابراین TTFT اول هر اندازه شامل زمان بارگذاری است.",
+    "run": "اجرای سنجش",
+    "stop": "توقف",
+    "progress": "{{done}}/{{total}} · {{size}}",
+    "context": "کانتکست",
+    "tps": "توکن/ثانیه",
+    "ttft": "TTFT",
+    "promptTokens": "توکن پرامپت",
+    "drop": "نسبت به کوچک‌ترین",
+    "empty": "یک سنجش اجرا کنید تا ببینید سرعت در کانتکست‌های بلندتر چطور می‌ماند.",
+    "failed": "ناموفق",
+    "close": "بستن",
+    "noPrompt": "اول در بخش بنچ یک پرامپت بنویسید.",
+    "noModels": "مدلی موجود نیست."
+  },
   "metrics": {
     "tps": "توکن/ثانیه",
     "ttft": "زمان اولین توکن",
@@ -82,7 +103,9 @@
     "timeMinutes": "{{count}} دقیقه پیش",
     "timeHours": "{{count}} ساعت پیش",
     "timeDays": "{{count}} روز پیش",
-    "winnersOnly": "فقط برنده‌ها"
+"winnersOnly": "فقط برنده‌ها",
+    "rerun": "اجرای مجدد",
+    "rerunTitle": "اجرای مجدد با همان پرامپت و تنظیمات"
   },
   "export": {
     "noHistoryToExport": "هیچ رکورد تاریخچه‌ای برای خروجی وجود ندارد.",
@@ -297,7 +320,11 @@
     "blindTitle": "حالت کور: هویت‌ها برای رأی بی‌طرفانه پنهان است",
     "blindName": "مدل {{letter}}",
     "phasePreparing": "در حال آماده‌سازی مدل…",
-    "phaseGenerating": "در حال تولید"
+"phaseGenerating": "در حال تولید",
+    "params": "پارامترها",
+    "paramsTitle": "پارامترهای هر مدل (فیلدهای خالی از تنظیمات کلی استفاده می‌کنند)",
+    "paramsReset": "استفاده از کلی",
+    "inherit": "کلی"
   },
   "testsuite": {
     "title": "تست‌سوئیت",
@@ -314,7 +341,9 @@
     "checkContains": "شامل باشد",
     "checkRegex": "رجکس",
     "checkExact": "دقیقاً",
-    "checkJson": "JSON معتبر",
+"checkJson": "JSON معتبر",
+    "checkSchema": "اسکیمای JSON",
+    "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "متن مورد انتظار…",
     "checkPatternPlaceholder": "مثلاً error \\d+",
     "checkInvalid": "نامعتبر",
