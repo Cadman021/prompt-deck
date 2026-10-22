@@ -30,6 +30,7 @@ test suites, sharper benchmark tables, and a roomier history panel.
 - Durations under a second now render in milliseconds; TTFT and total duration share one formatter
 - Tabular (fixed-width) numerals across metrics, leaderboard, history, and scoreboard so digits no longer jitter
 - Syntax highlighting is code-split and only runs after a stream finishes (and for blocks under 20k chars), so it never competes with local inference
+- Dependabot now uses a Tauri **multi-ecosystem group**, so the npm and Rust halves of a Tauri bump arrive as one PR that satisfies the version gate instead of two PRs that each fail it
 
 ### 🐛 Fixed
 
