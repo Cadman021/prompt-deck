@@ -48,6 +48,12 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Tauri npm/Rust version gate
+        # Fails the release when `@tauri-apps/*` and the matching Rust crates
+        # have drifted apart (`tauri build` cannot complete on such a pair).
+        # Kept out of ci.yml so Dependabot's per-ecosystem PRs stay mergeable.
+        run: node scripts/check-tauri-versions.cjs
+
       - name: Install frontend dependencies
         run: npm ci
 

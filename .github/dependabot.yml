@@ -1,14 +1,4 @@
 version: 2
-
-multi-ecosystem-groups:
-  # Tauri's npm packages and Rust crates have to move in lockstep: the CI
-  # "tauri-versions" gate fails whenever `@tauri-apps/*` and `tauri-plugin-*`
-  # drift apart, and `tauri build` hard-fails on a half-updated pair.
-  # A multi-ecosystem group lands both halves in a single PR.
-  tauri:
-    schedule:
-      interval: weekly
-
 updates:
   - package-ecosystem: npm
     directory: /
@@ -20,24 +10,26 @@ updates:
       # major). Revisit manually when the plugin catches up.
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
-    # Only the Tauri JS packages join the cross-ecosystem group above; every
-    # other npm dependency keeps getting normal updates. `patterns` is required
-    # on any entry that sets `multi-ecosystem-group`.
-    multi-ecosystem-group: tauri
-    patterns:
-      - '@tauri-apps/*'
+    groups:
+      # All Tauri JS packages in one PR so they move together.
+      # Groups are per-ecosystem, so the matching cargo group still arrives as
+      # a separate PR. Keeping both halves updating is more important than
+      # atomically combining them; the release workflow's "tauri-versions" gate
+      # is what stops a half-updated pair from being tagged as a release.
+      tauri:
+        patterns:
+          - '@tauri-apps/*'
   - package-ecosystem: cargo
     directory: /src-tauri
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-    # Rust half of the same Tauri bump — matches crates named `tauri`,
-    # `tauri-build`, and `tauri-plugin-*`.
-    multi-ecosystem-group: tauri
-    patterns:
-      - 'tauri'
-      - 'tauri-build'
-      - 'tauri-plugin-*'
+    groups:
+      tauri:
+        patterns:
+          - 'tauri'
+          - 'tauri-build'
+          - 'tauri-plugin-*'
   - package-ecosystem: github-actions
     directory: /
     schedule:

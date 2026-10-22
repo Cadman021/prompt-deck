@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Nothing yet — see `main` for work toward the next release.
+### 🔧 Changed
+
+- **Tauri version gate moved from CI to the release workflow**: Dependabot still opens the npm and Rust halves of a Tauri bump as separate PRs, so gating every PR made both halves permanently red and mutually blocked. A mismatch now only fails at tag time — which is where `tauri build` would actually break
+- **Dependabot back to per-ecosystem `groups`**: the 1.5.0 `multi-ecosystem-groups` setup did not consolidate the two halves in practice and stopped opening the Rust half at all; per-ecosystem groups keep both ecosystems updating
+
+### 📦 Dependencies
+
+- Tauri `2.12.3` → `2.12.4` and `tauri-build` `2.7.2` → `2.7.4` (npm `@tauri-apps/api` `2.12.3` → `2.12.4`), `@tauri-apps/plugin-updater` / `tauri-plugin-updater` `2.13.3` → `2.14.0`, `@tauri-apps/plugin-sql` / `tauri-plugin-sql` `2.5.0` → `2.6.0`, `@tauri-apps/plugin-opener` / `tauri-plugin-opener` `2.7.1` → `2.7.2`, `@tauri-apps/plugin-process` `2.4.0`
 
 ## [1.5.0] - 2026-10-17
 

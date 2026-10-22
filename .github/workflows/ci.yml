@@ -31,9 +31,10 @@ jobs:
       - name: ESLint
         run: npx eslint .
 
-      - name: Tauri npm/Rust version gate
-        run: node scripts/check-tauri-versions.cjs
-
+      # The Tauri npm/Rust parity gate deliberately does NOT run here: Dependabot
+      # opens the npm and Rust halves as separate PRs, so a per-PR gate would
+      # red-flag both forever. It runs in release.yml instead, where it still
+      # stops a half-updated pair from being tagged as a release.
       - name: Build frontend
         run: npm run build
 

@@ -1,8 +1,10 @@
 // scripts/check-tauri-versions.js
-// CI gate: every Tauri npm package must share its major.minor with the
-// matching Rust crate. `tauri build` hard-fails otherwise — and since npm
-// and cargo updates arrive as separate Dependabot PRs, this is what stops a
-// half-merged pair from ever reaching a release tag.
+// Release gate: every Tauri npm package must share its major.minor with the
+// matching Rust crate, otherwise `tauri build` hard-fails.
+//
+// npm and cargo updates arrive as separate Dependabot PRs, so this runs in
+// .github/workflows/release.yml (not ci.yml) — gating every PR would block
+// both halves forever while still letting GitHub merge them in any order.
 //
 // Reads lockfiles only (no install needed):
 //   node scripts/check-tauri-versions.js
