@@ -4,6 +4,7 @@
     "confirm": "تأیید"
   },
   "app": {
+    "loading": "در حال بارگذاری…",
     "title": "PromptDeck",
     "refreshModels": "به‌روزرسانی مدل‌ها",
     "run": "اجرا (Ctrl+Enter)",
@@ -103,7 +104,7 @@
     "timeMinutes": "{{count}} دقیقه پیش",
     "timeHours": "{{count}} ساعت پیش",
     "timeDays": "{{count}} روز پیش",
-"winnersOnly": "فقط برنده‌ها",
+    "winnersOnly": "فقط برنده‌ها",
     "rerun": "اجرای مجدد",
     "rerunTitle": "اجرای مجدد با همان پرامپت و تنظیمات"
   },
@@ -177,7 +178,8 @@
     "settings": "تنظیم",
     "cloud": "ابری",
     "tests": "تست",
-    "models": "مدل"
+    "models": "مدل",
+    "spend": "هزینه"
   },
   "settings": {
     "providerTitle": "ارائه‌دهنده و اتصال",
@@ -320,7 +322,7 @@
     "blindTitle": "حالت کور: هویت‌ها برای رأی بی‌طرفانه پنهان است",
     "blindName": "مدل {{letter}}",
     "phasePreparing": "در حال آماده‌سازی مدل…",
-"phaseGenerating": "در حال تولید",
+    "phaseGenerating": "در حال تولید",
     "params": "پارامترها",
     "paramsTitle": "پارامترهای هر مدل (فیلدهای خالی از تنظیمات کلی استفاده می‌کنند)",
     "paramsReset": "استفاده از کلی",
@@ -341,7 +343,7 @@
     "checkContains": "شامل باشد",
     "checkRegex": "رجکس",
     "checkExact": "دقیقاً",
-"checkJson": "JSON معتبر",
+    "checkJson": "JSON معتبر",
     "checkSchema": "اسکیمای JSON",
     "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "متن مورد انتظار…",
@@ -382,5 +384,28 @@
     "ollama": "دریافت Ollama",
     "lmstudio": "دریافت LM Studio",
     "rescan": "جست‌وجوی مجدد"
+  },
+  "spend": {
+    "title": "هزینهٔ ابری",
+    "subtitle": "هزینهٔ اجراهای ابری شما، همان‌طور که هنگام اجرا ثبت شده — بر اساس ارائه‌دهنده، مدل و روز.",
+    "total": "کل هزینه",
+    "runs": "اجراهای ابری",
+    "avgRun": "میانگین هر اجرا",
+    "tokens": "توکن‌ها",
+    "promptTokens": "پرامپت",
+    "completionTokens": "پاسخ",
+    "last30": "۳۰ روز گذشته",
+    "byProvider": "بر اساس ارائه‌دهنده",
+    "byModel": "بر اساس مدل",
+    "model": "مدل",
+    "cost": "هزینه",
+    "share": "سهم",
+    "runsCount": "{{n}} اجرای ابری",
+    "runsShort": "{{n}} بار",
+    "modelsTracked": "{{n}} مدل",
+    "empty": "هنوز هزینهٔ ابری ثبت نشده است.",
+    "emptyHint": "برای شروع ثبت هزینه، یک مدل ابری را بنچمارک کنید. فقط اجراهایی که تعداد توکن دقیق سرور و قیمت معلوم دارند حساب می‌شوند.",
+    "unknown": "نامعلوم",
+    "refresh": "به‌روزرسانی"
   }
 }

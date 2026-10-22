@@ -1,6 +1,7 @@
 // src/services/dbService.ts
 import Database from '@tauri-apps/plugin-sql';
 import { computeElo, ELO_INITIAL, wilsonLowerBound } from '../utils/stats';
+import type { SpendDay, SpendRow } from '../utils/spend';
 
 export interface BenchmarkResult {
   model: string;
@@ -431,6 +432,60 @@ export class DbService {
     } catch (error) {
       console.error('Failed to fetch model stats:', error);
       return [];
+    }
+  }
+
+  /**
+   * Cloud spend recorded at run time: per model/provider totals plus daily
+   * totals for the trend. Rows without a frozen cost (local runs, or cloud
+   * runs that lacked exact token counts) are excluded, so the dashboard never
+   * guesses.
+   */
+  static async getSpendStats(): Promise<{ byModel: SpendRow[]; byDay: SpendDay[] }> {
+    try {
+      const db = await this.init();
+      const modelRows = await db.select<
+        {
+          provider_id: string | null;
+          model: string;
+          cost: number | null;
+          runs: number;
+          prompt_tokens: number | null;
+          completion_tokens: number | null;
+        }[]
+      >(
+        `SELECT provider_id, model,
+                SUM(cost_usd) AS cost,
+                COUNT(*) AS runs,
+                SUM(COALESCE(prompt_tokens, 0)) AS prompt_tokens,
+                SUM(COALESCE(completion_tokens, 0)) AS completion_tokens
+         FROM benchmark_results
+         WHERE source = 'cloud' AND cost_usd IS NOT NULL AND cost_usd > 0
+         GROUP BY provider_id, model
+         ORDER BY cost DESC`
+      );
+      const dayRows = await db.select<{ day: string; cost: number | null }[]>(
+        `SELECT substr(r.created_at, 1, 10) AS day, SUM(res.cost_usd) AS cost
+         FROM benchmark_runs r
+         JOIN benchmark_results res ON res.run_id = r.id
+         WHERE res.source = 'cloud' AND res.cost_usd IS NOT NULL AND res.cost_usd > 0
+         GROUP BY day
+         ORDER BY day ASC`
+      );
+      return {
+        byModel: modelRows.map((r) => ({
+          providerId: r.provider_id ?? 'unknown',
+          model: r.model,
+          cost: r.cost ?? 0,
+          runs: r.runs ?? 0,
+          promptTokens: r.prompt_tokens ?? 0,
+          completionTokens: r.completion_tokens ?? 0,
+        })),
+        byDay: dayRows.map((r) => ({ day: r.day, cost: r.cost ?? 0 })),
+      };
+    } catch (error) {
+      console.error('Failed to fetch spend stats:', error);
+      return { byModel: [], byDay: [] };
     }
   }
 

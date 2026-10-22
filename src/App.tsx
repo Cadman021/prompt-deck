@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LLMService } from './services/llmService';
 import { OllamaModel, BenchmarkMetrics, GenerationOverrides, hasOverrides } from './types/ollama';
@@ -15,33 +15,53 @@ import {
   qualifiedName,
 } from './services/modelTarget';
 import { resolveRunEndpoint, runRepeatedStream } from './services/runTarget';
-import { HistorySidebar } from './components/HistorySidebar';
 import { ModelColumn } from './components/ModelColumn';
 import { generateMarkdownReport } from './utils/exportUtils';
 import { safeHost } from './utils/httpError';
 import { formatDurationMs } from './utils/timeUtils';
 import { rafBatch } from './utils/rafBatch';
+import { parseRunConfig } from './utils/runConfig';
 import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
-import { BenchmarkChart } from './components/BenchmarkChart';
-import { DiffView } from './components/DiffView';
-import { Leaderboard } from './components/Leaderboard';
 import { exportElementAsPdf, exportReportAsPdfText, needsImageFallback } from './utils/pdfExport';
 import { ReportPrintView } from './components/ReportPrintView';
 import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
-import { TestSuiteView } from './components/testsuite/TestSuiteView';
-import { CloudProvidersView } from './components/cloud/CloudProvidersView';
 import { TopBar } from './components/layout/TopBar';
 import { UpdaterPrompt } from './components/UpdaterPrompt';
 import { JudgePanel } from './components/JudgePanel';
 import { ResultToolbar } from './components/layout/ResultToolbar';
-import { SettingsPanel } from './components/layout/SettingsPanel';
 import { Toaster } from './components/Toaster';
 import { OnboardingCard } from './components/OnboardingCard';
-import { ContextSweep } from './components/ContextSweep';
 import { toast } from './store/useToastStore';
 import './i18n/config';
 import { Play, Plus, Eye, EyeOff, Zap, Clock, DollarSign, Activity } from 'lucide-react';
+
+// Heavy or rarely-opened views are code-split so the Bench path stays small.
+const HistorySidebar = lazy(() =>
+  import('./components/HistorySidebar').then((m) => ({ default: m.HistorySidebar }))
+);
+const Leaderboard = lazy(() =>
+  import('./components/Leaderboard').then((m) => ({ default: m.Leaderboard }))
+);
+const ContextSweep = lazy(() =>
+  import('./components/ContextSweep').then((m) => ({ default: m.ContextSweep }))
+);
+const SettingsPanel = lazy(() =>
+  import('./components/layout/SettingsPanel').then((m) => ({ default: m.SettingsPanel }))
+);
+const DiffView = lazy(() => import('./components/DiffView').then((m) => ({ default: m.DiffView })));
+const BenchmarkChart = lazy(() =>
+  import('./components/BenchmarkChart').then((m) => ({ default: m.BenchmarkChart }))
+);
+const TestSuiteView = lazy(() =>
+  import('./components/testsuite/TestSuiteView').then((m) => ({ default: m.TestSuiteView }))
+);
+const CloudProvidersView = lazy(() =>
+  import('./components/cloud/CloudProvidersView').then((m) => ({ default: m.CloudProvidersView }))
+);
+const SpendView = lazy(() =>
+  import('./components/SpendView').then((m) => ({ default: m.SpendView }))
+);
 
 const MAX_MODELS = 4;
 const MIN_MODELS = 2;
@@ -82,29 +102,7 @@ const createSlot = (model = '', source: ModelSource = { kind: 'local' }): Slot =
 const slotQualified = (s: Pick<Slot, 'source' | 'model'>): string =>
   qualifiedName(s.source, s.model);
 
-/** The `run_config` JSON snapshot saved with every run (see `finalizeRun`). */
-interface SavedRunConfig {
-  system?: string;
-  temperature?: number;
-  top_p?: number;
-  num_ctx?: number;
-  serverDefaults?: boolean;
-  seed?: number | null;
-  maxTokens?: number | null;
-  repeats?: number;
-  slotParams?: Record<string, GenerationOverrides>;
-}
-
-/** Tolerant parse: history rows from older versions may lack a config. */
-const parseRunConfig = (json?: string | null): SavedRunConfig => {
-  if (!json) return {};
-  try {
-    const parsed = JSON.parse(json) as unknown;
-    return parsed && typeof parsed === 'object' ? (parsed as SavedRunConfig) : {};
-  } catch {
-    return {};
-  }
-};
+/** The `run_config` JSON snapshot is parsed by `parseRunConfig` (utils/runConfig). */
 
 /** Blind voting toggle: enabling hides identities AND shuffles columns, so no
  * positional knowledge survives; voting reveals again. Disabled mid-run. */
@@ -237,7 +235,7 @@ export default function App() {
   const printRef = useRef<HTMLDivElement>(null);
 
   // App Shell navigation: 'bench'/'tests'/'cloud' are pages, the rest are overlay panels.
-  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud'>('bench');
+  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud' | 'spend'>('bench');
   const activeView: SidebarView = isSettingsOpen
     ? 'settings'
     : isLeaderboardOpen
@@ -247,7 +245,7 @@ export default function App() {
         : activePage;
 
   const handleSidebarNavigate = (view: SidebarView) => {
-    if (view === 'bench' || view === 'tests' || view === 'cloud') {
+    if (view === 'bench' || view === 'tests' || view === 'cloud' || view === 'spend') {
       setActivePage(view);
       setIsSidebarOpen(false);
       setIsLeaderboardOpen(false);
@@ -1000,28 +998,30 @@ export default function App() {
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased overflow-hidden">
       <AppSidebar activeView={activeView} onNavigate={handleSidebarNavigate} />
 
-      <HistorySidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        onSelectRecord={handleSelectHistoryRecord}
-        onRerun={handleRerunHistoryRecord}
-      />
-      <Leaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
-      <ContextSweep
-        isOpen={isSweepOpen}
-        onClose={() => setIsSweepOpen(false)}
-        prompt={prompt}
-        models={models}
-        cloudGroups={cloudGroups}
-      />
+      <Suspense fallback={null}>
+        <HistorySidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          onSelectRecord={handleSelectHistoryRecord}
+          onRerun={handleRerunHistoryRecord}
+        />
+        <Leaderboard isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+        <ContextSweep
+          isOpen={isSweepOpen}
+          onClose={() => setIsSweepOpen(false)}
+          prompt={prompt}
+          models={models}
+          cloudGroups={cloudGroups}
+        />
+        <SettingsPanel
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          advancedConfig={advancedConfig}
+          onAdvancedChange={setAdvancedConfig}
+        />
+      </Suspense>
       <UpdaterPrompt />
       <Toaster />
-      <SettingsPanel
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        advancedConfig={advancedConfig}
-        onAdvancedChange={setAdvancedConfig}
-      />
 
       {/* Main column */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
@@ -1123,13 +1123,41 @@ export default function App() {
         )}
 
         {activePage === 'tests' ? (
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <TestSuiteView models={models} />
-          </div>
+          <Suspense
+            fallback={
+              <div className="flex-1 grid place-items-center text-xs text-slate-400">
+                {t('app.loading', 'Loading…')}
+              </div>
+            }
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <TestSuiteView models={models} />
+            </div>
+          </Suspense>
         ) : activePage === 'cloud' ? (
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <CloudProvidersView />
-          </div>
+          <Suspense
+            fallback={
+              <div className="flex-1 grid place-items-center text-xs text-slate-400">
+                {t('app.loading', 'Loading…')}
+              </div>
+            }
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <CloudProvidersView />
+            </div>
+          </Suspense>
+        ) : activePage === 'spend' ? (
+          <Suspense
+            fallback={
+              <div className="flex-1 grid place-items-center text-xs text-slate-400">
+                {t('app.loading', 'Loading…')}
+              </div>
+            }
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <SpendView />
+            </div>
+          </Suspense>
         ) : (
           <>
             {/* Scrollable workspace — model outputs get max height now */}
@@ -1187,42 +1215,46 @@ export default function App() {
 
               {diffPair && diffSlots.length === 2 && (
                 <div className="px-3 pb-2">
-                  <DiffView
-                    leftName={
-                      blindMode
-                        ? blindLabelFor(slots.findIndex((s) => s.id === diffSlots[0].id))
-                        : slotQualified(diffSlots[0])
-                    }
-                    rightName={
-                      blindMode
-                        ? blindLabelFor(slots.findIndex((s) => s.id === diffSlots[1].id))
-                        : slotQualified(diffSlots[1])
-                    }
-                    leftText={diffSlots[0].output}
-                    rightText={diffSlots[1].output}
-                    onClose={() => setDiffPair(null)}
-                    onPairChange={(a, b) => {
-                      const left = comparableSlots[a] ?? comparableSlots[0];
-                      const right = comparableSlots[b] ?? comparableSlots[1];
-                      if (left && right) setDiffPair([left.id, right.id]);
-                    }}
-                    pairIndex={[
-                      comparableSlots.findIndex((s) => s.id === diffSlots[0].id),
-                      comparableSlots.findIndex((s) => s.id === diffSlots[1].id),
-                    ]}
-                    pairCount={comparableSlots.length}
-                  />
+                  <Suspense fallback={null}>
+                    <DiffView
+                      leftName={
+                        blindMode
+                          ? blindLabelFor(slots.findIndex((s) => s.id === diffSlots[0].id))
+                          : slotQualified(diffSlots[0])
+                      }
+                      rightName={
+                        blindMode
+                          ? blindLabelFor(slots.findIndex((s) => s.id === diffSlots[1].id))
+                          : slotQualified(diffSlots[1])
+                      }
+                      leftText={diffSlots[0].output}
+                      rightText={diffSlots[1].output}
+                      onClose={() => setDiffPair(null)}
+                      onPairChange={(a, b) => {
+                        const left = comparableSlots[a] ?? comparableSlots[0];
+                        const right = comparableSlots[b] ?? comparableSlots[1];
+                        if (left && right) setDiffPair([left.id, right.id]);
+                      }}
+                      pairIndex={[
+                        comparableSlots.findIndex((s) => s.id === diffSlots[0].id),
+                        comparableSlots.findIndex((s) => s.id === diffSlots[1].id),
+                      ]}
+                      pairCount={comparableSlots.length}
+                    />
+                  </Suspense>
                 </div>
               )}
 
               {slots.every((s) => s.metrics) && slots[0]?.metrics && (
                 <div className="px-3 pb-2">
-                  <BenchmarkChart
-                    entries={slots.map((s, i) => ({
-                      name: blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
-                      metrics: s.metrics!,
-                    }))}
-                  />
+                  <Suspense fallback={null}>
+                    <BenchmarkChart
+                      entries={slots.map((s, i) => ({
+                        name: blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
+                        metrics: s.metrics!,
+                      }))}
+                    />
+                  </Suspense>
                 </div>
               )}
 

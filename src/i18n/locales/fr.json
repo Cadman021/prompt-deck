@@ -4,6 +4,7 @@
     "confirm": "Confirmer"
   },
   "app": {
+    "loading": "Chargement…",
     "title": "PromptDeck",
     "refreshModels": "Actualiser les modèles",
     "run": "Exécuter (Ctrl+Entrée)",
@@ -103,7 +104,7 @@
     "timeMinutes": "il y a {{count}} min",
     "timeHours": "il y a {{count}} h",
     "timeDays": "il y a {{count}} j",
-"winnersOnly": "Gagnants uniquement",
+    "winnersOnly": "Gagnants uniquement",
     "rerun": "Relancer",
     "rerunTitle": "Relancer avec le même prompt et les mêmes réglages"
   },
@@ -177,7 +178,8 @@
     "settings": "Config",
     "cloud": "Cloud",
     "tests": "Tests",
-    "models": "modèles"
+    "models": "modèles",
+    "spend": "Coûts"
   },
   "settings": {
     "providerTitle": "Fournisseur & Connexion",
@@ -320,7 +322,7 @@
     "blindTitle": "Mode aveugle : identités masquées pour un vote impartial",
     "blindName": "Modèle {{letter}}",
     "phasePreparing": "Préparation du modèle…",
-"phaseGenerating": "Génération",
+    "phaseGenerating": "Génération",
     "params": "Paramètres",
     "paramsTitle": "Paramètres par modèle (les champs vides utilisent les valeurs globales)",
     "paramsReset": "Utiliser les valeurs globales",
@@ -341,7 +343,7 @@
     "checkContains": "Contient",
     "checkRegex": "Regex",
     "checkExact": "Exact",
-"checkJson": "JSON valide",
+    "checkJson": "JSON valide",
     "checkSchema": "Schéma JSON",
     "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Texte attendu…",
@@ -382,5 +384,28 @@
     "ollama": "Obtenir Ollama",
     "lmstudio": "Obtenir LM Studio",
     "rescan": "Rechercher à nouveau"
+  },
+  "spend": {
+    "title": "Dépenses cloud",
+    "subtitle": "Ce que vos exécutions cloud ont coûté, figé au moment du run — par fournisseur, modèle et jour.",
+    "total": "Total dépensé",
+    "runs": "Runs cloud",
+    "avgRun": "Moyenne par run",
+    "tokens": "Tokens",
+    "promptTokens": "prompt",
+    "completionTokens": "réponse",
+    "last30": "30 derniers jours",
+    "byProvider": "Par fournisseur",
+    "byModel": "Par modèle",
+    "model": "Modèle",
+    "cost": "Coût",
+    "share": "Part",
+    "runsCount": "{{n}} runs cloud",
+    "runsShort": "{{n}}×",
+    "modelsTracked": "{{n}} modèles",
+    "empty": "Aucune dépense cloud enregistrée.",
+    "emptyHint": "Lancez un benchmark sur un modèle cloud pour suivre les coûts. Seuls les runs avec des tokens exacts et un tarif connu sont comptés.",
+    "unknown": "Inconnu",
+    "refresh": "Actualiser"
   }
 }

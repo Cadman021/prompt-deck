@@ -4,6 +4,7 @@
     "confirm": "Подтвердить"
   },
   "app": {
+    "loading": "Загрузка…",
     "title": "PromptDeck",
     "refreshModels": "Обновить модели",
     "run": "Запустить (Ctrl+Enter)",
@@ -103,7 +104,7 @@
     "timeMinutes": "{{count}} мин. назад",
     "timeHours": "{{count}} ч. назад",
     "timeDays": "{{count}} дн. назад",
-"winnersOnly": "Только победители",
+    "winnersOnly": "Только победители",
     "rerun": "Запустить снова",
     "rerunTitle": "Запустить снова с тем же запросом и настройками"
   },
@@ -177,7 +178,8 @@
     "settings": "Настр.",
     "cloud": "Cloud",
     "tests": "Тесты",
-    "models": "моделей"
+    "models": "моделей",
+    "spend": "Траты"
   },
   "settings": {
     "providerTitle": "Провайдер и подключение",
@@ -320,7 +322,7 @@
     "blindTitle": "Слепой режим: личности скрыты для честного голосования",
     "blindName": "Модель {{letter}}",
     "phasePreparing": "Подготовка модели…",
-"phaseGenerating": "Генерация",
+    "phaseGenerating": "Генерация",
     "params": "Параметры",
     "paramsTitle": "Параметры для модели (пустые поля берутся из общих настроек)",
     "paramsReset": "Использовать общие",
@@ -341,7 +343,7 @@
     "checkContains": "Содержит",
     "checkRegex": "Регекс",
     "checkExact": "Точно",
-"checkJson": "Валидный JSON",
+    "checkJson": "Валидный JSON",
     "checkSchema": "Схема JSON",
     "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Ожидаемый текст…",
@@ -382,5 +384,28 @@
     "ollama": "Скачать Ollama",
     "lmstudio": "Скачать LM Studio",
     "rescan": "Искать снова"
+  },
+  "spend": {
+    "title": "Расходы на облако",
+    "subtitle": "Сколько стоили облачные раны — цена фиксируется при запуске, по провайдеру, модели и дню.",
+    "total": "Всего потрачено",
+    "runs": "Облачные раны",
+    "avgRun": "В среднем за ран",
+    "tokens": "Токены",
+    "promptTokens": "запрос",
+    "completionTokens": "ответ",
+    "last30": "Последние 30 дней",
+    "byProvider": "По провайдерам",
+    "byModel": "По моделям",
+    "model": "Модель",
+    "cost": "Стоимость",
+    "share": "Доля",
+    "runsCount": "{{n}} облачных ранов",
+    "runsShort": "{{n}}×",
+    "modelsTracked": "{{n}} моделей",
+    "empty": "Облачных трат пока нет.",
+    "emptyHint": "Запустите бенчмарк облачной модели. Учитываются только раны с точными токенами от сервера и известными ценами.",
+    "unknown": "Неизвестно",
+    "refresh": "Обновить"
   }
 }

@@ -4,6 +4,7 @@
     "confirm": "确认"
   },
   "app": {
+    "loading": "加载中…",
     "title": "PromptDeck",
     "refreshModels": "刷新模型",
     "run": "运行 (Ctrl+Enter)",
@@ -103,7 +104,7 @@
     "timeMinutes": "{{count}}分钟前",
     "timeHours": "{{count}}小时前",
     "timeDays": "{{count}}天前",
-"winnersOnly": "仅显示胜者",
+    "winnersOnly": "仅显示胜者",
     "rerun": "重新运行",
     "rerunTitle": "使用相同提示词和设置重新运行"
   },
@@ -177,7 +178,8 @@
     "settings": "设置",
     "cloud": "云端",
     "tests": "测试",
-    "models": "个模型"
+    "models": "个模型",
+    "spend": "花费"
   },
   "settings": {
     "providerTitle": "服务商与连接",
@@ -320,7 +322,7 @@
     "blindTitle": "盲测模式：隐藏身份以便公正投票",
     "blindName": "模型{{letter}}",
     "phasePreparing": "正在准备模型…",
-"phaseGenerating": "生成中",
+    "phaseGenerating": "生成中",
     "params": "参数",
     "paramsTitle": "按模型设置参数(留空则使用全局值)",
     "paramsReset": "使用全局",
@@ -341,7 +343,7 @@
     "checkContains": "包含",
     "checkRegex": "正则",
     "checkExact": "精确",
-"checkJson": "有效 JSON",
+    "checkJson": "有效 JSON",
     "checkSchema": "JSON Schema",
     "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "期望文本…",
@@ -382,5 +384,28 @@
     "ollama": "获取 Ollama",
     "lmstudio": "获取 LM Studio",
     "rescan": "重新扫描"
+  },
+  "spend": {
+    "title": "云端花费",
+    "subtitle": "云端运行的支出,在运行时冻结 —— 按服务商、模型和日期统计。",
+    "total": "总花费",
+    "runs": "云端运行",
+    "avgRun": "平均每次",
+    "tokens": "Token",
+    "promptTokens": "提示词",
+    "completionTokens": "回答",
+    "last30": "最近 30 天",
+    "byProvider": "按服务商",
+    "byModel": "按模型",
+    "model": "模型",
+    "cost": "花费",
+    "share": "占比",
+    "runsCount": "{{n}} 次云端运行",
+    "runsShort": "{{n}}×",
+    "modelsTracked": "{{n}} 个模型",
+    "empty": "尚未记录云端花费。",
+    "emptyHint": "对云端模型运行基准测试即可开始记录。仅统计具有精确服务端 token 数和已知价格的运行。",
+    "unknown": "未知",
+    "refresh": "刷新"
   }
 }

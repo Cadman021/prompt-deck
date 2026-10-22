@@ -177,6 +177,11 @@ npm run tauri build
 - [x] Shareable test suites (JSON export / import)
 - [x] Live streaming phase, timer, and live tok/s
 - [x] Syntax-highlighted, copyable code blocks
+- [x] Per-model generation parameters — override temperature, top-p and max tokens per Bench column
+- [x] Re-run any run from History with its prompt, columns and sampling settings
+- [x] JSON Schema output checks in Test Suite
+- [x] Cloud spend dashboard — totals, 30-day trend, by provider and model
+- [x] Context sweep — tok/s and TTFT across 2K–64K context windows
 
 Contributions and ideas are very welcome — see [Contributing](#-contributing) below.
 

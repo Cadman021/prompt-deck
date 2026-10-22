@@ -163,7 +163,7 @@ npm run tauri build
 - [x] 流式阶段、计时与实时 tok/s
 - [x] 语法高亮且可复制的代码块
 - [x] API Key 存入系统钥匙串（自动迁移、内存缓存、静默兜底）
-- [ ] 云端运行费用/用量统计
+- [x] 云端运行费用/用量统计
 
 欢迎贡献想法 — 见下方 [Contributing](#-contributing)。
 

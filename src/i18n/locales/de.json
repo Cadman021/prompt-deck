@@ -4,6 +4,7 @@
     "confirm": "Bestätigen"
   },
   "app": {
+    "loading": "Lädt…",
     "title": "PromptDeck",
     "refreshModels": "Modelle aktualisieren",
     "run": "Ausführen (Strg+Enter)",
@@ -103,7 +104,7 @@
     "timeMinutes": "vor {{count}} Min.",
     "timeHours": "vor {{count}} Std.",
     "timeDays": "vor {{count}} Tagen",
-"winnersOnly": "Nur Gewinner",
+    "winnersOnly": "Nur Gewinner",
     "rerun": "Erneut ausführen",
     "rerunTitle": "Mit gleichem Prompt und gleichen Einstellungen erneut ausführen"
   },
@@ -177,7 +178,8 @@
     "settings": "Config",
     "cloud": "Cloud",
     "tests": "Tests",
-    "models": "Modelle"
+    "models": "Modelle",
+    "spend": "Kosten"
   },
   "settings": {
     "providerTitle": "Provider & Verbindung",
@@ -320,7 +322,7 @@
     "blindTitle": "Blind-Modus: Identitäten für unvoreingenommenes Voten verborgen",
     "blindName": "Modell {{letter}}",
     "phasePreparing": "Modell wird vorbereitet…",
-"phaseGenerating": "Generiert",
+    "phaseGenerating": "Generiert",
     "params": "Parameter",
     "paramsTitle": "Parameter pro Modell (leere Felder nutzen die globalen Werte)",
     "paramsReset": "Global verwenden",
@@ -341,7 +343,7 @@
     "checkContains": "Enthält",
     "checkRegex": "Regex",
     "checkExact": "Exakt",
-"checkJson": "Gültiges JSON",
+    "checkJson": "Gültiges JSON",
     "checkSchema": "JSON-Schema",
     "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Erwarteter Text…",
@@ -382,5 +384,28 @@
     "ollama": "Ollama holen",
     "lmstudio": "LM Studio holen",
     "rescan": "Erneut suchen"
+  },
+  "spend": {
+    "title": "Cloud-Ausgaben",
+    "subtitle": "Was Ihre Cloud-Runs gekostet haben – zum Laufzeitpunkt festgehalten, nach Anbieter, Modell und Tag.",
+    "total": "Gesamtausgaben",
+    "runs": "Cloud-Runs",
+    "avgRun": "Ø pro Run",
+    "tokens": "Tokens",
+    "promptTokens": "Prompt",
+    "completionTokens": "Antwort",
+    "last30": "Letzte 30 Tage",
+    "byProvider": "Nach Anbieter",
+    "byModel": "Nach Modell",
+    "model": "Modell",
+    "cost": "Kosten",
+    "share": "Anteil",
+    "runsCount": "{{n}} Cloud-Runs",
+    "runsShort": "{{n}}×",
+    "modelsTracked": "{{n}} Modelle",
+    "empty": "Noch keine Cloud-Ausgaben erfasst.",
+    "emptyHint": "Benchmarken Sie ein Cloud-Modell, um Kosten zu erfassen. Gezählt werden nur Runs mit exakten Server-Tokenzahlen und bekannter Preisliste.",
+    "unknown": "Unbekannt",
+    "refresh": "Aktualisieren"
   }
 }

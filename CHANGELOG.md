@@ -10,8 +10,11 @@ All notable changes to this project will be documented in this file.
 - **Re-run from History** — a run can be started again straight from its history card, restoring the prompt, columns, global sampling settings and per-model overrides that produced it
 - **JSON Schema checks** for Test Suite outputs (alongside exact/contains/regex/JSON), with path-level errors and a compact validator covering `type`, `required`, `properties`, `items`, `enum`, `const`, bounds and `allOf`/`anyOf`/`oneOf`/`not`
 - **Context sweep** — runs one model against the same prompt at 2K…64K context windows (neutral filler, fixed 256-token answers) and charts tok/s and TTFT against window size, with the percentage drop versus the smallest window
+- **Cloud spend dashboard** — new Spend page with total cost, average per run, a 30-day cost trend, and per-provider / per-model breakdowns built from the cost frozen into each run (local runs and runs without exact tokens stay out)
 
 ### 🔧 Changed
+
+- **Heavy views are code-split**: History, Leaderboard, Settings, Diff, Test Suite, Cloud, Spend, the context sweep and the results chart now load on demand — the startup bundle dropped from ~1.1 MB to ~275 KB, so the Bench paints sooner on launch
 
 - **Tauri version gate moved from CI to the release workflow**: Dependabot still opens the npm and Rust halves of a Tauri bump as separate PRs, so gating every PR made both halves permanently red and mutually blocked. A mismatch now only fails at tag time — which is where `tauri build` would actually break
 - **Dependabot back to per-ecosystem `groups`**: the 1.5.0 `multi-ecosystem-groups` setup did not consolidate the two halves in practice and stopped opening the Rust half at all; per-ecosystem groups keep both ecosystems updating

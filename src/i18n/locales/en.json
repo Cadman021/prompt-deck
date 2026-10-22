@@ -4,6 +4,7 @@
     "confirm": "Confirm"
   },
   "app": {
+    "loading": "Loading…",
     "title": "PromptDeck",
     "refreshModels": "Refresh Models",
     "run": "Run (Ctrl+Enter)",
@@ -103,7 +104,7 @@
     "timeMinutes": "{{count}}m ago",
     "timeHours": "{{count}}h ago",
     "timeDays": "{{count}}d ago",
-"winnersOnly": "Winners only",
+    "winnersOnly": "Winners only",
     "rerun": "Re-run",
     "rerunTitle": "Re-run with the same prompt and settings"
   },
@@ -177,7 +178,8 @@
     "settings": "Config",
     "cloud": "Cloud",
     "tests": "Tests",
-    "models": "models"
+    "models": "models",
+    "spend": "Spend"
   },
   "settings": {
     "providerTitle": "Provider & Connection",
@@ -320,7 +322,7 @@
     "blindTitle": "Blind mode: identities hidden for unbiased voting",
     "blindName": "Model {{letter}}",
     "phasePreparing": "Preparing model…",
-"phaseGenerating": "Generating",
+    "phaseGenerating": "Generating",
     "params": "Parameters",
     "paramsTitle": "Per-model parameters (unset fields use global)",
     "paramsReset": "Use global",
@@ -341,7 +343,7 @@
     "checkContains": "Contains",
     "checkRegex": "Regex",
     "checkExact": "Exact",
-"checkJson": "Valid JSON",
+    "checkJson": "Valid JSON",
     "checkSchema": "JSON Schema",
     "checkSchemaPlaceholder": "{\"type\":\"object\",\"required\":[\"answer\"],\"properties\":{\"answer\":{\"type\":\"string\"}}}",
     "checkTextPlaceholder": "Expected text…",
@@ -382,5 +384,28 @@
     "ollama": "Get Ollama",
     "lmstudio": "Get LM Studio",
     "rescan": "Scan again"
+  },
+  "spend": {
+    "title": "Cloud spend",
+    "subtitle": "What your cloud runs cost, frozen at run time — by provider, model and day.",
+    "total": "Total spend",
+    "runs": "Cloud runs",
+    "avgRun": "Average per run",
+    "tokens": "Tokens",
+    "promptTokens": "prompt",
+    "completionTokens": "completion",
+    "last30": "Last 30 days",
+    "byProvider": "By provider",
+    "byModel": "By model",
+    "model": "Model",
+    "cost": "Cost",
+    "share": "Share",
+    "runsCount": "{{n}} cloud runs",
+    "runsShort": "{{n}}×",
+    "modelsTracked": "{{n}} models",
+    "empty": "No cloud spend recorded yet.",
+    "emptyHint": "Benchmark a cloud model to start tracking cost here. Only runs with exact server token counts and known pricing are counted.",
+    "unknown": "Unknown",
+    "refresh": "Refresh"
   }
 }

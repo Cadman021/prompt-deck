@@ -9,9 +9,11 @@ import {
   Cloud,
   FlaskConical,
   Terminal,
+  Wallet,
 } from 'lucide-react';
 
-export type SidebarView = 'bench' | 'tests' | 'cloud' | 'history' | 'leaderboard' | 'settings';
+export type SidebarView =
+  'bench' | 'tests' | 'cloud' | 'spend' | 'history' | 'leaderboard' | 'settings';
 
 interface AppSidebarProps {
   activeView: SidebarView;
@@ -21,12 +23,7 @@ interface AppSidebarProps {
 export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onNavigate }) => {
   const { t } = useTranslation();
 
-  const navItem = (
-    id: SidebarView,
-    icon: React.ReactNode,
-    label: string,
-    badge?: string
-  ) => {
+  const navItem = (id: SidebarView, icon: React.ReactNode, label: string, badge?: string) => {
     const active = activeView === id;
     return (
       <button
@@ -63,6 +60,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onNavigate }
       {navItem('bench', <LayoutGrid className="w-5 h-5" />, t('nav.bench', 'Bench'))}
       {navItem('tests', <FlaskConical className="w-5 h-5" />, t('nav.tests', 'Tests'))}
       {navItem('cloud', <Cloud className="w-5 h-5" />, t('nav.cloud', 'Cloud'))}
+      {navItem('spend', <Wallet className="w-5 h-5" />, t('nav.spend', 'Spend'))}
       {navItem('history', <History className="w-5 h-5" />, t('nav.history', 'History'))}
       {navItem('leaderboard', <Trophy className="w-5 h-5" />, t('nav.leaderboard', 'Board'))}
 
