@@ -15,22 +15,14 @@ import {
 } from 'lucide-react';
 import { OllamaModel, BenchmarkMetrics, GenerationOverrides, hasOverrides } from '../types/ollama';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { ModelSource, CloudGroup } from '../services/modelTarget';
+import { ModelSource, CloudGroup, qualifiedName } from '../services/modelTarget';
+import { modelColorHex } from '../utils/modelColor';
 import { useTranslation } from 'react-i18next';
 import { formatDurationMs } from '../utils/timeUtils';
 import { toast } from '../store/useToastStore';
 
-const COLUMN_COLORS = [
-  'text-indigo-500',
-  'text-cyan-500',
-  'text-emerald-500',
-  'text-amber-500',
-  'text-rose-500',
-  'text-violet-500',
-];
 
 interface ModelColumnProps {
-  index: number;
   models: OllamaModel[];
   source: ModelSource;
   selectedModel: string;
@@ -90,7 +82,6 @@ function formatTps(metrics: BenchmarkMetrics): string {
 }
 
 export const ModelColumn: React.FC<ModelColumnProps> = ({
-  index,
   models,
   source,
   selectedModel,
@@ -115,7 +106,13 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   onVote,
 }) => {
   const { t } = useTranslation();
-  const color = COLUMN_COLORS[index % COLUMN_COLORS.length];
+  // Color follows the model, not the column position, so a shuffle can't
+  // repaint the comparison and a model keeps its color across every view.
+  // In blind mode it is derived from the anonymous label instead: a stable
+  // per-model color is a fingerprint, and would identify the model that
+  // blind mode is explicitly hiding.
+  const colorIdentity = blindLabel ?? qualifiedName(source, selectedModel);
+  const color = modelColorHex(colorIdentity);
   const [paramsOpen, setParamsOpen] = React.useState(false);
   const overridden = hasOverrides(params);
 
@@ -160,13 +157,16 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
             : 'border-slate-200 dark:border-slate-800'
       }`}
     >
+      {/* Model-colored rule: identifies the column at a glance even when the
+          header is scrolled away, and matches the chart / scoreboard bars. */}
+      <div className="h-0.5 shrink-0" style={{ backgroundColor: color }} aria-hidden="true" />
       <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             {isWinner ? (
               <Crown className="w-4 h-4 text-amber-500 shrink-0" />
             ) : (
-              <Cpu className={`w-4 h-4 ${color} shrink-0`} />
+              <Cpu className="w-4 h-4 shrink-0" style={{ color }} />
             )}
             {blindLabel ? (
               <span

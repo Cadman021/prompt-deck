@@ -424,5 +424,25 @@
     "restarting": "Restarting…",
     "later": "Later",
     "install": "Download & install"
+  },
+  "race": {
+    "title": "Live race",
+    "toggle": "Race",
+    "toggleTitle": "Show live speed lanes while the models run",
+    "inProgress": "streaming — bars show live tok/s",
+    "finished": "finished — final tok/s",
+    "waitingFirstToken": "waiting for first token",
+    "failed": "failed",
+    "laneSpeed": "{{name}}: {{tps}} tok/s",
+    "laneFailed": "{{name}} failed",
+    "hint": "Ranked by live speed. Final numbers come from the server when each run finishes."
+  },
+  "share": {
+    "button": "Share",
+    "buttonTitle": "Save this run as a PNG card you can post",
+    "done": "Share card saved as PNG",
+    "failed": "Could not build the share card.",
+    "cloud": "cloud",
+    "tagline": "Local, private, side-by-side LLM benchmarking"
   }
 }

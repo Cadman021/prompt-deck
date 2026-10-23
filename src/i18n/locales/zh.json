@@ -424,5 +424,25 @@
     "restarting": "正在重启…",
     "later": "稍后",
     "install": "下载并安装"
+  },
+  "race": {
+    "title": "实时竞速",
+    "toggle": "竞速",
+    "toggleTitle": "运行期间显示实时速度车道",
+    "inProgress": "流式输出中 — 条形显示实时 tok/s",
+    "finished": "已完成 — 最终 tok/s",
+    "waitingFirstToken": "等待首个 token",
+    "failed": "失败",
+    "laneSpeed": "{{name}}：{{tps}} tok/s",
+    "laneFailed": "{{name}} 失败",
+    "hint": "按实时速度排序。每次运行结束后由服务器给出最终数值。"
+  },
+  "share": {
+    "button": "分享",
+    "buttonTitle": "将本次运行保存为可发布的 PNG 卡片",
+    "done": "分享卡片已保存为 PNG",
+    "failed": "无法生成分享卡片。",
+    "cloud": "云端",
+    "tagline": "本地、私密并排 LLM 基准测试"
   }
 }

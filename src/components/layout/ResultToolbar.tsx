@@ -4,7 +4,7 @@
 // the two scopes don't sit side by side and confuse.
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileDown, Check, GitCompare, RefreshCw } from 'lucide-react';
+import { FileDown, Check, GitCompare, RefreshCw, Flag, ImageDown } from 'lucide-react';
 
 interface ResultToolbarProps {
   hasOutput: boolean;
@@ -15,6 +15,10 @@ interface ResultToolbarProps {
   pdfState: 'idle' | 'exporting' | 'done';
   onExportPdf: () => void;
   slotsLabel: string;
+  raceActive: boolean;
+  onToggleRace: () => void;
+  shareState: 'idle' | 'exporting';
+  onExportShareCard: () => void;
 }
 
 export const ResultToolbar: React.FC<ResultToolbarProps> = ({
@@ -26,9 +30,15 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
   pdfState,
   onExportPdf,
   slotsLabel,
+  raceActive,
+  onToggleRace,
+  shareState,
+  onExportShareCard,
 }) => {
   const { t } = useTranslation();
-  if (!hasOutput && !canShowDiff) return null;
+  // No early return: the toolbar also carries the race toggle, which is used
+  // *before* and *during* a run, when there is no output yet. The report
+  // actions below are the parts that gate on `hasOutput`.
 
   const btn =
     'flex items-center gap-1.5 px-2.5 py-1.5 text-micro font-medium rounded-lg border transition-all shadow-sm';
@@ -39,6 +49,20 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
         {slotsLabel}
       </span>
       <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
+
+      <button
+        onClick={onToggleRace}
+        aria-pressed={raceActive}
+        className={`${btn} ${
+          raceActive
+            ? 'bg-indigo-600 text-white border-indigo-600'
+            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+        }`}
+        title={t('race.toggleTitle', 'Show live speed lanes while the models run')}
+      >
+        <Flag className="w-3.5 h-3.5" />
+        <span>{t('race.toggle', 'Race')}</span>
+      </button>
 
       {hasOutput && (
         <>
@@ -63,6 +87,20 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
               <FileDown className="w-3.5 h-3.5" />
             )}
             <span>{pdfState === 'done' ? t('app.exportCsvDone') : 'PDF'}</span>
+          </button>
+
+          <button
+            onClick={onExportShareCard}
+            disabled={shareState === 'exporting'}
+            className={`${btn} bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-60`}
+            title={t('share.buttonTitle', 'Save this run as a PNG card you can post')}
+          >
+            {shareState === 'exporting' ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <ImageDown className="w-3.5 h-3.5" />
+            )}
+            <span>{t('share.button', 'Share')}</span>
           </button>
         </>
       )}

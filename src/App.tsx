@@ -24,12 +24,17 @@ import { parseRunConfig } from './utils/runConfig';
 import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
 import { exportElementAsPdf, exportReportAsPdfText, needsImageFallback } from './utils/pdfExport';
+import { exportElementAsPng } from './utils/shareCard';
 import { ReportPrintView } from './components/ReportPrintView';
 import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
 import { TopBar } from './components/layout/TopBar';
 import { UpdaterPrompt } from './components/UpdaterPrompt';
 import { JudgePanel } from './components/JudgePanel';
 import { ResultToolbar } from './components/layout/ResultToolbar';
+// Eager on purpose: the share card is captured 50ms after it mounts, so a
+// lazy chunk could still be loading when the ref is read. It carries no
+// heavy dependencies (html2canvas loads on demand in utils/shareCard).
+import { ShareCard } from './components/ShareCard';
 import { Toaster } from './components/Toaster';
 import { OnboardingCard } from './components/OnboardingCard';
 import { toast } from './store/useToastStore';
@@ -58,6 +63,9 @@ const TestSuiteView = lazy(() =>
 );
 const CloudProvidersView = lazy(() =>
   import('./components/cloud/CloudProvidersView').then((m) => ({ default: m.CloudProvidersView }))
+);
+const RaceView = lazy(() =>
+  import('./components/RaceView').then((m) => ({ default: m.RaceView }))
 );
 const SpendView = lazy(() =>
   import('./components/SpendView').then((m) => ({ default: m.SpendView }))
@@ -183,6 +191,9 @@ export default function App() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSweepOpen, setIsSweepOpen] = useState(false);
+  // Race view: the live timing board shown above the columns. A view toggle,
+  // not a setting — it changes what you watch during a run, not what runs.
+  const [raceMode, setRaceMode] = useState(false);
 
   // Dynamic list of model comparison slots (2 to MAX_MODELS)
   const [slots, setSlots] = useState<Slot[]>([createSlot(), createSlot()]);
@@ -192,17 +203,22 @@ export default function App() {
   const cloudCustom = useCloudStore((s) => s.customProviders);
   const cloudPricing = useCloudStore((s) => s.modelPricing);
 
-  /** Formatted run cost for priced cloud slots, else null. */
-  const slotCost = (
-    s: Pick<Slot, 'source' | 'model'>,
-    m: BenchmarkMetrics | null
-  ): string | null => {
+  /** Raw run cost in USD for priced cloud slots, else null. */
+  const costFor = (s: Pick<Slot, 'source' | 'model'>, m: BenchmarkMetrics | null): number | null => {
     if (s.source.kind !== 'cloud' || !m || m.tokenSource !== 'server') return null;
-    const cost = calcCost(
+    return calcCost(
       m.promptTokens,
       m.completionTokens,
       (cloudPricing[s.source.providerId] ?? {})[s.model]
     );
+  };
+
+  /** Formatted run cost for display, else null. */
+  const slotCost = (
+    s: Pick<Slot, 'source' | 'model'>,
+    m: BenchmarkMetrics | null
+  ): string | null => {
+    const cost = costFor(s, m);
     return cost == null ? null : formatCost(cost);
   };
   const cloudGroups = useMemo(
@@ -233,6 +249,12 @@ export default function App() {
 
   const [pdfState, setPdfState] = useState<'idle' | 'exporting' | 'done'>('idle');
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Share card: same mount-on-demand trick as the PDF source, so the fixed
+  // 540px card never participates in layout or re-renders during streaming.
+  const [shareState, setShareState] = useState<'idle' | 'exporting'>('idle');
+  const [shareMounted, setShareMounted] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
 
   // App Shell navigation: 'bench'/'tests'/'cloud' are pages, the rest are overlay panels.
   const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud' | 'spend'>('bench');
@@ -358,6 +380,39 @@ export default function App() {
     }, 50);
     return () => clearTimeout(timer);
   }, [printMounted, pdfState, t]);
+
+  // Capture the share card once it has mounted and painted.
+  useEffect(() => {
+    if (!shareMounted || shareState !== 'exporting') return;
+    const timer = setTimeout(() => {
+      const el = shareRef.current;
+      if (!el) {
+        setShareState('idle');
+        setShareMounted(false);
+        return;
+      }
+      void exportElementAsPng(el).then(
+        () => {
+          toast(t('share.done', 'Share card saved as PNG'), 'success');
+          setShareState('idle');
+          setShareMounted(false);
+        },
+        (err: unknown) => {
+          console.error('Share card export failed:', err);
+          toast(t('share.failed', 'Could not build the share card.'), 'error');
+          setShareState('idle');
+          setShareMounted(false);
+        }
+      );
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [shareMounted, shareState, t]);
+
+  const handleExportShareCard = () => {
+    if (shareState === 'exporting' || !hasShareableRun) return;
+    setShareState('exporting');
+    setShareMounted(true);
+  };
 
   const handleCopyReport = async () => {
     if (!slots.some((s) => s.output)) return;
@@ -955,6 +1010,23 @@ export default function App() {
 
   const hasOutput = slots.some((s) => s.output);
 
+  // The card needs real metrics to draw bars and split times; a stopped or
+  // errored run has nothing worth posting.
+  const shareableModels = slots.flatMap((s) =>
+    s.metrics && s.output && !s.error
+      ? [
+          {
+            name: slotQualified(s),
+            output: s.output,
+            metrics: s.metrics,
+            costUsd: costFor(s, s.metrics),
+            isWinner: winnerModel !== null && winnerModel === slotQualified(s),
+          },
+        ]
+      : []
+  );
+  const hasShareableRun = shareableModels.length > 0;
+
   // Post-run verdict: the headline winners so the user doesn't have to scan
   // every column. Only ranks slots that actually finished with metrics.
   const verdict = useMemo(() => {
@@ -1045,6 +1117,10 @@ export default function App() {
               pdfState={pdfState}
               onExportPdf={handleExportPdf}
               slotsLabel={`${slots.length}/${MAX_MODELS} models`}
+              raceActive={raceMode}
+              onToggleRace={() => setRaceMode((v) => !v)}
+              shareState={shareState}
+              onExportShareCard={handleExportShareCard}
             />
 
             {verdict && !isLoading && (
@@ -1162,11 +1238,41 @@ export default function App() {
           <>
             {/* Scrollable workspace — model outputs get max height now */}
             <div className="flex-1 min-h-0 overflow-y-auto">
+              {raceMode && (
+                <div className="px-3 pt-3">
+                  <Suspense fallback={null}>
+                    <RaceView
+                      running={isLoading}
+                      lanes={slots.flatMap((s, i) => {
+                        if (!s.model) return [];
+                        // Blind: the anonymous label is both the name and
+                        // the color key, so a lane can't fingerprint the
+                        // model it is supposed to be hiding.
+                        const identity = blindMode ? blindLabelFor(i) : slotQualified(s);
+                        return [
+                          {
+                            id: s.id,
+                            name: identity,
+                            colorKey: identity,
+                            output: s.output,
+                            metrics: s.metrics,
+                            loading: s.loading,
+                            error: s.error,
+                            startedAt: s.startedAt,
+                            firstTokenAt: s.firstTokenAt,
+                          },
+                        ];
+                      })}
+                    />
+                  </Suspense>
+                </div>
+              )}
               <main className={`grid ${gridColsClass} gap-3 p-3 min-h-[320px]`}>
+                {/* `index` is still needed for blind labels (column position
+                    is the anonymity), but not for color any more. */}
                 {slots.map((slot, index) => (
                   <ModelColumn
                     key={slot.id}
-                    index={index}
                     models={models}
                     source={slot.source}
                     selectedModel={slot.model}
@@ -1251,6 +1357,10 @@ export default function App() {
                     <BenchmarkChart
                       entries={slots.map((s, i) => ({
                         name: blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
+                        // Blind: label doubles as the color key so the bar
+                        // can't fingerprint the model it is hiding.
+                        colorKey:
+                          blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
                         metrics: s.metrics!,
                       }))}
                     />
@@ -1377,6 +1487,21 @@ export default function App() {
               tokenSource: s.metrics?.tokenSource,
             }))}
           />
+        </div>
+      )}
+
+      {/* Hidden share card, mounted only while exporting. Off-screen rather
+          than display:none — html2canvas cannot measure a hidden subtree. */}
+      {shareMounted && (
+        <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1 }}>
+          <Suspense fallback={null}>
+            <ShareCard
+              ref={shareRef}
+              prompt={prompt}
+              models={shareableModels}
+              host={safeHost(useSettingsStore.getState().baseUrl) || null}
+            />
+          </Suspense>
         </div>
       )}
     </div>

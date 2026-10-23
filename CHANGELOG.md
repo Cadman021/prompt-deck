@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ Added
 
+- **Race view** — a live timing board above the columns: one lane per model, ranked by tok/s as the run streams, with TTFT split times and the model's own color. Bars encode *speed*, not characters written, so a model that rambles for 800 tokens doesn't outrank one that answers in 80. Toggled with the Race button in the results toolbar
+- **Share card (PNG)** — saves a run as a fixed-size card (prompt, per-model speed bars, TTFT, token counts, cloud cost) for posting. Renders on a fixed dark ground so the image looks the same regardless of the sender's theme
+- **One color per model, everywhere** — the columns, results chart, Test Suite scoreboard and history chips now derive a model's color from its name instead of its position, so adding a column or shuffling for blind mode no longer repaints the comparison. Colors are assigned collision-free within a run
 - **Per-model generation parameters** — any Bench column can override temperature, top-p and max output tokens from the column header (a dot marks overridden columns; unset fields still inherit the global Advanced settings), so one model can be compared against itself at different temperatures
 - **Re-run from History** — a run can be started again straight from its history card, restoring the prompt, columns, global sampling settings and per-model overrides that produced it
 - **JSON Schema checks** for Test Suite outputs (alongside exact/contains/regex/JSON), with path-level errors and a compact validator covering `type`, `required`, `properties`, `items`, `enum`, `const`, bounds and `allOf`/`anyOf`/`oneOf`/`not`

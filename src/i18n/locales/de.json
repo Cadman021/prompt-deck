@@ -424,5 +424,25 @@
     "restarting": "Neustart…",
     "later": "Später",
     "install": "Herunterladen & installieren"
+  },
+  "race": {
+    "title": "Live-Rennen",
+    "toggle": "Rennen",
+    "toggleTitle": "Live-Geschwindigkeitsspuren während des Laufs anzeigen",
+    "inProgress": "Streaming — Balken zeigen Live-tok/s",
+    "finished": "fertig — endgültige tok/s",
+    "waitingFirstToken": "wartet auf erstes Token",
+    "failed": "fehlgeschlagen",
+    "laneSpeed": "{{name}}: {{tps}} tok/s",
+    "laneFailed": "{{name}} fehlgeschlagen",
+    "hint": "Nach Live-Geschwindigkeit sortiert. Die endgültigen Werte liefert der Server am Ende jedes Laufs."
+  },
+  "share": {
+    "button": "Teilen",
+    "buttonTitle": "Diesen Lauf als PNG-Karte zum Posten speichern",
+    "done": "Teilen-Karte als PNG gespeichert",
+    "failed": "Teilen-Karte konnte nicht erstellt werden.",
+    "cloud": "Cloud",
+    "tagline": "Lokales, privates LLM-Benchmarking Seite an Seite"
   }
 }

@@ -30,6 +30,7 @@ import { rafBatch, cancelRafBatch } from '../../utils/rafBatch';
 import { NO_CHECK, evalCheck, isValidCheck, type CheckType } from '../../utils/checks';
 import { buildSuiteFile, parseSuiteFile } from '../../utils/suiteFile';
 import { formatDurationMs } from '../../utils/timeUtils';
+import { modelColorHex } from '../../utils/modelColor';
 import { toast } from '../../store/useToastStore';
 import { APP_VERSION } from '../../version';
 import { OllamaModel, BenchmarkMetrics } from '../../types/ollama';
@@ -37,7 +38,6 @@ import { MarkdownRenderer } from '../MarkdownRenderer';
 
 const MAX_TESTS = 10;
 const STORAGE_KEY = 'promptdeck-test-suite';
-const MODEL_COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
 
 // Green→red ratio background for the scoreboard (relative to each row's best
 // tps), so "who is fastest here" reads at a glance even without the crown.
@@ -838,7 +838,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                 )}
               </p>
             )}
-            {models.map((m, i) => {
+            {models.map((m) => {
               const checked = selectedModels.includes(m.name);
               return (
                 <label
@@ -857,7 +857,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   />
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
-                    style={{ background: MODEL_COLORS[i % MODEL_COLORS.length] }}
+                    style={{ background: modelColorHex(m.name) }}
                   />
                   <span className="font-mono font-medium truncate">{m.name}</span>
                 </label>
@@ -916,12 +916,12 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   <th className="text-start font-semibold px-3 py-2 max-w-[260px]">
                     {t('testsuite.test', 'Test')}
                   </th>
-                  {selectedModels.map((m, i) => (
+                  {selectedModels.map((m) => (
                     <th key={m} className="font-mono font-semibold px-3 py-2 text-center">
                       <span className="inline-flex items-center gap-1.5">
                         <span
                           className="w-2 h-2 rounded-full inline-block"
-                          style={{ background: MODEL_COLORS[i % MODEL_COLORS.length] }}
+                          style={{ background: modelColorHex(m) }}
                         />
                         <span className="truncate max-w-[140px]" title={m}>
                           {displayName(m).split(':')[0]}

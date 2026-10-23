@@ -12,9 +12,19 @@ import {
   Cell,
 } from 'recharts';
 import { BenchmarkMetrics } from '../types/ollama';
+import { modelColorHex } from '../utils/modelColor';
 
 interface ModelMetric {
+  /** Axis label. In blind mode this is the anonymous "Model A" style name. */
   name: string;
+  /**
+   * Identity the bar color is derived from. Defaults to `name`.
+   *
+   * Blind mode passes the anonymous label instead of the real model name: a
+   * per-model color is a fingerprint, so reusing it while identities are
+   * hidden would give the round away to anyone who saw the previous run.
+   */
+  colorKey?: string;
   metrics: BenchmarkMetrics;
 }
 
@@ -22,23 +32,21 @@ interface BenchmarkChartProps {
   entries: ModelMetric[];
 }
 
-const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
-
 export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
   const { t } = useTranslation();
   if (!entries || entries.length < 2) return null;
 
-  const tpsData = entries.map((e, i) => ({
+  const tpsData = entries.map((e) => ({
     name: e.name,
     value: e.metrics.tps,
-    fill: COLORS[i % COLORS.length],
+    fill: modelColorHex(e.colorKey ?? e.name),
     estimated: e.metrics.tpsEstimated,
   }));
 
-  const ttftData = entries.map((e, i) => ({
+  const ttftData = entries.map((e) => ({
     name: e.name,
     value: e.metrics.ttftMs,
-    fill: COLORS[i % COLORS.length],
+    fill: modelColorHex(e.colorKey ?? e.name),
   }));
 
   return (

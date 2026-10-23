@@ -424,5 +424,25 @@
     "restarting": "Redémarrage…",
     "later": "Plus tard",
     "install": "Télécharger et installer"
+  },
+  "race": {
+    "title": "Course en direct",
+    "toggle": "Course",
+    "toggleTitle": "Afficher les vitesses en direct pendant l’exécution",
+    "inProgress": "en streaming — les barres montrent les tok/s en direct",
+    "finished": "terminé — tok/s finaux",
+    "waitingFirstToken": "en attente du premier token",
+    "failed": "échec",
+    "laneSpeed": "{{name}} : {{tps}} tok/s",
+    "laneFailed": "Échec de {{name}}",
+    "hint": "Classé par vitesse en direct. Les chiffres finaux viennent du serveur à la fin de chaque exécution."
+  },
+  "share": {
+    "button": "Partager",
+    "buttonTitle": "Enregistrer ce run en carte PNG à publier",
+    "done": "Carte de partage enregistrée en PNG",
+    "failed": "Impossible de créer la carte de partage.",
+    "cloud": "cloud",
+    "tagline": "Benchmark LLM local, privé et côte à côte"
   }
 }

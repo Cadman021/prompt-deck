@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Clock, Crown, Download, Upload, Trash2, X, Copy, FileText, RotateCcw } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 import { formatRelativeTime } from '../utils/timeUtils';
+import { modelColorHex } from '../utils/modelColor';
 import { useCloudStore } from '../store/useCloudStore';
 import { formatCost, parseQualified } from '../services/modelTarget';
 import { copyHistoryAsJson, exportHistoryAsCsv } from '../utils/exportUtils';
@@ -439,7 +440,15 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                             : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300'
                         }`}
                       >
-                        {isWinner && <Crown className="w-3 h-3 shrink-0" />}
+                        {isWinner ? (
+                          <Crown className="w-3 h-3 shrink-0" />
+                        ) : (
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: modelColorHex(r.model) }}
+                            aria-hidden="true"
+                          />
+                        )}
                         <span className="truncate">{shortName(r).split(':')[0]}</span>
                       </span>
                     );
