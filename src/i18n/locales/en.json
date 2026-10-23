@@ -444,5 +444,21 @@
     "failed": "Could not build the share card.",
     "cloud": "cloud",
     "tagline": "Local, private, side-by-side LLM benchmarking"
+  },
+  "alerts": {
+    "title": "Sound & alerts",
+    "sound": "Sound effects",
+    "soundHint": "Short tones when a run starts and finishes.",
+    "volume": "Volume",
+    "preview": "Play a preview",
+    "notify": "Desktop notification",
+    "notifyHint": "Tell me when a run finishes while PromptDeck is in the background."
+  },
+  "notify": {
+    "title": "Benchmark finished",
+    "body": "{{count}} models finished. {{winner}}",
+    "bodyPartial": "{{ok}} of {{total}} models finished, {{failed}} failed. {{winner}}",
+    "suiteTitle": "Test suite finished",
+    "suiteBody": "{{done}} runs completed."
   }
 }

@@ -444,5 +444,21 @@
     "failed": "Teilen-Karte konnte nicht erstellt werden.",
     "cloud": "Cloud",
     "tagline": "Lokales, privates LLM-Benchmarking Seite an Seite"
+  },
+  "alerts": {
+    "title": "Ton & Hinweise",
+    "sound": "Soundeffekte",
+    "soundHint": "Kurze Töne bei Start und Ende eines Laufs.",
+    "volume": "Lautstärke",
+    "preview": "Vorschau abspielen",
+    "notify": "Desktop-Benachrichtigung",
+    "notifyHint": "Melden, wenn ein Lauf endet, während PromptDeck im Hintergrund ist."
+  },
+  "notify": {
+    "title": "Benchmark beendet",
+    "body": "{{count}} Modelle fertig. {{winner}}",
+    "bodyPartial": "{{ok}} von {{total}} Modellen fertig, {{failed}} fehlgeschlagen. {{winner}}",
+    "suiteTitle": "Testsuite beendet",
+    "suiteBody": "{{done}} Läufe abgeschlossen."
   }
 }

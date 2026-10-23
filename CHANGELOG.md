@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ Added
 
+- **Sound effects and desktop notifications** — short synthesised cues mark a run starting and finishing (a suite gets its own three-note resolve, an all-error run gets a falling tone), and a desktop notification fires when a long run ends while the window is in the background. Cues are generated with the Web Audio API rather than shipped as audio files, so there are no assets to load and nothing breaks if a webview refuses to start an `AudioContext`. New "Sound & alerts" section in Settings, with a volume slider that previews the real cue
 - **Race view** — a live timing board above the columns: one lane per model, ranked by tok/s as the run streams, with TTFT split times and the model's own color. Bars encode *speed*, not characters written, so a model that rambles for 800 tokens doesn't outrank one that answers in 80. Toggled with the Race button in the results toolbar
 - **Share card (PNG)** — saves a run as a fixed-size card (prompt, per-model speed bars, TTFT, token counts, cloud cost) for posting. Renders on a fixed dark ground so the image looks the same regardless of the sender's theme
 - **One color per model, everywhere** — the columns, results chart, Test Suite scoreboard and history chips now derive a model's color from its name instead of its position, so adding a column or shuffling for blind mode no longer repaints the comparison. Colors are assigned collision-free within a run

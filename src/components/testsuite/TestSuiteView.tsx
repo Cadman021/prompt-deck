@@ -31,6 +31,8 @@ import { NO_CHECK, evalCheck, isValidCheck, type CheckType } from '../../utils/c
 import { buildSuiteFile, parseSuiteFile } from '../../utils/suiteFile';
 import { formatDurationMs } from '../../utils/timeUtils';
 import { modelColorHex } from '../../utils/modelColor';
+import { playCue } from '../../utils/sound';
+import { notify, shouldNotify } from '../../utils/notify';
 import { toast } from '../../store/useToastStore';
 import { APP_VERSION } from '../../version';
 import { OllamaModel, BenchmarkMetrics } from '../../types/ollama';
@@ -274,6 +276,21 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
     useTestSuiteStore.getState().setAbortController(null);
     setRunning(false);
     setProgress({ done, total: queue.length, label: '' });
+
+    // Suite runs are the long ones — minutes of local inference — so the end
+    // gets its own cue and notification rather than sharing the bench's.
+    const { alerts } = useSettingsStore.getState();
+    if (signal.aborted) {
+      playCue('error', alerts.volume, alerts.sound);
+    } else {
+      playCue('suiteFinish', alerts.volume, alerts.sound);
+      if (alerts.notify && shouldNotify()) {
+        void notify({
+          title: t('notify.suiteTitle', 'Test suite finished'),
+          body: t('notify.suiteBody', '{{done}} runs completed.', { done }),
+        });
+      }
+    }
 
     if (saveToHistory && !signal.aborted) {
       await saveSuiteToHistory(queue);

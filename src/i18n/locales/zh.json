@@ -444,5 +444,21 @@
     "failed": "无法生成分享卡片。",
     "cloud": "云端",
     "tagline": "本地、私密并排 LLM 基准测试"
+  },
+  "alerts": {
+    "title": "声音与提醒",
+    "sound": "音效",
+    "soundHint": "运行开始和结束时播放短提示音。",
+    "volume": "音量",
+    "preview": "试听",
+    "notify": "桌面通知",
+    "notifyHint": "当 PromptDeck 在后台时，运行结束后通知我。"
+  },
+  "notify": {
+    "title": "基准测试完成",
+    "body": "{{count}} 个模型已完成。{{winner}}",
+    "bodyPartial": "{{total}} 个模型中 {{ok}} 个完成，{{failed}} 个失败。{{winner}}",
+    "suiteTitle": "测试套件完成",
+    "suiteBody": "已完成 {{done}} 次运行。"
   }
 }

@@ -8,6 +8,7 @@
     "opener:default",
     "process:default",
     "updater:default",
+    "notification:default",
     "sql:default",
     {
       "identifier": "sql:allow-execute",

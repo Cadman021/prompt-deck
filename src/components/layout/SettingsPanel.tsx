@@ -1,13 +1,16 @@
 // src/components/layout/SettingsPanel.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Server, SlidersHorizontal, Palette, Languages, Sun, Moon, Zap, Check } from 'lucide-react';
+import {
+  X, Server, SlidersHorizontal, Palette, Languages, Sun, Moon, Zap, Check, Volume2, Play,
+} from 'lucide-react';
 import { ProviderSettings } from '../ProviderSettings';
 import type { AdvancedConfig } from '../AdvancedSettings';
 import { useSettingsStore, Theme } from '../../store/useSettingsStore';
 import { LanguageModal, SUPPORTED_LANGUAGES } from './LanguageModal';
 import { ConfirmModal } from '../ConfirmModal';
 import { openExternal } from '../../utils/openExternal';
+import { playCue } from '../../utils/sound';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -23,7 +26,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onAdvancedChange,
 }) => {
   const { t } = useTranslation();
-  const { theme, setTheme, language, resetSettings } = useSettingsStore();
+  const { theme, setTheme, language, resetSettings, alerts, setAlerts } = useSettingsStore();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   if (!isOpen) return null;
@@ -88,6 +91,98 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </span>
               <span className="font-mono text-slate-500 dark:text-slate-400">{language.toUpperCase()}</span>
             </button>
+          </section>
+
+          <section>
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <Volume2 className="w-4 h-4 text-indigo-500" />
+              <span>{t('alerts.title', 'Sound & alerts')}</span>
+            </div>
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 divide-y divide-slate-200 dark:divide-slate-700/60">
+              <div className="flex items-center justify-between gap-3 p-3">
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                    {t('alerts.sound', 'Sound effects')}
+                  </div>
+                  <p className="text-micro text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {t('alerts.soundHint', 'Short tones when a run starts and finishes.')}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={alerts.sound}
+                  onChange={(e) => setAlerts({ sound: e.target.checked })}
+                  aria-label={t('alerts.sound', 'Sound effects')}
+                  className="w-4 h-4 accent-indigo-500 shrink-0"
+                />
+              </div>
+
+              <div className="p-3">
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <label
+                    htmlFor="alerts-volume"
+                    className={`text-xs font-medium ${
+                      alerts.sound
+                        ? 'text-slate-700 dark:text-slate-200'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    {t('alerts.volume', 'Volume')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono tabular-nums text-micro text-indigo-600 dark:text-indigo-300">
+                      {Math.round(alerts.volume * 100)}%
+                    </span>
+                    {/* Previewing the real cue is the only honest way to pick a
+                        volume — a slider with no sound is a guess. */}
+                    <button
+                      type="button"
+                      disabled={!alerts.sound || alerts.volume === 0}
+                      onClick={() =>
+                        playCue('runFinish', alerts.volume, alerts.sound)
+                      }
+                      title={t('alerts.preview', 'Play a preview')}
+                      aria-label={t('alerts.preview', 'Play a preview')}
+                      className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 transition disabled:opacity-40"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <input
+                  id="alerts-volume"
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={alerts.volume}
+                  disabled={!alerts.sound}
+                  onChange={(e) => setAlerts({ volume: parseFloat(e.target.value) })}
+                  className="w-full accent-indigo-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 p-3">
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                    {t('alerts.notify', 'Desktop notification')}
+                  </div>
+                  <p className="text-micro text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {t(
+                      'alerts.notifyHint',
+                      'Tell me when a run finishes while PromptDeck is in the background.'
+                    )}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={alerts.notify}
+                  onChange={(e) => setAlerts({ notify: e.target.checked })}
+                  aria-label={t('alerts.notify', 'Desktop notification')}
+                  className="w-4 h-4 accent-indigo-500 shrink-0"
+                />
+              </div>
+            </div>
           </section>
 
           <section>

@@ -45,6 +45,8 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         // Signed in-app updates (see plugins.updater in tauri.conf.json)
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Desktop notification when a long benchmark finishes unfocused
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             keychain_set,
             keychain_get,

@@ -444,5 +444,21 @@
     "failed": "Impossible de créer la carte de partage.",
     "cloud": "cloud",
     "tagline": "Benchmark LLM local, privé et côte à côte"
+  },
+  "alerts": {
+    "title": "Son et alertes",
+    "sound": "Effets sonores",
+    "soundHint": "Tons courts au début et à la fin d’une exécution.",
+    "volume": "Volume",
+    "preview": "Lire un aperçu",
+    "notify": "Notification de bureau",
+    "notifyHint": "Me prévenir quand une exécution se termine alors que PromptDeck est en arrière-plan."
+  },
+  "notify": {
+    "title": "Benchmark terminé",
+    "body": "{{count}} modèles terminés. {{winner}}",
+    "bodyPartial": "{{ok}} sur {{total}} modèles terminés, {{failed}} en échec. {{winner}}",
+    "suiteTitle": "Suite de tests terminée",
+    "suiteBody": "{{done}} exécutions terminées."
   }
 }

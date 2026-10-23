@@ -25,6 +25,8 @@ import { PromptPresets } from './components/PromptPresets';
 import { DbService, HistoryRecord, BenchmarkResult } from './services/dbService';
 import { exportElementAsPdf, exportReportAsPdfText, needsImageFallback } from './utils/pdfExport';
 import { exportElementAsPng } from './utils/shareCard';
+import { playCue, type Cue } from './utils/sound';
+import { notify, shouldNotify } from './utils/notify';
 import { ReportPrintView } from './components/ReportPrintView';
 import { AppSidebar, SidebarView } from './components/layout/AppSidebar';
 import { TopBar } from './components/layout/TopBar';
@@ -111,6 +113,12 @@ const slotQualified = (s: Pick<Slot, 'source' | 'model'>): string =>
   qualifiedName(s.source, s.model);
 
 /** The `run_config` JSON snapshot is parsed by `parseRunConfig` (utils/runConfig). */
+
+/** Last path segment of a qualified name — display only. */
+const shortModel = (name: string): string => {
+  const parts = name.split('/');
+  return parts[parts.length - 1];
+};
 
 /** Blind voting toggle: enabling hides identities AND shuffles columns, so no
  * positional knowledge survives; voting reveals again. Disabled mid-run. */
@@ -296,6 +304,69 @@ export default function App() {
       finishedRefs.current[id] = true;
     });
   }, [t]);
+
+  // --- Run announcements ---------------------------------------------------
+  // Sound and desktop notifications. Both read the store at call time rather
+  // than from the render closure: a run can finish long after the render that
+  // started it, and the user may have toggled sound off in between.
+
+  const announceCue = useCallback(
+    (cue: Cue) => {
+      const { alerts } = useSettingsStore.getState();
+      playCue(cue, alerts.volume, alerts.sound);
+    },
+    []
+  );
+
+  /**
+   * Called once per finished run. Picks the cue from how the run actually
+   * went — an all-error run gets the falling tone, not the success one.
+   */
+  const announceFinished = useCallback(
+    (modelCount: number) => {
+      const { alerts } = useSettingsStore.getState();
+      const finished = slotsRef.current.filter((s) => s.model);
+      const ok = finished.filter((s) => s.metrics && !s.error);
+      const failed = finished.length - ok.length;
+
+      if (ok.length === 0) {
+        playCue('error', alerts.volume, alerts.sound);
+      } else {
+        playCue('runFinish', alerts.volume, alerts.sound);
+      }
+
+      if (!alerts.notify || !shouldNotify()) return;
+
+      // Name the winner when one is clearly fastest; otherwise just report
+      // the shape of the run. Kept short — a notification is a headline.
+      const fastest =
+        ok.length > 1
+          ? ok.reduce((a, b) => ((b.metrics?.tps ?? 0) > (a.metrics?.tps ?? 0) ? b : a))
+          : ok[0];
+      const winner = fastest?.metrics
+        ? `${shortModel(slotQualified(fastest)).split(':')[0]} · ${fastest.metrics.tps} tok/s`
+        : '';
+
+      const body =
+        failed > 0
+          ? t('notify.bodyPartial', '{{ok}} of {{total}} models finished, {{failed}} failed. {{winner}}', {
+              ok: ok.length,
+              total: modelCount,
+              failed,
+              winner,
+            })
+          : t('notify.body', '{{count}} models finished. {{winner}}', {
+              count: ok.length,
+              winner,
+            });
+
+      void notify({
+        title: t('notify.title', 'Benchmark finished'),
+        body: body.trim(),
+      });
+    },
+    [t]
+  );
 
   // The hidden PDF source mounts only for the duration of an export — it
   // used to live mounted (re-rendering on every stream chunk for nothing).
@@ -757,6 +828,7 @@ export default function App() {
         }));
       });
       setIsLoading(true);
+      announceCue('runStart');
 
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
@@ -828,14 +900,20 @@ export default function App() {
       };
 
       let finalized = false;
+      /** Every path that ends a run goes through here exactly once. */
+      const finishRun = (): void => {
+        setIsLoading(false);
+        finalizeRun();
+        announceFinished(runnable.length);
+      };
+
       const markFinished = (id: string) => {
         finishedRefs.current[id] = true;
         if (!Object.values(finishedRefs.current).every(Boolean) || finalized) return;
         finalized = true;
         // All slots finished (success, error or stop) — finalize once.
-        setIsLoading(false);
         // Read synchronously from refs instead of setState-inside-setState.
-        finalizeRun();
+        finishRun();
       };
 
       // Defer stream startup so the reset render commits first.
@@ -854,15 +932,14 @@ export default function App() {
             Object.keys(finishedRefs.current).forEach((id) => {
               finishedRefs.current[id] = true;
             });
-            setIsLoading(false);
-            finalizeRun();
+            finishRun();
           })();
           return;
         }
         runnable.forEach((slot) => runSlot(slot, currentPrompt, signal, markFinished));
       }, 0);
     },
-    [prompt, isLoading, runSlot, blindMode, shuffleSlots]
+    [prompt, isLoading, runSlot, blindMode, shuffleSlots, announceCue, announceFinished]
   );
 
   /** Run button / Ctrl+Enter: current prompt and columns. */
@@ -1060,11 +1137,6 @@ export default function App() {
         : 0;
     return { fastest, lowestTtft, cheapest, spread, count: done.length };
   }, [slots, cloudPricing]);
-
-  const shortModel = (name: string): string => {
-    const parts = name.split('/');
-    return parts[parts.length - 1];
-  };
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased overflow-hidden">

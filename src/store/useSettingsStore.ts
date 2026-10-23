@@ -25,6 +25,24 @@ const DEFAULT_ADVANCED: AdvancedConfig = {
   maxTokens: null,
 };
 
+/** Sound and alert preferences. All default off-conservative: silent, but
+ *  notifications on, because a notification only fires when the user has
+ *  already walked away. */
+export interface AlertsConfig {
+  /** Play the short synthesised cues. */
+  sound: boolean;
+  /** Master volume for the cues, 0…1. */
+  volume: number;
+  /** Post a desktop notification when a run finishes unfocused. */
+  notify: boolean;
+}
+
+const DEFAULT_ALERTS: AlertsConfig = {
+  sound: false,
+  volume: 0.5,
+  notify: true,
+};
+
 interface SettingsState {
   theme: Theme;
   language: Language;
@@ -34,6 +52,7 @@ interface SettingsState {
   runMode: RunMode;
   /** Blind voting: mask model identities everywhere in Bench. */
   blindMode: boolean;
+  alerts: AlertsConfig;
   setBlindMode: (blind: boolean) => void;
   setTheme: (theme: Theme) => void;
   setLanguage: (lang: Language) => void;
@@ -41,6 +60,7 @@ interface SettingsState {
   setBaseUrl: (url: string) => void;
   setAdvancedConfig: (config: AdvancedConfig) => void;
   setRunMode: (mode: RunMode) => void;
+  setAlerts: (alerts: Partial<AlertsConfig>) => void;
   resetSettings: () => void;
 }
 
@@ -52,6 +72,7 @@ interface PersistedSettings {
   advancedConfig: AdvancedConfig;
   runMode: RunMode;
   blindMode: boolean;
+  alerts: AlertsConfig;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -64,6 +85,7 @@ export const useSettingsStore = create<SettingsState>()(
       advancedConfig: DEFAULT_ADVANCED,
       runMode: 'sequential',
       blindMode: false,
+      alerts: DEFAULT_ALERTS,
       setBlindMode: (blindMode) => set({ blindMode }),
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => set({ language }),
@@ -76,19 +98,30 @@ export const useSettingsStore = create<SettingsState>()(
       setBaseUrl: (baseUrl) => set({ baseUrl }),
       setAdvancedConfig: (advancedConfig) => set({ advancedConfig }),
       setRunMode: (runMode) => set({ runMode }),
+      setAlerts: (alerts) => set({ alerts: { ...get().alerts, ...alerts } }),
       resetSettings: () =>
         set({
           provider: 'ollama',
           baseUrl: DEFAULT_BASE_URLS.ollama,
           advancedConfig: { ...DEFAULT_ADVANCED },
+          alerts: { ...DEFAULT_ALERTS },
         }),
     }),
     {
       name: 'promptdeck-settings',
-      version: 3,
+      version: 4,
       // v2 -> v3: 'runMode' added (defaults to 'sequential' via initial state
       // when absent — zustand merges persisted state over it).
-      migrate: (persisted: unknown) => (persisted ?? {}) as PersistedSettings,
+      // v3 -> v4: 'alerts' added. Older payloads have no `alerts`, and the
+      // merge below only fills top-level keys that are missing, so a partial
+      // object from a future/older shape still gets the defaults filled in.
+      migrate: (persisted: unknown) => {
+        const state = (persisted ?? {}) as Partial<PersistedSettings>;
+        return {
+          ...state,
+          alerts: { ...DEFAULT_ALERTS, ...(state.alerts ?? {}) },
+        } as PersistedSettings;
+      },
       partialize: (s): PersistedSettings => ({
         theme: s.theme,
         language: s.language,
@@ -97,6 +130,7 @@ export const useSettingsStore = create<SettingsState>()(
         advancedConfig: s.advancedConfig,
         runMode: s.runMode,
         blindMode: s.blindMode,
+        alerts: s.alerts,
       }),
     }
   )
