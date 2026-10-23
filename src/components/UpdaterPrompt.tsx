@@ -84,7 +84,7 @@ export const UpdaterPrompt: React.FC = () => {
           {phase.kind === 'available' && (
             <button
               onClick={() => setPhase({ kind: 'idle' })}
-              aria-label="Close"
+              aria-label={t('common.close', 'Close')}
               className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
             >
               <X className="w-4 h-4" />

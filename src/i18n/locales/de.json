@@ -1,7 +1,10 @@
 {
   "common": {
     "cancel": "Abbrechen",
-    "confirm": "Bestätigen"
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "dismiss": "Schließen",
+    "notifications": "Benachrichtigungen"
   },
   "app": {
     "loading": "Lädt…",
@@ -134,7 +137,8 @@
     "summaryPrompt": "Erkläre die wichtigsten Unterschiede zwischen Microservices und monolithischer Architektur in einer Vergleichstabelle, einschließlich Vor- und Nachteilen beider Ansätze.",
     "namePromptTitle": "Namen für diese Vorlage eingeben:",
     "saveCurrentTitle": "Aktuellen Prompt als Vorlage speichern",
-    "saveCurrent": "Aktuellen speichern"
+    "saveCurrent": "Aktuellen speichern",
+    "deletePreset": "Vorlage löschen"
   },
   "service": {
     "connectOllama": "Verbindung zu Ollama konnte nicht hergestellt werden. Läuft der Ollama-Dienst?",
@@ -169,7 +173,11 @@
     "runs": "Durchläufe",
     "wins": "Siege",
     "hint": "Ranking nach Elo-Wertung aus Direktvergleichen, dann Durchschnittsgeschwindigkeit. Fehlgeschlagene Läufe zählen nicht.",
-    "eloTitle": "Elo-Wertung aus Direktvergleichen"
+    "eloTitle": "Elo-Wertung aus Direktvergleichen",
+    "lowSample": "Kleine Stichprobe",
+    "lowSampleTitle": "Weniger als 5 Läufe — die Siegquote ist noch nicht verlässlich.",
+    "wilsonTitle": "Wilson-95%-Untergrenze: wie viel der Siegquote kleinen Stichproben standhält.",
+    "winRate": "Siegquote"
   },
   "nav": {
     "bench": "Bench",
@@ -326,7 +334,9 @@
     "params": "Parameter",
     "paramsTitle": "Parameter pro Modell (leere Felder nutzen die globalen Werte)",
     "paramsReset": "Global verwenden",
-    "inherit": "global"
+    "inherit": "global",
+    "removeModel": "Dieses Modell entfernen",
+    "selectModel": "Modell"
   },
   "testsuite": {
     "title": "Test-Suite",
@@ -407,5 +417,12 @@
     "emptyHint": "Benchmarken Sie ein Cloud-Modell, um Kosten zu erfassen. Gezählt werden nur Runs mit exakten Server-Tokenzahlen und bekannter Preisliste.",
     "unknown": "Unbekannt",
     "refresh": "Aktualisieren"
+  },
+  "updater": {
+    "available": "Update verfügbar: {{version}}",
+    "downloading": "Update wird geladen… ({{kb}} KB)",
+    "restarting": "Neustart…",
+    "later": "Später",
+    "install": "Herunterladen & installieren"
   }
 }

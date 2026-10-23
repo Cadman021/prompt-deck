@@ -66,13 +66,13 @@ const CodeBlock: React.FC<{
       className="my-3 rounded-lg border border-slate-300 dark:border-slate-800 overflow-hidden"
     >
       <div className="flex items-center justify-between bg-slate-800 dark:bg-slate-900 px-3 py-1.5 border-b border-slate-700/60">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+        <span className="text-nano font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {language || t('app.codePlain', 'text')}
         </span>
         <button
           onClick={() => void handleCopy()}
           title={t('app.copyCode', 'Copy code')}
-          className="flex items-center gap-1 text-[10px] font-medium text-slate-300 hover:text-white transition"
+          className="flex items-center gap-1 text-nano font-medium text-slate-300 hover:text-white transition"
         >
           <Copy className="w-3 h-3" />
           {t('app.copyCode', 'Copy code')}

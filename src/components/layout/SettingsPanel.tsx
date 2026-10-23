@@ -34,7 +34,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <button
         key={id}
         onClick={() => setTheme(id)}
-        className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-3 border text-[11px] font-medium transition-all ${selected
+        className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-3 border text-micro font-medium transition-all ${selected
           ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 shadow-[0_0_14px_rgba(99,102,241,0.3)]'
           : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
@@ -49,11 +49,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="relative w-[380px] max-w-full h-full bg-white dark:bg-slate-900 border-s border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+      <div className="relative w-[380px] max-w-full h-full bg-white dark:bg-slate-900 border-s border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col drawer-in">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-sm font-bold">{t('nav.settings', 'Config')}</h2>
           <button
             onClick={onClose}
+            aria-label={t('common.close', 'Close')}
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition"
           >
             <X className="w-4 h-4" />
@@ -85,7 +86,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <span className="font-semibold">
                 {SUPPORTED_LANGUAGES.find((l) => l.id === language)?.native ?? language.toUpperCase()}
               </span>
-              <span className="font-mono text-slate-400">{language.toUpperCase()}</span>
+              <span className="font-mono text-slate-500 dark:text-slate-400">{language.toUpperCase()}</span>
             </button>
           </section>
 
@@ -96,7 +97,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60">
               <ProviderSettings />
-              <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
+              <p className="mt-2 text-micro text-slate-500 dark:text-slate-400 leading-relaxed">
                 {t('settings.providerHint', 'Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server.')}
               </p>
             </div>
@@ -233,7 +234,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </section>
           <section>
-            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-rose-500 dark:text-red-400">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-rose-700 dark:text-red-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
@@ -250,7 +251,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <button
               onClick={() => void openExternal('https://github.com/Cadman021')}
               title="Sina Cadman on GitHub"
-              className="group flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors py-1.5 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60"
+              className="group flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors py-1.5 px-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60"
             >
               <span>Powered by</span>
               <span className="font-semibold text-slate-700 dark:text-slate-300 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">

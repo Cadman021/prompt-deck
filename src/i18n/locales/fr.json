@@ -1,7 +1,10 @@
 {
   "common": {
     "cancel": "Annuler",
-    "confirm": "Confirmer"
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "dismiss": "Fermer",
+    "notifications": "Notifications"
   },
   "app": {
     "loading": "Chargement…",
@@ -134,7 +137,8 @@
     "summaryPrompt": "Expliquez les principales différences entre l'architecture Microservices et Monolithique dans un tableau comparatif, avec les avantages et inconvénients de chacune.",
     "namePromptTitle": "Nommez ce preset :",
     "saveCurrentTitle": "Enregistrer le prompt actuel comme preset",
-    "saveCurrent": "Enregistrer l'actuel"
+    "saveCurrent": "Enregistrer l'actuel",
+    "deletePreset": "Supprimer le préréglage"
   },
   "service": {
     "connectOllama": "Connexion à Ollama impossible. Le service Ollama est-il en cours d'exécution ?",
@@ -169,7 +173,11 @@
     "runs": "exécutions",
     "wins": "victoires",
     "hint": "Classé par cote Elo des votes directs, puis vitesse moyenne. Les exécutions échouées sont exclues.",
-    "eloTitle": "Cote Elo des votes directs"
+    "eloTitle": "Cote Elo des votes directs",
+    "lowSample": "Échantillon faible",
+    "lowSampleTitle": "Moins de 5 exécutions — le taux de victoire n'est pas encore fiable.",
+    "wilsonTitle": "Borne inférieure de Wilson à 95 % : la part du taux de victoire qui résiste aux petits échantillons.",
+    "winRate": "Taux de victoire"
   },
   "nav": {
     "bench": "Bench",
@@ -326,7 +334,9 @@
     "params": "Paramètres",
     "paramsTitle": "Paramètres par modèle (les champs vides utilisent les valeurs globales)",
     "paramsReset": "Utiliser les valeurs globales",
-    "inherit": "global"
+    "inherit": "global",
+    "removeModel": "Retirer ce modèle",
+    "selectModel": "Modèle"
   },
   "testsuite": {
     "title": "Suite de tests",
@@ -407,5 +417,12 @@
     "emptyHint": "Lancez un benchmark sur un modèle cloud pour suivre les coûts. Seuls les runs avec des tokens exacts et un tarif connu sont comptés.",
     "unknown": "Inconnu",
     "refresh": "Actualiser"
+  },
+  "updater": {
+    "available": "Mise à jour disponible : {{version}}",
+    "downloading": "Téléchargement de la mise à jour… ({{kb}} Ko)",
+    "restarting": "Redémarrage…",
+    "later": "Plus tard",
+    "install": "Télécharger et installer"
   }
 }

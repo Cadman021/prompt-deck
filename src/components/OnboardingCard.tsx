@@ -57,7 +57,7 @@ export const OnboardingCard: React.FC<OnboardingCardProps> = ({ onConnect, onDis
         <button
           onClick={onDismiss}
           aria-label={t('onboarding.dismiss', 'Dismiss')}
-          className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800 transition shrink-0"
+          className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800 transition shrink-0"
         >
           <X className="w-4 h-4" />
         </button>
@@ -71,7 +71,7 @@ export const OnboardingCard: React.FC<OnboardingCardProps> = ({ onConnect, onDis
           </div>
         ) : servers.length > 0 ? (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1.5">
+            <p className="text-micro font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
               {t('onboarding.found', 'Local servers detected')}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -85,7 +85,7 @@ export const OnboardingCard: React.FC<OnboardingCardProps> = ({ onConnect, onDis
                   <span className="font-mono text-slate-700 dark:text-slate-200">
                     {server.baseUrl}
                   </span>
-                  <span className="text-slate-400 dark:text-slate-500">
+                  <span className="text-slate-500 dark:text-slate-400">
                     {t('onboarding.models', '{{count}} models', { count: server.models.length })}
                   </span>
                 </button>
@@ -118,7 +118,7 @@ export const OnboardingCard: React.FC<OnboardingCardProps> = ({ onConnect, onDis
         <button
           onClick={() => void scan()}
           disabled={servers === null}
-          className="mt-3 flex items-center gap-1.5 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 disabled:opacity-50 transition"
+          className="mt-3 flex items-center gap-1.5 text-micro font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 disabled:opacity-50 transition"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           {t('onboarding.rescan', 'Scan again')}

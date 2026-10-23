@@ -57,7 +57,7 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
           <h2 className="text-base font-bold">{t('language.title', 'Select Language')}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close', 'Close')}
             className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition"
           >
             <X className="w-5 h-5" />
@@ -88,7 +88,7 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
               );
             })}
           </div>
-          <p className="mt-3 px-1 text-[11px] text-slate-400 dark:text-slate-500">
+          <p className="mt-3 px-1 text-micro text-slate-500 dark:text-slate-400">
             {t('language.hint', 'More languages coming soon — English, Deutsch and فارسی are fully supported.')}
           </p>
         </div>

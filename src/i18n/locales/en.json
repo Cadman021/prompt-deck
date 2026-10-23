@@ -1,7 +1,10 @@
 {
   "common": {
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "close": "Close",
+    "dismiss": "Dismiss",
+    "notifications": "Notifications"
   },
   "app": {
     "loading": "Loading…",
@@ -134,7 +137,8 @@
     "summaryPrompt": "Explain the key differences between Microservices and Monolithic architecture in a comparison table, including pros and cons of each.",
     "namePromptTitle": "Name this preset:",
     "saveCurrentTitle": "Save current prompt as preset",
-    "saveCurrent": "Save current"
+    "saveCurrent": "Save current",
+    "deletePreset": "Delete preset"
   },
   "service": {
     "connectOllama": "Could not connect to Ollama. Is the Ollama service running?",
@@ -169,7 +173,11 @@
     "runs": "runs",
     "wins": "wins",
     "hint": "Ranked by Elo rating from pairwise votes, then average speed. Failed runs are excluded.",
-    "eloTitle": "Elo rating from pairwise votes"
+    "eloTitle": "Elo rating from pairwise votes",
+    "lowSample": "Low sample",
+    "lowSampleTitle": "Fewer than 5 runs — the win rate is not reliable yet.",
+    "wilsonTitle": "Wilson 95% lower bound: how much of the win rate survives small samples.",
+    "winRate": "Win rate"
   },
   "nav": {
     "bench": "Bench",
@@ -326,7 +334,9 @@
     "params": "Parameters",
     "paramsTitle": "Per-model parameters (unset fields use global)",
     "paramsReset": "Use global",
-    "inherit": "global"
+    "inherit": "global",
+    "removeModel": "Remove this model",
+    "selectModel": "Model"
   },
   "testsuite": {
     "title": "Test Suite",
@@ -407,5 +417,12 @@
     "emptyHint": "Benchmark a cloud model to start tracking cost here. Only runs with exact server token counts and known pricing are counted.",
     "unknown": "Unknown",
     "refresh": "Refresh"
+  },
+  "updater": {
+    "available": "Update available: {{version}}",
+    "downloading": "Downloading update… ({{kb}} KB)",
+    "restarting": "Restarting…",
+    "later": "Later",
+    "install": "Download & install"
   }
 }

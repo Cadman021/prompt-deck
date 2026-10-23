@@ -94,7 +94,7 @@ export const ProviderSettings: React.FC = () => {
         </div>
       )}
 
-      {notice && <p className="text-[11px] text-slate-500 dark:text-slate-400">{notice}</p>}
+      {notice && <p className="text-micro text-slate-500 dark:text-slate-400">{notice}</p>}
     </div>
   );
 };

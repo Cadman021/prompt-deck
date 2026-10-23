@@ -70,24 +70,33 @@ export const PromptPresets: React.FC<PromptPresetsProps> = ({
         <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
       )}
 
+      {/* User presets: the pill is a container, not a button — a button inside
+          a button is invalid and left the delete action keyboard-unreachable. */}
       {userPresets.map((preset) => (
-        <button
+        <span
           key={preset.id}
-          type="button"
-          disabled={disabled}
-          onClick={() => onSelect(preset.prompt)}
-          title={preset.prompt}
-          className="group flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 text-xs font-medium rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all disabled:opacity-50"
+          className="group inline-flex items-center gap-1 ps-2.5 pe-1 py-1 text-xs font-medium rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all"
         >
-          <Bookmark className="w-3 h-3" />
-          <span>{preset.label}</span>
-          <span
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelect(preset.prompt)}
+            title={preset.prompt}
+            className="inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Bookmark className="w-3 h-3" />
+            <span>{preset.label}</span>
+          </button>
+          <button
+            type="button"
             onClick={(e) => handleDelete(e, preset.id)}
-            className="opacity-0 group-hover:opacity-100 hover:text-rose-500 rounded-full p-0.5 transition-opacity"
+            title={t('presets.deletePreset', 'Delete preset')}
+            aria-label={t('presets.deletePreset', 'Delete preset')}
+            className="rounded-full p-0.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-rose-500 transition-opacity"
           >
             <X className="w-3 h-3" />
-          </span>
-        </button>
+          </button>
+        </span>
       ))}
 
       <button

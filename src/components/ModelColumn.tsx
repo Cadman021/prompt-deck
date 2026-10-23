@@ -160,128 +160,130 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
             : 'border-slate-200 dark:border-slate-800'
       }`}
     >
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {isWinner ? (
-            <Crown className="w-4 h-4 text-amber-500 shrink-0" />
-          ) : (
-            <Cpu className={`w-4 h-4 ${color} shrink-0`} />
-          )}
-          {blindLabel ? (
-            <span
-              className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30"
-              title={t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')}
-            >
-              <EyeOff className="w-3 h-3" />
-              {blindLabel}
-            </span>
-          ) : (
-            source.kind === 'cloud' && (
+      <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {isWinner ? (
+              <Crown className="w-4 h-4 text-amber-500 shrink-0" />
+            ) : (
+              <Cpu className={`w-4 h-4 ${color} shrink-0`} />
+            )}
+            {blindLabel ? (
               <span
-                className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30"
-                title={cloudGroups.find((g) => g.providerId === source.providerId)?.name}
+                className="shrink-0 inline-flex items-center gap-1 text-nano font-bold px-1.5 py-1 rounded-md bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/30"
+                title={t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')}
               >
-                <Cloud className="w-3 h-3" />
-                {cloudGroups.find((g) => g.providerId === source.providerId)?.name.split(' ')[0] ??
-                  '☁'}
+                <EyeOff className="w-3 h-3" />
+                {blindLabel}
               </span>
-            )
-          )}
+            ) : (
+              source.kind === 'cloud' && (
+                <span
+                  className="shrink-0 inline-flex items-center gap-1 text-nano font-bold px-1.5 py-1 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30"
+                  title={cloudGroups.find((g) => g.providerId === source.providerId)?.name}
+                >
+                  <Cloud className="w-3 h-3" />
+                  {cloudGroups
+                    .find((g) => g.providerId === source.providerId)
+                    ?.name.split(' ')[0] ?? '☁'}
+                </span>
+              )
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {onParamsChange && (
+              <button
+                onClick={() => setParamsOpen((v) => !v)}
+                aria-pressed={paramsOpen}
+                title={t('bench.paramsTitle', 'Per-model parameters (unset fields use global)')}
+                aria-label={t('bench.paramsTitle', 'Per-model parameters (unset fields use global)')}
+                className={`relative p-1 rounded transition shrink-0 ${
+                  paramsOpen || overridden
+                    ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {overridden && (
+                  <span className="absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                )}
+              </button>
+            )}
+            {output && !error && (
+              <button
+                onClick={handleCopy}
+                title={t('app.copyOutput')}
+                aria-label={t('app.copyOutput')}
+                className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition shrink-0"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            )}
+            {output && !error && onVote && (
+              <button
+                onClick={onVote}
+                title={t('vote.voteTitle')}
+                aria-pressed={isWinner}
+                aria-label={t('vote.voteTitle')}
+                className={`p-1 rounded transition ${
+                  isWinner
+                    ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                }`}
+              >
+                <ThumbsUp className={`w-4 h-4 ${isWinner ? 'fill-current' : ''}`} />
+              </button>
+            )}
+            {canRemove && onRemove && (
+              <button
+                onClick={onRemove}
+                title={t('bench.removeModel', 'Remove this model')}
+                aria-label={t('bench.removeModel', 'Remove this model')}
+                className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {!blindLabel && (
           <select
+            dir="ltr"
             value={encodeValue(source, selectedModel)}
             onChange={(e) => {
               const next = decodeValue(e.target.value);
               onSourceChange(next.source, next.model);
             }}
-            disabled={!!blindLabel}
-            title={
-              blindLabel
-                ? t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')
-                : undefined
-            }
-            className="bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none w-full min-w-0 disabled:opacity-70"
+            aria-label={t('bench.selectModel', 'Model')}
+            title={selectedModel}
+            className="w-full min-w-0 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-left"
           >
-            {blindLabel ? (
-              <option value={encodeValue(source, selectedModel)}>{blindLabel}</option>
-            ) : (
-              <>
-                <optgroup label={t('bench.localModels', 'Local models')}>
-                  {models.map((m) => (
-                    <option key={`local:${m.name}`} value={encodeValue({ kind: 'local' }, m.name)}>
-                      {m.name}
-                    </option>
-                  ))}
-                </optgroup>
-                {cloudGroups.map((g) => (
-                  <optgroup key={g.providerId} label={`☁ ${g.name}`}>
-                    {g.models.map((m) => (
-                      <option
-                        key={`cloud:${g.providerId}:${m}`}
-                        value={encodeValue({ kind: 'cloud', providerId: g.providerId }, m)}
-                      >
-                        {m}
-                      </option>
-                    ))}
-                  </optgroup>
+            <optgroup label={t('bench.localModels', 'Local models')}>
+              {models.map((m) => (
+                <option key={`local:${m.name}`} value={encodeValue({ kind: 'local' }, m.name)}>
+                  {m.name}
+                </option>
+              ))}
+            </optgroup>
+            {cloudGroups.map((g) => (
+              <optgroup key={g.providerId} label={`☁ ${g.name}`}>
+                {g.models.map((m) => (
+                  <option
+                    key={`cloud:${g.providerId}:${m}`}
+                    value={encodeValue({ kind: 'cloud', providerId: g.providerId }, m)}
+                  >
+                    {m}
+                  </option>
                 ))}
-              </>
-            )}
+              </optgroup>
+            ))}
           </select>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {onParamsChange && (
-            <button
-              onClick={() => setParamsOpen((v) => !v)}
-              aria-pressed={paramsOpen}
-              title={t('bench.paramsTitle', 'Per-model parameters (unset fields use global)')}
-              className={`relative p-1 rounded transition shrink-0 ${
-                paramsOpen || overridden
-                  ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'
-                  : 'text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              {overridden && (
-                <span className="absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />
-              )}
-            </button>
-          )}
-          {output && !error && (
-            <button
-              onClick={handleCopy}
-              title={t('app.copyOutput')}
-              className="p-1 rounded text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition shrink-0"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-          )}
-          {output && !error && onVote && (
-            <button
-              onClick={onVote}
-              title={t('vote.voteTitle')}
-              className={`p-1 rounded transition ${
-                isWinner
-                  ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50'
-                  : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40'
-              }`}
-            >
-              <ThumbsUp className={`w-4 h-4 ${isWinner ? 'fill-current' : ''}`} />
-            </button>
-          )}
-          {canRemove && onRemove && (
-            <button
-              onClick={onRemove}
-              title="Remove this model"
-              className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {paramsOpen && onParamsChange && (
-        <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-[11px] space-y-1.5">
+        <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-micro space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="font-semibold text-slate-600 dark:text-slate-300">
               {t('bench.params', 'Parameters')}
@@ -289,7 +291,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
             <button
               onClick={() => onParamsChange({})}
               disabled={!overridden}
-              className="text-[10px] text-indigo-500 hover:underline disabled:opacity-40 disabled:no-underline"
+              className="text-nano text-indigo-500 hover:underline disabled:opacity-40 disabled:no-underline"
             >
               {t('bench.paramsReset', 'Use global')}
             </button>
@@ -373,7 +375,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
       )}
 
       {isWinner && (
-        <div className="px-3 py-1 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/50 text-[11px] font-semibold text-amber-600 dark:text-amber-300 flex items-center gap-1">
+        <div className="px-3 py-1 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/50 text-micro font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1">
           <Crown className="w-3 h-3" />
           <span>{t('vote.winner')}</span>
         </div>
@@ -381,10 +383,10 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
 
       {metrics && (
         <div
-          className={`grid ${costLabel ? 'grid-cols-4' : 'grid-cols-3'} gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono tabular-nums`}
+          className={`grid ${costLabel ? 'grid-cols-4' : 'grid-cols-3'} gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-micro font-mono tabular-nums`}
         >
           <div
-            className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
+            className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400"
             title={
               [
                 metrics.tpsEstimated ? t('metrics.estimatedTooltip') : '',
@@ -408,7 +410,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
             </span>
           </div>
           <div
-            className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400"
+            className="flex items-center gap-1 text-cyan-700 dark:text-cyan-400"
             title={
               [
                 metrics.loadDurationMs != null
@@ -434,7 +436,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
           </div>
           {costLabel && (
             <div
-              className="text-amber-600 dark:text-amber-300 text-end"
+              className="text-amber-700 dark:text-amber-300 text-end"
               title={t('metrics.costTitle', 'Estimated run cost')}
             >
               {costLabel}
@@ -462,7 +464,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
         ) : output || reasoning || loading ? (
           <>
             {loading && (
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="mb-2 flex items-center gap-2 text-micro font-mono text-slate-500 dark:text-slate-400">
                 <span className="relative flex h-2 w-2 shrink-0">
                   <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
@@ -488,7 +490,7 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
                 className="mb-3 rounded-lg bg-violet-500/5 dark:bg-violet-400/5 border border-violet-500/20 px-3 py-2"
                 open={!output}
               >
-                <summary className="text-[11px] font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
+                <summary className="text-micro font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
                   {t('app.thinking', 'Thinking')}
                 </summary>
                 <div

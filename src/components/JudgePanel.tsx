@@ -111,7 +111,7 @@ export const JudgePanel: React.FC<JudgePanelProps> = ({ prompt, items, models, c
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 flex-wrap">
         <Scale className="w-4 h-4 text-violet-500" />
         <h3 className="text-xs font-bold">{t('judge.title', 'LLM Judge')}</h3>
-        <span className="text-[11px] text-slate-400 dark:text-slate-500">
+        <span className="text-micro text-slate-500 dark:text-slate-400">
           {t('judge.subtitle', 'One model scores all outputs blind against a fixed rubric')}
         </span>
         <div className="flex-1" />
@@ -199,7 +199,7 @@ export const JudgePanel: React.FC<JudgePanelProps> = ({ prompt, items, models, c
                       </div>
                       {s.reason && (
                         <p
-                          className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed"
+                          className="text-micro text-slate-500 dark:text-slate-400 leading-relaxed"
                           dir="auto"
                         >
                           {s.reason}
@@ -210,7 +210,7 @@ export const JudgePanel: React.FC<JudgePanelProps> = ({ prompt, items, models, c
                 })}
               </div>
               {winnerItem && (
-                <p className="text-[11px] text-violet-600 dark:text-violet-300 font-semibold">
+                <p className="text-micro text-violet-600 dark:text-violet-300 font-semibold">
                   {t('judge.pick', "Judge's pick")}:{' '}
                   <span className="font-mono">{winnerItem.qualified}</span>
                 </p>
@@ -219,14 +219,14 @@ export const JudgePanel: React.FC<JudgePanelProps> = ({ prompt, items, models, c
           )}
           {parseError && (
             <details className="text-xs">
-              <summary className="text-rose-500 cursor-pointer">
+              <summary className="text-rose-700 dark:text-rose-400 cursor-pointer">
                 {t(
                   'judge.parseError',
                   "Couldn't parse the verdict as JSON — read the raw response"
                 )}
               </summary>
               <pre
-                className="mt-1.5 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 whitespace-pre-wrap font-mono text-[11px] max-h-48 overflow-y-auto"
+                className="mt-1.5 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 whitespace-pre-wrap font-mono text-micro max-h-48 overflow-y-auto"
                 dir="auto"
               >
                 {raw || '—'}

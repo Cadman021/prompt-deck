@@ -24,7 +24,7 @@ export const ReportPrintView = React.forwardRef<HTMLDivElement, ReportPrintViewP
         style={{ width: '800px', padding: '32px', fontFamily: 'sans-serif' }}
       >
         <h1 className="text-2xl font-bold text-indigo-600 mb-1">{t('report.title', '📊 PromptDeck Benchmark Report')}</h1>
-        <p className="text-xs text-slate-400 mb-6">{new Date().toLocaleString()}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">{new Date().toLocaleString()}</p>
 
         <h2 className="text-sm font-bold text-slate-700 mb-1">{t('report.prompt', 'Prompt')}</h2>
         <blockquote className="border-l-4 border-indigo-400 pl-3 text-sm text-slate-600 mb-6 whitespace-pre-wrap">
@@ -61,7 +61,7 @@ export const ReportPrintView = React.forwardRef<HTMLDivElement, ReportPrintViewP
               {r.output ? (
                 <MarkdownRenderer content={r.output} />
               ) : (
-                <span className="italic text-slate-400">{t('report.noOutput', 'No output')}</span>
+                <span className="italic text-slate-500 dark:text-slate-400">{t('report.noOutput', 'No output')}</span>
               )}
             </div>
           </div>

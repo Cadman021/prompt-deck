@@ -9,6 +9,9 @@ interface LeaderboardProps {
   onClose: () => void;
 }
 
+/** Below this many successful runs, a win rate is not yet meaningful. */
+const LOW_SAMPLE_RUNS = 5;
+
 export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const [stats, setStats] = useState<ModelStat[]>([]);
@@ -39,7 +42,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close', 'Close')}
             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded transition-colors text-lg leading-none"
           >
             ×
@@ -52,7 +55,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
               {t('leaderboard.loading')}
             </div>
           ) : stats.length === 0 ? (
-            <div className="text-center text-slate-400 dark:text-slate-500 py-8 px-4 text-sm leading-relaxed">
+            <div className="text-center text-slate-500 dark:text-slate-400 py-8 px-4 text-sm leading-relaxed">
               {t('leaderboard.empty')}
             </div>
           ) : (
@@ -66,13 +69,26 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
                     {i === 0 && s.wins > 0 ? (
                       <Crown className="w-4 h-4 text-amber-500 shrink-0" />
                     ) : (
-                      <span className="text-xs font-mono text-slate-400 w-4 shrink-0">{i + 1}</span>
+                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400 w-4 shrink-0">{i + 1}</span>
                     )}
                     <span className="text-xs font-semibold font-mono truncate" title={s.model}>
                       {s.model}
                     </span>
+                    {/* Under 5 successful runs the win rate is noise; say so
+                        instead of letting a 1/1 model look like a champion. */}
+                    {s.runs < LOW_SAMPLE_RUNS && (
+                      <span
+                        className="shrink-0 rounded px-1 py-px text-nano font-semibold uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                        title={t(
+                          'leaderboard.lowSampleTitle',
+                          'Fewer than 5 runs — the win rate is not reliable yet.'
+                        )}
+                      >
+                        {t('leaderboard.lowSample', 'Low sample')}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 shrink-0">
+                  <span className="text-micro font-mono text-slate-500 dark:text-slate-400 shrink-0">
                     {s.runs} {t('leaderboard.runs')}
                   </span>
                 </div>
@@ -82,8 +98,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
                     style={{ width: `${maxTps > 0 ? Math.round((s.avgTps / maxTps) * 100) : 0}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] font-mono tabular-nums">
-                  <span className="text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center justify-between text-micro font-mono tabular-nums">
+                  <span className="text-emerald-700 dark:text-emerald-400">
                     {s.avgTps} {t('metrics.tps')}
                   </span>
                   <span
@@ -92,8 +108,17 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
                   >
                     Elo {s.elo}
                   </span>
-                  <span className="text-amber-600 dark:text-amber-300">
+                  <span
+                    className="text-amber-700 dark:text-amber-300"
+                    title={`${t('leaderboard.winRate', 'Win rate')}: ${Math.round(s.winRate * 100)}%\n${t(
+                      'leaderboard.wilsonTitle',
+                      'Wilson 95% lower bound: how much of the win rate survives small samples.'
+                    )}: ${Math.round(s.wilson * 100)}%`}
+                  >
                     {s.wins} {t('leaderboard.wins')} · {Math.round(s.winRate * 100)}%
+                    <span className="ms-1 opacity-60 text-nano">
+                      (≥{Math.round(s.wilson * 100)}%)
+                    </span>
                   </span>
                 </div>
               </div>
@@ -101,7 +126,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
           )}
         </div>
 
-        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500">
+        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 text-nano text-slate-500 dark:text-slate-400">
           {t('leaderboard.hint')}
         </div>
       </div>

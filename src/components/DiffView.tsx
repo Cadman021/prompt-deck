@@ -47,7 +47,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
               <select
                 value={pairIndex[0]}
                 onChange={(e) => onPairChange(Number(e.target.value), pairIndex[1])}
-                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-mono focus:outline-none"
+                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-micro font-mono focus:outline-none"
                 aria-label={t('diff.leftSide')}
               >
                 {Array.from({ length: pairCount }, (_, k) => (
@@ -56,11 +56,11 @@ export const DiffView: React.FC<DiffViewProps> = ({
                   </option>
                 ))}
               </select>
-              <span className="text-slate-400">vs</span>
+              <span className="text-slate-500 dark:text-slate-400">vs</span>
               <select
                 value={pairIndex[1]}
                 onChange={(e) => onPairChange(pairIndex[0], Number(e.target.value))}
-                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-mono focus:outline-none"
+                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-micro font-mono focus:outline-none"
                 aria-label={t('diff.rightSide')}
               >
                 {Array.from({ length: pairCount }, (_, k) => (
@@ -74,22 +74,22 @@ export const DiffView: React.FC<DiffViewProps> = ({
           <span className="font-mono text-indigo-600 dark:text-indigo-300 truncate max-w-[180px]" title={leftName}>
             {shortModelName(leftName).split(':')[0]}
           </span>
-          <span className="text-slate-400">↔</span>
-          <span className="font-mono text-cyan-600 dark:text-cyan-300 truncate max-w-[180px]" title={rightName}>
+          <span className="text-slate-500 dark:text-slate-400">↔</span>
+          <span className="font-mono text-cyan-700 dark:text-cyan-300 truncate max-w-[180px]" title={rightName}>
             {shortModelName(rightName).split(':')[0]}
           </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+          <span className="text-micro text-slate-500 dark:text-slate-400 font-mono">
             {Math.round(summary.similarity * 100)}% {t('diff.similar')}
           </span>
-          <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
+          <span className="text-micro font-mono text-emerald-700 dark:text-emerald-400">
             +{summary.added}
           </span>
-          <span className="text-[11px] font-mono text-rose-500 dark:text-rose-400">
+          <span className="text-micro font-mono text-rose-700 dark:text-rose-400">
             −{summary.removed}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+          <label className="flex items-center gap-1 text-micro text-slate-500 dark:text-slate-400 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={showUnchanged}
@@ -101,7 +101,8 @@ export const DiffView: React.FC<DiffViewProps> = ({
           <button
             onClick={onClose}
             title={t('diff.close')}
-            className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+            aria-label={t('diff.close')}
+            className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -119,7 +120,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
 
       <div className="max-h-72 overflow-y-auto text-xs font-mono leading-5">
         {visible.length === 0 ? (
-          <div className="p-4 text-center text-slate-400 text-xs font-sans">
+          <div className="p-4 text-center text-slate-500 dark:text-slate-400 text-xs font-sans">
             {t('diff.allSameHidden')}
           </div>
         ) : (
@@ -154,7 +155,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
         )}
       </div>
 
-      <div className="px-4 py-1.5 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+      <div className="px-4 py-1.5 border-t border-slate-200 dark:border-slate-800 text-nano text-slate-500 dark:text-slate-400 flex items-center gap-1">
         <ChevronDown className="w-3 h-3" />
         <span>{t('diff.hint')}</span>
       </div>

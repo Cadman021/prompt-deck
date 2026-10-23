@@ -40,9 +40,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onNavigate }
           <span className="absolute start-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-full bg-indigo-500" />
         )}
         {icon}
-        <span className="text-[10px] font-medium leading-none">{label}</span>
+        <span className="text-nano font-medium leading-none">{label}</span>
         {badge && (
-          <span className="absolute top-1 end-1 text-[8px] font-bold px-1 py-px rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+          <span className="absolute top-1 end-1 text-nano font-bold px-1 py-px rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
             {badge}
           </span>
         )}

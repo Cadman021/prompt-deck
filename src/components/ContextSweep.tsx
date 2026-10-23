@@ -212,7 +212,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
               <Activity className="w-4 h-4 text-indigo-500" />
               {t('sweep.title', 'Context sweep')}
             </h2>
-            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-micro text-slate-500 dark:text-slate-400">
               {t(
                 'sweep.subtitle',
                 'Same model, same prompt, growing context: see where generation speed drops.'
@@ -222,7 +222,8 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
           <button
             onClick={onClose}
             title={t('sweep.close', 'Close')}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
+            aria-label={t('sweep.close', 'Close')}
+            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -235,7 +236,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
             <>
               <div className="grid sm:grid-cols-2 gap-3">
                 <label className="space-y-1">
-                  <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="block text-micro font-semibold text-slate-600 dark:text-slate-300">
                     {t('sweep.model', 'Model')}
                   </span>
                   <select
@@ -267,7 +268,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                 </label>
 
                 <div className="space-y-1">
-                  <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="block text-micro font-semibold text-slate-600 dark:text-slate-300">
                     {t('sweep.sizes', 'Context sizes')}
                   </span>
                   <div className="flex flex-wrap gap-1">
@@ -279,7 +280,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                           onClick={() => toggleSize(size)}
                           disabled={running}
                           aria-pressed={active}
-                          className={`px-2 py-1 text-[11px] font-mono rounded-lg border transition disabled:opacity-50 ${
+                          className={`px-2 py-1 text-micro font-mono rounded-lg border transition disabled:opacity-50 ${
                             active
                               ? 'bg-indigo-600 text-white border-indigo-600'
                               : 'bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-indigo-400'
@@ -293,14 +294,14 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                 </div>
               </div>
 
-              <p className="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500">
+              <p className="text-micro leading-relaxed text-slate-500 dark:text-slate-400">
                 {t(
                   'sweep.hint',
                   'Each step sends ~90% of the window as neutral filler plus your prompt, with a 256-token answer cap. Changing the window can make a local server reload the model, so the first TTFT at each size includes load time.'
                 )}
               </p>
 
-              {error && <p className="text-xs text-rose-500">{error}</p>}
+              {error && <p className="text-xs text-rose-700 dark:text-rose-400">{error}</p>}
 
               <div className="flex items-center gap-2">
                 {running ? (
@@ -327,7 +328,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                   </button>
                 )}
                 {progress && (
-                  <span className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                  <span className="text-micro font-mono tabular-nums text-slate-500 dark:text-slate-400">
                     {t('sweep.progress', '{{done}}/{{total}} Â· {{size}}', {
                       done: progress.done + 1,
                       total: progress.total,
@@ -338,13 +339,13 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
               </div>
 
               {results.length === 0 ? (
-                <p className="text-xs text-slate-400 dark:text-slate-500 py-4 text-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">
                   {t('sweep.empty', 'Run a sweep to see how speed holds up at longer contexts.')}
                 </p>
               ) : (
                 <>
                   <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-                    <table className="w-full text-[11px] font-mono tabular-nums">
+                    <table className="w-full text-micro font-mono tabular-nums">
                       <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400">
                         <tr>
                           <th className="text-start px-2 py-1.5">
@@ -372,16 +373,16 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                               <td className="px-2 py-1.5 text-slate-600 dark:text-slate-300">
                                 {r.label}
                               </td>
-                              <td className="px-2 py-1.5 text-end text-emerald-600 dark:text-emerald-400">
+                              <td className="px-2 py-1.5 text-end text-emerald-700 dark:text-emerald-400">
                                 {r.error ? (
-                                  <span className="text-rose-500">
+                                  <span className="text-rose-700 dark:text-rose-400">
                                     {t('sweep.failed', 'failed')}
                                   </span>
                                 ) : (
                                   r.tps.toFixed(1)
                                 )}
                               </td>
-                              <td className="px-2 py-1.5 text-end text-cyan-600 dark:text-cyan-400">
+                              <td className="px-2 py-1.5 text-end text-cyan-700 dark:text-cyan-400">
                                 {r.ttftMs > 0 ? formatDurationMs(r.ttftMs) : 'â€”'}
                               </td>
                               <td className="px-2 py-1.5 text-end text-slate-500 dark:text-slate-400">
@@ -390,7 +391,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                               <td
                                 className={`px-2 py-1.5 text-end ${
                                   drop != null && drop >= 20
-                                    ? 'text-rose-500'
+                                    ? 'text-rose-700 dark:text-rose-400'
                                     : 'text-slate-500 dark:text-slate-400'
                                 }`}
                               >
@@ -406,7 +407,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                   {okPoints.length >= 2 && (
                     <div className="grid sm:grid-cols-2 gap-3">
                       <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-2">
-                        <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                        <div className="text-nano font-semibold text-slate-500 dark:text-slate-400 mb-1">
                           {t('sweep.tps', 'tok/s')}
                         </div>
                         <ResponsiveContainer width="100%" height={140}>
@@ -426,7 +427,7 @@ export const ContextSweep: React.FC<ContextSweepProps> = ({
                         </ResponsiveContainer>
                       </div>
                       <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-2">
-                        <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                        <div className="text-nano font-semibold text-slate-500 dark:text-slate-400 mb-1">
                           {t('sweep.ttft', 'TTFT')} (ms)
                         </div>
                         <ResponsiveContainer width="100%" height={140}>

@@ -33,10 +33,10 @@ const StorageBadge: React.FC = () => {
   const keychain = backend === 'keychain';
   return (
     <span
-      className={`ms-2 font-mono text-[10px] px-1.5 py-0.5 rounded-full border ${
+      className={`ms-2 font-mono text-nano px-1.5 py-0.5 rounded-full border ${
         keychain
-          ? 'text-emerald-600 dark:text-emerald-300 border-emerald-500/40 bg-emerald-500/10'
-          : 'text-amber-600 dark:text-amber-300 border-amber-500/40 bg-amber-500/10'
+          ? 'text-emerald-700 dark:text-emerald-300 border-emerald-500/40 bg-emerald-500/10'
+          : 'text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-500/10'
       }`}
       title={
         keychain
@@ -148,7 +148,7 @@ export const CloudProvidersView: React.FC = () => {
       {testingAll ? (
         <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-indigo-500 animate-spin" />
       ) : (
-        <span className="text-[10px]">▶</span>
+        <span className="text-nano">▶</span>
       )}
       {testingAll ? t('cloud.testing', 'Testing…') : t('cloud.testAll', 'Test All')}
     </button>
@@ -157,14 +157,14 @@ export const CloudProvidersView: React.FC = () => {
   const renderCard = (d: AnyDef) => {
     const conns = keys.filter((k) => k.providerId === d.id);
     const healthy = conns.filter((k) => k.enabled && k.status === 'ok').length;
-    let statusClass = 'text-slate-400 dark:text-slate-500';
+    let statusClass = 'text-slate-500 dark:text-slate-400';
     let statusText = t('cloud.noConnections', 'No connections');
     if (conns.length > 0) {
       if (healthy > 0) {
-        statusClass = 'text-emerald-600 dark:text-emerald-300';
+        statusClass = 'text-emerald-700 dark:text-emerald-300';
         statusText = `● ${healthy} ${t('cloud.connectedCount', 'Connected', { count: healthy })}`;
       } else {
-        statusClass = 'text-amber-600 dark:text-amber-300';
+        statusClass = 'text-amber-700 dark:text-amber-300';
         statusText = `${conns.length} ${t('cloud.connections', 'connections')}`;
       }
     }
@@ -177,7 +177,7 @@ export const CloudProvidersView: React.FC = () => {
         <ProviderIcon def={d} />
         <span className="min-w-0">
           <span className="block text-xs font-bold truncate">{d.name}</span>
-          <span className={`block text-[11px] font-medium truncate ${statusClass}`}>
+          <span className={`block text-micro font-medium truncate ${statusClass}`}>
             {statusText}
           </span>
         </span>
@@ -222,7 +222,7 @@ export const CloudProvidersView: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {t('cloud.subtitle', 'Manage your AI provider connections')}
               {healthyCount > 0 && (
-                <span className="ms-2 font-mono text-emerald-600 dark:text-emerald-300">
+                <span className="ms-2 font-mono text-emerald-700 dark:text-emerald-300">
                   ● {healthyCount} {t('cloud.connected', 'Connected')}
                 </span>
               )}
@@ -231,7 +231,7 @@ export const CloudProvidersView: React.FC = () => {
           </div>
         </div>
         <div className="relative">
-          <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -241,7 +241,7 @@ export const CloudProvidersView: React.FC = () => {
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-400 dark:text-slate-500 -mt-3">
+      <p className="text-micro text-slate-500 dark:text-slate-400 -mt-3">
         {t(
           'cloud.benchHint',
           'Connections are saved here first — using cloud models in Bench and Test Suite comes next.'
@@ -267,7 +267,7 @@ export const CloudProvidersView: React.FC = () => {
           <div className="mb-3 p-4 rounded-xl bg-white dark:bg-slate-900/60 border border-indigo-300 dark:border-indigo-500/50 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold mb-1 text-slate-600 dark:text-slate-300">
+                <label className="block text-micro font-semibold mb-1 text-slate-600 dark:text-slate-300">
                   {t('cloud.providerName', 'Provider name')}
                 </label>
                 <input
@@ -278,7 +278,7 @@ export const CloudProvidersView: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold mb-1 text-slate-600 dark:text-slate-300">
+                <label className="block text-micro font-semibold mb-1 text-slate-600 dark:text-slate-300">
                   {t('cloud.baseUrl', 'Base URL')}
                 </label>
                 <input
@@ -309,7 +309,7 @@ export const CloudProvidersView: React.FC = () => {
         )}
 
         {customDefs.length === 0 && !showAdd ? (
-          <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
             {t(
               'cloud.noCustom',
               'No custom providers — use the button above to add OpenAI-compatible endpoints.'
@@ -346,7 +346,7 @@ export const CloudProvidersView: React.FC = () => {
             {keyDefs.map(renderCard)}
           </div>
           {keyDefs.length === 0 && (
-            <p className="text-xs text-slate-400 italic">
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic">
               {t('cloud.noMatch', 'No providers match your search.')}
             </p>
           )}

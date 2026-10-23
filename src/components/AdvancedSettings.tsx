@@ -48,7 +48,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({ config, onCh
           <span>{t("advanced.title")}</span>
         </div>
         <svg
-          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

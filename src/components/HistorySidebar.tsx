@@ -76,12 +76,12 @@ const HistoryMetaLine: React.FC<{
   const age = record.created_at ? getRelativeLabel(record.created_at) : '';
   if (!stats && !age) return null;
   return (
-    <div className="text-[11px] font-mono tabular-nums truncate">
-      {stats && <span className="text-emerald-600 dark:text-emerald-400">{stats}</span>}
+    <div className="text-micro font-mono tabular-nums truncate">
+      {stats && <span className="text-emerald-700 dark:text-emerald-400">{stats}</span>}
       {stats && age ? (
-        <span className="text-slate-400 dark:text-slate-500"> · {age}</span>
+        <span className="text-slate-500 dark:text-slate-400"> · {age}</span>
       ) : age ? (
-        <span className="text-slate-400 dark:text-slate-500">{age}</span>
+        <span className="text-slate-500 dark:text-slate-400">{age}</span>
       ) : null}
     </div>
   );
@@ -263,22 +263,33 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             <Clock className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
             <h2 className="font-bold text-lg">{t('history.title')}</h2>
             {totalCount > 0 && (
-              <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+              <span className="text-micro font-mono text-slate-500 dark:text-slate-400">
                 {totalCount}
               </span>
             )}
           </div>
           <div className="flex items-center gap-0.5">
-            <button onClick={handleCopyJson} title={t('app.copyJsonTitle')} className={iconBtn}>
+            <button
+              onClick={handleCopyJson}
+              title={t('app.copyJsonTitle')}
+              aria-label={t('app.copyJsonTitle')}
+              className={iconBtn}
+            >
               <Copy className="w-4 h-4" />
             </button>
-            <button onClick={handleExportCsv} title={t('app.exportCsvTitle')} className={iconBtn}>
+            <button
+              onClick={handleExportCsv}
+              title={t('app.exportCsvTitle')}
+              aria-label={t('app.exportCsvTitle')}
+              className={iconBtn}
+            >
               <FileText className="w-4 h-4" />
             </button>
             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
             <button
               onClick={handleExportDb}
               title={t('history.exportDb', 'Export full backup (JSON)')}
+              aria-label={t('history.exportDb', 'Export full backup (JSON)')}
               className={iconBtn}
             >
               <Download className="w-4 h-4" />
@@ -286,6 +297,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             <button
               onClick={() => fileRef.current?.click()}
               title={t('history.importDb', 'Import backup (JSON)')}
+              aria-label={t('history.importDb', 'Import backup (JSON)')}
               className={iconBtn}
             >
               <Upload className="w-4 h-4" />
@@ -301,12 +313,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <button
                 onClick={() => setConfirmClear(true)}
                 title={t('history.clearAllTitle')}
-                className={`${iconBtn} text-rose-500 dark:text-red-400 hover:text-rose-600 dark:hover:text-red-300`}
+                aria-label={t('history.clearAllTitle')}
+                className={`${iconBtn} text-rose-700 dark:text-red-400 hover:text-rose-600 dark:hover:text-red-300`}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button onClick={onClose} className={iconBtn}>
+            <button
+              onClick={onClose}
+              aria-label={t('common.close', 'Close')}
+              className={iconBtn}
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -338,7 +355,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               </button>
             </div>
             {hasFilter && (
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-micro text-slate-500 dark:text-slate-400">
                 {t('history.resultsCount', { count: totalCount })}
               </div>
             )}
@@ -360,7 +377,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               {t('history.loading')}
             </div>
           ) : records.length === 0 ? (
-            <div className="text-center text-slate-400 dark:text-slate-500 py-8 px-4 text-sm leading-relaxed">
+            <div className="text-center text-slate-500 dark:text-slate-400 py-8 px-4 text-sm leading-relaxed">
               {hasFilter ? t('history.noResults') : t('history.empty')}
             </div>
           ) : (
@@ -376,7 +393,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               >
                 <div className="flex items-start justify-between gap-2">
                   <p
-                    className="text-[13px] text-slate-800 dark:text-slate-200 font-medium line-clamp-2 leading-snug"
+                    className="text-[0.8125rem] text-slate-800 dark:text-slate-200 font-medium line-clamp-2 leading-snug"
                     dir="auto"
                     title={record.prompt}
                   >
@@ -392,7 +409,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         }}
                         title={t('history.rerunTitle', 'Re-run with the same prompt and settings')}
                         aria-label={t('history.rerun', 'Re-run')}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-500 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 dark:text-slate-400 hover:text-indigo-500 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                       </button>
@@ -401,7 +418,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                       onClick={(e) => record.id && handleDelete(e, record.id)}
                       title={t('history.deleteRecordTitle')}
                       aria-label={t('history.deleteRecordTitle')}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 dark:hover:text-red-400 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
+                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 dark:text-slate-400 hover:text-rose-500 dark:hover:text-red-400 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -416,7 +433,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                       <span
                         key={i}
                         title={r.model}
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-mono max-w-full ${
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-micro font-mono max-w-full ${
                           isWinner
                             ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-semibold border border-amber-300/60 dark:border-amber-700/60'
                             : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300'

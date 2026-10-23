@@ -11,14 +11,23 @@ All notable changes to this project will be documented in this file.
 - **JSON Schema checks** for Test Suite outputs (alongside exact/contains/regex/JSON), with path-level errors and a compact validator covering `type`, `required`, `properties`, `items`, `enum`, `const`, bounds and `allOf`/`anyOf`/`oneOf`/`not`
 - **Context sweep** — runs one model against the same prompt at 2K…64K context windows (neutral filler, fixed 256-token answers) and charts tok/s and TTFT against window size, with the percentage drop versus the smallest window
 - **Cloud spend dashboard** — new Spend page with total cost, average per run, a 30-day cost trend, and per-provider / per-model breakdowns built from the cost frozen into each run (local runs and runs without exact tokens stay out)
+- **Bundled fonts** — Inter (UI), JetBrains Mono (metrics) and Vazirmatn (Persian) now ship with the app instead of relying on whatever the OS has installed, so typography and Persian rendering are identical on every machine
+- **Low-sample badge and Wilson bound on the leaderboard** — a model with fewer than 5 successful runs is flagged instead of letting a 1/1 record top the board, and each win rate now shows its Wilson 95% lower bound next to the raw percentage
 
 ### 🐛 Fixed
 
 - **Overscroll "slack" at the window edges**: dragging with a touchpad or touchscreen bounced/slid the whole page and revealed a gap behind the app. WebView2 swipe-navigation and elastic overscroll are now disabled, the document can no longer scroll, and inner panes contain their own overscroll
+- **Settings panel never animated**: it used `animate-in` / `slide-in-from-right`, which come from `tw-animate-css` — a package this project doesn't install, so the classes silently did nothing. Replaced with a real keyframe that also mirrors under RTL
+- **Delete button inside a button in Quick Prompts**: user presets wrapped a delete button in the preset button, which is invalid HTML and left the delete action unreachable by keyboard. The pill is now a container with two sibling buttons
+- **Untranslated updater dialog and model picker**: `updater.*` and `bench.selectModel` were referenced in code but existed in no locale, so those strings fell back to English in all six languages
 
 ### 🔧 Changed
 
 - **Heavy views are code-split**: History, Leaderboard, Settings, Diff, Test Suite, Cloud, Spend, the context sweep and the results chart now load on demand — the startup bundle dropped from ~1.1 MB to ~275 KB, so the Bench paints sooner on launch
+
+- **Accessibility pass**: 37 icon-only controls now carry a translated `aria-label` (up from 13, several of them hardcoded English), vote and favourites toggles expose `aria-pressed`, and the toast stack is an `aria-live` region so screen readers announce results instead of missing them
+- **Contrast fixes measured against WCAG AA**: `slate-400` on light surfaces was 2.56:1 and the inverted pair `text-slate-400 dark:text-slate-500` failed in *both* themes (2.56 / 3.07) — both now resolve to `text-slate-500 dark:text-slate-400`. Accent text (emerald, cyan, amber, rose) moved to the `-700` step on light with an explicit dark twin, taking metric rows from 3.2–3.9:1 to 5:1+
+- **Documented micro type scale**: `text-micro` (11px) and `text-nano` (10px) replace 95 arbitrary `text-[11px]` / `text-[10px]` utilities. Nothing renders below 10px any more (8px and 9px outliers removed, 10px prose promoted to 11px), and 10px is reserved for uppercase mono labels and badges
 
 - **Tauri version gate moved from CI to the release workflow**: Dependabot still opens the npm and Rust halves of a Tauri bump as separate PRs, so gating every PR made both halves permanently red and mutually blocked. A mismatch now only fails at tag time — which is where `tauri build` would actually break
 - **Dependabot back to per-ecosystem `groups`**: the 1.5.0 `multi-ecosystem-groups` setup did not consolidate the two halves in practice and stopped opening the Rust half at all; per-ecosystem groups keep both ecosystems updating

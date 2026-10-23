@@ -118,7 +118,7 @@ const BlindToggle: React.FC<{
       onClick={() => (blindMode ? onDisable() : onEnable())}
       disabled={disabled}
       title={t('bench.blindTitle', 'Blind mode: identities hidden for unbiased voting')}
-      className={`flex items-center gap-1 px-2 py-1 text-[10px] font-mono rounded-lg border transition shrink-0 disabled:opacity-50 ${
+      className={`flex items-center gap-1 px-2 py-1 text-nano font-mono rounded-lg border transition shrink-0 disabled:opacity-50 ${
         blindMode
           ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-800 dark:border-slate-100 font-bold'
           : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200'
@@ -136,7 +136,7 @@ const RunModeToggle: React.FC = () => {
   const { t } = useTranslation();
   const runMode = useSettingsStore((s) => s.runMode);
   const setRunMode = useSettingsStore((s) => s.setRunMode);
-  const base = 'px-2 py-0.5 text-[10px] font-mono rounded-md transition';
+  const base = 'px-2 py-0.5 text-nano font-mono rounded-md transition';
   return (
     <div
       className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0"
@@ -147,7 +147,7 @@ const RunModeToggle: React.FC = () => {
         className={`${base} ${
           runMode === 'parallel'
             ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
-            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
         }`}
       >
         {t('app.runModeParallel', 'Parallel')}
@@ -157,7 +157,7 @@ const RunModeToggle: React.FC = () => {
         className={`${base} ${
           runMode === 'sequential'
             ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm font-bold'
-            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
         }`}
       >
         {t('app.runModeSequential', 'Sequential')}
@@ -1048,8 +1048,8 @@ export default function App() {
             />
 
             {verdict && !isLoading && (
-              <div className="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 text-[11px]">
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+              <div className="shrink-0 flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 text-micro">
+                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
                   <Zap className="w-3 h-3" />
                   {t('app.verdictFastest', 'Fastest')}:{' '}
                   <strong className="font-semibold">
@@ -1060,7 +1060,7 @@ export default function App() {
                   </span>
                 </span>
                 {verdict.lowestTtft && (
-                  <span className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
+                  <span className="flex items-center gap-1 text-cyan-700 dark:text-cyan-400">
                     <Clock className="w-3 h-3" />
                     {t('app.verdictLowestTtft', 'Lowest TTFT')}:{' '}
                     <strong className="font-semibold">
@@ -1072,7 +1072,7 @@ export default function App() {
                   </span>
                 )}
                 {verdict.cheapest && (
-                  <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400">
                     <DollarSign className="w-3 h-3" />
                     {t('app.verdictCheapest', 'Cheapest')}:{' '}
                     <strong className="font-semibold">
@@ -1084,7 +1084,7 @@ export default function App() {
                   </span>
                 )}
                 {verdict.spread > 0 && (
-                  <span className="text-slate-400 dark:text-slate-500">
+                  <span className="text-slate-500 dark:text-slate-400">
                     {t('app.verdictSlower', 'slowest {{pct}}% slower than fastest', {
                       pct: verdict.spread,
                     })}
@@ -1096,7 +1096,7 @@ export default function App() {
         )}
 
         {error && (
-          <div className="bg-rose-500/10 border-b border-rose-500/20 px-4 py-2 text-xs text-rose-500 flex justify-between items-center shrink-0">
+          <div className="bg-rose-500/10 border-b border-rose-500/20 px-4 py-2 text-xs text-rose-700 dark:text-rose-400 flex justify-between items-center shrink-0">
             <span>
               {error}
               {error === t('app.noModelsFound') && (
@@ -1125,7 +1125,7 @@ export default function App() {
         {activePage === 'tests' ? (
           <Suspense
             fallback={
-              <div className="flex-1 grid place-items-center text-xs text-slate-400">
+              <div className="flex-1 grid place-items-center text-xs text-slate-500 dark:text-slate-400">
                 {t('app.loading', 'Loading…')}
               </div>
             }
@@ -1137,7 +1137,7 @@ export default function App() {
         ) : activePage === 'cloud' ? (
           <Suspense
             fallback={
-              <div className="flex-1 grid place-items-center text-xs text-slate-400">
+              <div className="flex-1 grid place-items-center text-xs text-slate-500 dark:text-slate-400">
                 {t('app.loading', 'Loading…')}
               </div>
             }
@@ -1149,7 +1149,7 @@ export default function App() {
         ) : activePage === 'spend' ? (
           <Suspense
             fallback={
-              <div className="flex-1 grid place-items-center text-xs text-slate-400">
+              <div className="flex-1 grid place-items-center text-xs text-slate-500 dark:text-slate-400">
                 {t('app.loading', 'Loading…')}
               </div>
             }
@@ -1311,7 +1311,7 @@ export default function App() {
                     className="w-full bg-transparent resize-none text-sm focus:outline-none placeholder:text-slate-400"
                   />
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                    <span className="text-nano text-slate-500 dark:text-slate-400 font-mono">
                       {t('app.runHint')}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -1319,7 +1319,7 @@ export default function App() {
                         onClick={() => setIsSweepOpen(true)}
                         disabled={isLoading || !prompt.trim() || !hasAnySource}
                         title={t('sweep.title', 'Context sweep')}
-                        className="flex items-center gap-1 px-2 py-1 text-[10px] font-mono rounded-lg border border-transparent bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 disabled:opacity-50 transition shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 text-nano font-mono rounded-lg border border-transparent bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-500 disabled:opacity-50 transition shrink-0"
                       >
                         <Activity className="w-3 h-3" />
                         {t('sweep.short', 'Sweep')}

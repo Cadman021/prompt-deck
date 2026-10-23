@@ -53,7 +53,7 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close', 'Close')}
             className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
           >
             <X className="w-4 h-4" />
@@ -104,7 +104,7 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
               </button>
             </div>
             {checkMsg && (
-              <p className={`mt-1.5 text-[11px] ${checkMsg.ok ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-500'}`}>
+              <p className={`mt-1.5 text-micro ${checkMsg.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-400'}`}>
                 {checkMsg.text}
               </p>
             )}

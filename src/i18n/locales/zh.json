@@ -1,7 +1,10 @@
 {
   "common": {
     "cancel": "取消",
-    "confirm": "确认"
+    "confirm": "确认",
+    "close": "关闭",
+    "dismiss": "关闭",
+    "notifications": "通知"
   },
   "app": {
     "loading": "加载中…",
@@ -134,7 +137,8 @@
     "summaryPrompt": "用对比表格解释微服务架构和单体架构的主要区别，包括各自的优缺点。",
     "namePromptTitle": "为这个预设命名：",
     "saveCurrentTitle": "将当前提示词保存为预设",
-    "saveCurrent": "保存当前"
+    "saveCurrent": "保存当前",
+    "deletePreset": "删除预设"
   },
   "service": {
     "connectOllama": "无法连接到 Ollama。Ollama 服务是否在运行？",
@@ -169,7 +173,11 @@
     "runs": "次运行",
     "wins": "次获胜",
     "hint": "按两两对决投票的 Elo 评分排名，其次按平均速度。失败的运行不计入。",
-    "eloTitle": "两两对决投票的 Elo 评分"
+    "eloTitle": "两两对决投票的 Elo 评分",
+    "lowSample": "样本不足",
+    "lowSampleTitle": "运行次数少于 5 次——胜率尚不可靠。",
+    "wilsonTitle": "Wilson 95% 置信下界：小样本下仍然站得住的胜率。",
+    "winRate": "胜率"
   },
   "nav": {
     "bench": "测试台",
@@ -326,7 +334,9 @@
     "params": "参数",
     "paramsTitle": "按模型设置参数(留空则使用全局值)",
     "paramsReset": "使用全局",
-    "inherit": "全局"
+    "inherit": "全局",
+    "removeModel": "移除此模型",
+    "selectModel": "模型"
   },
   "testsuite": {
     "title": "测试套件",
@@ -407,5 +417,12 @@
     "emptyHint": "对云端模型运行基准测试即可开始记录。仅统计具有精确服务端 token 数和已知价格的运行。",
     "unknown": "未知",
     "refresh": "刷新"
+  },
+  "updater": {
+    "available": "有可用更新：{{version}}",
+    "downloading": "正在下载更新…（{{kb}} KB）",
+    "restarting": "正在重启…",
+    "later": "稍后",
+    "install": "下载并安装"
   }
 }

@@ -1,5 +1,27 @@
 @import 'tailwindcss';
 
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Micro type scale. This app is dense, so small type is deliberate — but it
+     needs a floor and a rule:
+       text-micro (11px) — the smallest size allowed for readable text:
+                           metadata rows, counts, chips, mono keycaps.
+       text-nano  (10px) — reserved for UPPERCASE mono labels and badges
+                           only. Never for prose, never for a sentence.
+     Nothing goes below 10px. Body copy stays at text-xs (12px) and up.
+     No `--text-*--line-height` here on purpose: these must behave exactly
+     like the arbitrary `text-[11px]` / `text-[10px]` they replace. */
+  --text-micro: 0.6875rem;
+  --text-nano: 0.625rem;
+}
+
+/* Persian UI gets a native reader font; Latin model names fall through to Inter. */
+html[lang='fa'] {
+  --font-sans: 'Vazirmatn Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Force Tailwind v4 to use class-based dark mode instead of media query */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -80,5 +102,60 @@
     box-shadow:
       0 0 0 1px rgba(34, 211, 238, 0.7),
       0 0 14px rgba(34, 211, 238, 0.35);
+  }
+}
+
+/* --- Accessibility ---------------------------------------------------------
+   Keyboard focus must always be visible, including on controls that opt out
+   with `focus:outline-none`. Unlayered rules win over Tailwind utilities. */
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Side drawer entrance. Written here rather than with `animate-in` /
+   `slide-in-from-*`, which come from `tw-animate-css` — a package this project
+   doesn't install, so those classes silently did nothing. */
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* RTL drawers enter from the left; mirror the travel so it still feels like
+   it comes from the edge the panel is docked to. */
+@keyframes drawer-in-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.drawer-in {
+  animation: drawer-in 160ms ease-out;
+}
+
+[dir='rtl'] .drawer-in {
+  animation-name: drawer-in-rtl;
+}
+
+/* Respect the OS motion preference for every animation/transition we ship. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

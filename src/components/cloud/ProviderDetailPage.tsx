@@ -163,7 +163,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
             <h2 className="text-xl font-bold">{def.name}</h2>
             <button
               onClick={() => void openExternal(def.keyUrl)}
-              className="inline-flex items-center gap-1 text-[11px] text-indigo-500 hover:underline"
+              className="inline-flex items-center gap-1 text-micro text-indigo-500 hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
               {t('cloud.getKey', 'Where to get an API key')}
@@ -205,7 +205,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
           </button>
         </div>
         {providerKeys.length === 0 ? (
-          <p className="px-4 py-5 text-xs text-slate-400 dark:text-slate-500 text-center">
+          <p className="px-4 py-5 text-xs text-slate-500 dark:text-slate-400 text-center">
             {t('cloud.noKeysYet', 'No connections yet — add your first API key.')}
           </p>
         ) : (
@@ -224,18 +224,19 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold truncate">{k.label}</div>
-                  <div className="text-[11px] font-mono text-slate-400 truncate" dir="ltr">
+                  <div className="text-micro font-mono text-slate-500 dark:text-slate-400 truncate" dir="ltr">
                     {fingerprint(secretFor(k)) || '••••'}
                     {k.status === 'error' && k.error && (
-                      <span className="ms-2 font-sans text-rose-500">{k.error}</span>
+                      <span className="ms-2 font-sans text-rose-700 dark:text-rose-400">{k.error}</span>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={() => void testOneKey(k.id)}
                   disabled={testingKey !== null}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition disabled:opacity-50"
+                  className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition disabled:opacity-50"
                   title={t('cloud.testKey', 'Test this key')}
+                  aria-label={t('cloud.testKey', 'Test this key')}
                 >
                   {testingKey === k.id ? (
                     <span className="w-3.5 h-3.5 block rounded-full border-2 border-slate-300 border-t-indigo-500 animate-spin" />
@@ -245,8 +246,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 </button>
                 <button
                   onClick={() => setKeyModal({ mode: 'edit', id: k.id })}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                   title={t('cloud.editKey', 'Edit')}
+                  aria-label={t('cloud.editKey', 'Edit')}
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
@@ -258,8 +260,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     });
                     removeKey(k.id);
                   }}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                   title={t('cloud.disconnect', 'Disconnect')}
+                  aria-label={t('cloud.disconnect', 'Disconnect')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -268,6 +271,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     type="checkbox"
                     checked={k.enabled}
                     onChange={(e) => updateKey(k.id, { enabled: e.target.checked })}
+                    aria-label={t('cloud.enabled', 'Enabled')}
                     className="peer sr-only"
                   />
                   <span className="w-8 h-[18px] rounded-full bg-slate-300 dark:bg-slate-700 peer-checked:bg-indigo-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:w-[14px] after:h-[14px] after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-[14px] rtl:peer-checked:after:-translate-x-[14px]" />
@@ -283,7 +287,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex-wrap gap-2">
           <h3 className="text-sm font-bold">
             {t('cloud.availableModels', 'Available Models')}
-            <span className="ms-2 font-mono font-normal text-slate-400">
+            <span className="ms-2 font-mono font-normal text-slate-500 dark:text-slate-400">
               {enabled.length}/{known.length}
               {mq && (
                 <span> · {visibleModels.length} {t('cloud.shown', 'shown')}</span>
@@ -292,7 +296,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
           </h3>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <input
                 value={modelQuery}
                 onChange={(e) => setModelQuery(e.target.value)}
@@ -304,13 +308,13 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
               <>
                 <button
                   onClick={() => setAllModels(def.id, true)}
-                  className="text-[11px] text-slate-500 hover:text-indigo-500 transition"
+                  className="text-micro text-slate-500 hover:text-indigo-500 transition"
                 >
                   {t('cloud.enableAll', 'Enable all')}
                 </button>
                 <button
                   onClick={() => setAllModels(def.id, false)}
-                  className="text-[11px] text-slate-500 hover:text-rose-500 transition"
+                  className="text-micro text-slate-500 hover:text-rose-500 transition"
                 >
                   {t('cloud.disableAll', 'Disable all')}
                 </button>
@@ -330,17 +334,17 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
 
         <div className="p-4 sm:p-5 space-y-4">
           {refreshError && (
-            <p className="text-[11px] text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+            <p className="text-micro text-rose-700 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
               {refreshError}
             </p>
           )}
           {refreshInfo && (
-            <p className="text-[11px] text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/25 rounded-lg px-3 py-2">
+            <p className="text-micro text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 border border-indigo-500/25 rounded-lg px-3 py-2">
               {refreshInfo}
             </p>
           )}
           {!activeKey && known.length === 0 && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-2">
               {t('cloud.fetchHint', 'Add an enabled API key first')}
             </p>
           )}
@@ -369,7 +373,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                       <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     )}
                     {probe?.phase === 'error' && (
-                      <X className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                      <X className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400 shrink-0" />
                     )}
                     <button
                       onClick={(e) => {
@@ -377,8 +381,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                         void handleProbeModel(m);
                       }}
                       disabled={!activeKey || probe?.phase === 'testing'}
-                      className="p-1 rounded text-slate-400 hover:text-amber-500 transition shrink-0 disabled:opacity-40"
+                      className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-amber-500 transition shrink-0 disabled:opacity-40"
                       title={t('cloud.testModel', 'Test this model (1-token probe)')}
+                      aria-label={t('cloud.testModel', 'Test this model (1-token probe)')}
                     >
                       {probe?.phase === 'testing' ? (
                         <span className="w-3.5 h-3.5 block rounded-full border-2 border-slate-300 border-t-amber-500 animate-spin" />
@@ -391,8 +396,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                         e.stopPropagation();
                         void handleCopyId(m);
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-indigo-500 transition shrink-0"
+                      className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-indigo-500 transition shrink-0"
                       title={t('cloud.copyId', 'Copy model id')}
+                      aria-label={t('cloud.copyId', 'Copy model id')}
                     >
                       {copied === m ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -401,8 +407,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                         e.stopPropagation();
                         removeKnownModel(def.id, m);
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+                      className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
                       title={t('cloud.deleteModel', 'Remove model from list')}
+                      aria-label={t('cloud.deleteModel', 'Remove model from list')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -412,7 +419,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
             </div>
           )}
           {known.length > 0 && visibleModels.length === 0 && (
-            <p className="text-xs text-slate-400 italic text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic text-center">
               {t('cloud.noMatch', 'No providers match your search.')}
             </p>
           )}
@@ -430,7 +437,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
               }}
               placeholder={t('cloud.modelPlaceholder', 'Add model id manually, e.g. openai/gpt-4o-mini')}
               dir="ltr"
-              className="flex-1 min-w-0 p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 text-[11px] font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 min-w-0 p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 text-micro font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <button
               onClick={() => {
@@ -440,7 +447,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 }
               }}
               disabled={!newModel.trim()}
-              className="flex items-center gap-1 px-3 py-2 text-[11px] font-semibold rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40 shrink-0"
+              className="flex items-center gap-1 px-3 py-2 text-micro font-semibold rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
               {t('cloud.addModel', 'Add Model')}
@@ -450,7 +457,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
           {/* Suggested */}
           {def.suggestedModels && def.suggestedModels.length > 0 && (
             <div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1.5">
+              <p className="text-micro text-slate-500 dark:text-slate-400 mb-1.5">
                 {t('cloud.suggested', 'Suggested:')}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -460,7 +467,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     <button
                       key={m}
                       onClick={() => addKnownModel(def.id, m)}
-                      className="flex items-center gap-1 px-2 py-1 text-[11px] font-mono rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:text-indigo-500 transition"
+                      className="flex items-center gap-1 px-2 py-1 text-micro font-mono rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:text-indigo-500 transition"
                       title={m}
                     >
                       <Plus className="w-3 h-3" />

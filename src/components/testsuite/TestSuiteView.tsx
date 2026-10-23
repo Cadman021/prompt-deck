@@ -621,6 +621,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                 onClick={handleClearResults}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                 title={t('testsuite.clearResults', 'Clear results')}
+                aria-label={t('testsuite.clearResults', 'Clear results')}
               >
                 <Eraser className="w-3.5 h-3.5" />
               </button>
@@ -710,7 +711,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             <button
               onClick={() => tests.length < MAX_TESTS && setTests([...tests, ''])}
               disabled={tests.length >= MAX_TESTS}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
+              className="flex items-center gap-1 text-micro px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition disabled:opacity-40"
             >
               <Plus className="w-3 h-3" />
               {t('testsuite.addPrompt', 'Add')}
@@ -728,7 +729,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               return (
                 <div key={i} className="space-y-1.5">
                   <div className="flex gap-2 items-start">
-                    <span className="mt-2 text-[11px] font-mono text-slate-400 w-5 shrink-0">
+                    <span className="mt-2 text-micro font-mono text-slate-500 dark:text-slate-400 w-5 shrink-0">
                       #{i + 1}
                     </span>
                     <textarea
@@ -747,7 +748,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                         setTests(tests.length <= 1 ? [''] : tests.filter((_, j) => j !== i))
                       }
                       disabled={running}
-                      className="mt-2 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition disabled:opacity-40"
+                      className="mt-2 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition disabled:opacity-40"
                       title={t('testsuite.removePrompt', 'Remove')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -759,10 +760,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                       onChange={(e) => setType(e.target.value as CheckType)}
                       disabled={running}
                       title={t('testsuite.checkTitle', 'Automatic output check')}
-                      className={`text-[11px] font-mono rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-950 shrink-0 ${
+                      className={`text-micro font-mono rounded-lg px-2 py-1.5 border focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-950 shrink-0 ${
                         valid
                           ? 'border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400'
-                          : 'border-rose-400 text-rose-500'
+                          : 'border-rose-400 text-rose-700 dark:text-rose-400'
                       }`}
                     >
                       <option value="none">{t('testsuite.checkNone', 'No check')}</option>
@@ -783,10 +784,10 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                             : t('testsuite.checkTextPlaceholder', 'Expected text…')
                         }
                         dir="auto"
-                        className={`flex-1 min-w-0 p-1.5 rounded-lg text-[11px] font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                        className={`flex-1 min-w-0 p-1.5 rounded-lg text-micro font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
                           valid
                             ? 'border-slate-200 dark:border-slate-700/60'
-                            : 'border-rose-400 text-rose-500'
+                            : 'border-rose-400 text-rose-700 dark:text-rose-400'
                         }`}
                       />
                     )}
@@ -802,15 +803,15 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                           'testsuite.checkSchemaPlaceholder',
                           '{"type":"object","required":["answer"],"properties":{"answer":{"type":"string"}}}'
                         )}
-                        className={`flex-1 min-w-0 p-1.5 rounded-lg text-[11px] font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y ${
+                        className={`flex-1 min-w-0 p-1.5 rounded-lg text-micro font-mono bg-white dark:bg-slate-950 border focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y ${
                           valid
                             ? 'border-slate-200 dark:border-slate-700/60'
-                            : 'border-rose-400 text-rose-500'
+                            : 'border-rose-400 text-rose-700 dark:text-rose-400'
                         }`}
                       />
                     )}
                     {check.type !== 'none' && !valid && (
-                      <span className="text-[10px] text-rose-500 shrink-0">
+                      <span className="text-nano text-rose-700 dark:text-rose-400 shrink-0">
                         {t('testsuite.checkInvalid', 'Invalid')}
                       </span>
                     )}
@@ -864,7 +865,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
             })}
             {cloudGroups.map((g) => (
               <div key={g.providerId}>
-                <p className="px-1 pt-1.5 pb-1 text-[11px] font-bold text-cyan-600 dark:text-cyan-300">
+                <p className="px-1 pt-1.5 pb-1 text-micro font-bold text-cyan-700 dark:text-cyan-300">
                   ☁ {g.name}
                 </p>
                 {g.models.map((m) => {
@@ -894,7 +895,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               </div>
             ))}
             {activeTests.length === 0 && (
-              <p className="text-[11px] text-amber-600 dark:text-amber-300 p-1">
+              <p className="text-micro text-amber-700 dark:text-amber-300 p-1">
                 {t('testsuite.needPrompt', 'Add at least one non-empty test prompt to run.')}
               </p>
             )}
@@ -926,7 +927,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                           {displayName(m).split(':')[0]}
                         </span>
                       </span>
-                      <span className="block text-[9px] font-normal text-slate-400 dark:text-slate-500">
+                      <span className="block text-nano font-normal text-slate-500 dark:text-slate-400">
                         tok/s
                       </span>
                     </th>
@@ -941,7 +942,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   >
                     <td className="px-3 py-2 text-slate-600 dark:text-slate-300 max-w-[260px]">
                       <div className="font-medium truncate" title={prompt} dir="auto">
-                        <span className="font-mono text-slate-400 me-1">#{row + 1}</span>
+                        <span className="font-mono text-slate-500 dark:text-slate-400 me-1">#{row + 1}</span>
                         {prompt.split('\n')[0].slice(0, 80)}
                       </div>
                     </td>
@@ -969,9 +970,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                                 : c.status === 'running'
                                   ? 'text-indigo-500 animate-pulse'
                                   : c.status === 'error'
-                                    ? 'text-rose-500 bg-rose-500/10 hover:bg-rose-500/20'
+                                    ? 'text-rose-700 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20'
                                     : isWinner
-                                      ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 ring-1 ring-emerald-500/40 hover:bg-emerald-500/20 font-bold'
+                                      ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 ring-1 ring-emerald-500/40 hover:bg-emerald-500/20 font-bold'
                                       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/40'
                             }`}
                             title={[
@@ -1021,18 +1022,18 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   </td>
                   {summary.map((s) => (
                     <td key={s.model} className="px-3 py-2 text-center">
-                      <div className="text-emerald-600 dark:text-emerald-300 font-bold">
+                      <div className="text-emerald-700 dark:text-emerald-300 font-bold">
                         {s.avgTps || '—'}
                       </div>
-                      <div className="text-[10px] text-amber-600 dark:text-amber-300">
+                      <div className="text-nano text-amber-700 dark:text-amber-300">
                         {s.wins} 👑 / {s.finished}
                       </div>
                       {s.passRate && (
                         <div
-                          className={`text-[10px] font-bold ${
+                          className={`text-nano font-bold ${
                             s.passRate.passed === s.passRate.total
-                              ? 'text-emerald-600 dark:text-emerald-300'
-                              : 'text-rose-500'
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-rose-700 dark:text-rose-400'
                           }`}
                           title={t('testsuite.passRateTitle', 'Automatic checks passed')}
                         >
@@ -1041,7 +1042,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                       )}
                       {s.totalCost != null && (
                         <div
-                          className="text-[10px] text-slate-500 dark:text-slate-400"
+                          className="text-nano text-slate-500 dark:text-slate-400"
                           title={t('testsuite.totalCostTitle', 'Total suite cost for this model')}
                         >
                           {formatCost(s.totalCost)}
@@ -1053,7 +1054,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               </tbody>
             </table>
           </div>
-          <p className="px-4 py-2 text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+          <p className="px-4 py-2 text-micro text-slate-500 dark:text-slate-400 font-mono">
             {t(
               'testsuite.scoreHint',
               '👑 = fastest tok/s on that test · click any cell to read the full output.'
@@ -1077,17 +1078,17 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   <div className="text-sm font-bold font-mono truncate" title={detail.model}>
                     {displayName(detail.model)}
                   </div>
-                  <div className="text-[11px] text-slate-500 truncate" dir="auto">
+                  <div className="text-micro text-slate-500 truncate" dir="auto">
                     {tests[detail.ti]?.split('\n')[0]}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {detailCell.passed != null && (
                     <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                      className={`text-micro font-bold px-2 py-0.5 rounded-full ${
                         detailCell.passed
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
-                          : 'bg-rose-500/10 text-rose-500'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-rose-500/10 text-rose-700 dark:text-rose-400'
                       }`}
                     >
                       {detailCell.passed
@@ -1096,7 +1097,7 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                     </span>
                   )}
                   {detailCell.metrics && (
-                    <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-300">
+                    <span className="text-micro font-mono text-emerald-700 dark:text-emerald-300">
                       {detailCell.metrics.tpsEstimated ? '~' : ''}
                       {detailCell.metrics.tps} tok/s · {formatDurationMs(detailCell.metrics.ttftMs)}{' '}
                       TTFT
@@ -1112,14 +1113,14 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               </div>
               <div className="overflow-y-auto p-5">
                 {detailCell.error && !detailCell.output ? (
-                  <p className="text-xs text-rose-500" dir="auto">
+                  <p className="text-xs text-rose-700 dark:text-rose-400" dir="auto">
                     {detailCell.error}
                   </p>
                 ) : (
                   <>
                     {detailCell.reasoning?.trim() && (
                       <details className="mb-3 rounded-lg bg-violet-500/5 dark:bg-violet-400/5 border border-violet-500/20 px-3 py-2">
-                        <summary className="text-[11px] font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
+                        <summary className="text-micro font-semibold text-violet-600 dark:text-violet-300 cursor-pointer select-none">
                           {t('app.thinking', 'Thinking')}
                         </summary>
                         <div

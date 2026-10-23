@@ -31,11 +31,11 @@ export const ResultToolbar: React.FC<ResultToolbarProps> = ({
   if (!hasOutput && !canShowDiff) return null;
 
   const btn =
-    'flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-lg border transition-all shadow-sm';
+    'flex items-center gap-1.5 px-2.5 py-1.5 text-micro font-medium rounded-lg border transition-all shadow-sm';
 
   return (
     <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-slate-200/70 dark:border-slate-800/70 bg-slate-50/80 dark:bg-slate-900/40 overflow-x-auto">
-      <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 whitespace-nowrap">
+      <span className="text-micro font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
         {slotsLabel}
       </span>
       <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />

@@ -46,12 +46,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       <div className="relative w-[380px] max-w-full rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
         <div className="flex items-center gap-2.5 px-5 py-4">
           <span className="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-4 h-4 text-rose-500" />
+            <AlertTriangle className="w-4 h-4 text-rose-700 dark:text-rose-400" />
           </span>
           <h2 className="flex-1 text-sm font-bold">{title}</h2>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('common.close', 'Close')}
             className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 transition"
           >
             <X className="w-4 h-4" />

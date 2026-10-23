@@ -33,9 +33,9 @@ const StatCard: React.FC<{ label: string; value: string; hint?: string }> = ({
   hint,
 }) => (
   <div className="p-4 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-sm">
-    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{label}</div>
+    <div className="text-micro font-medium text-slate-500 dark:text-slate-400">{label}</div>
     <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
-    {hint && <div className="mt-0.5 text-[10px] text-slate-400">{hint}</div>}
+    {hint && <div className="mt-0.5 text-nano text-slate-500 dark:text-slate-400">{hint}</div>}
   </div>
 );
 
@@ -91,7 +91,7 @@ export const SpendView: React.FC = () => {
           onClick={() => void load()}
           disabled={loading}
           title={t('spend.refresh', 'Refresh')}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-400 disabled:opacity-50 transition shrink-0"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-micro rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:border-indigo-400 disabled:opacity-50 transition shrink-0"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t('spend.refresh', 'Refresh')}
@@ -99,7 +99,7 @@ export const SpendView: React.FC = () => {
       </div>
 
       {!summary ? (
-        <div className="py-16 text-center text-xs text-slate-400">
+        <div className="py-16 text-center text-xs text-slate-500 dark:text-slate-400">
           {t('app.loading', 'Loading…')}
         </div>
       ) : summary.totalCost === 0 ? (
@@ -108,7 +108,7 @@ export const SpendView: React.FC = () => {
           <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
             {t('spend.empty', 'No cloud spend recorded yet.')}
           </p>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {t(
               'spend.emptyHint',
               'Benchmark a cloud model to start tracking cost here. Only runs with exact server token counts and known pricing are counted.'
@@ -187,7 +187,7 @@ export const SpendView: React.FC = () => {
               </AreaChart>
             </ResponsiveContainer>
             {summary.monthly.length > 1 && (
-              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400">
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-nano text-slate-500 dark:text-slate-400">
                 {summary.monthly.slice(-6).map((m) => (
                   <span key={m.month} className="tabular-nums">
                     {m.month} · {money(m.cost)}
@@ -212,7 +212,7 @@ export const SpendView: React.FC = () => {
                           <ProviderIcon def={def} />
                         ) : (
                           <span className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                            <Wallet className="w-4 h-4 text-slate-400" />
+                            <Wallet className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                           </span>
                         )}
                         <div className="min-w-0 flex-1">
@@ -229,7 +229,7 @@ export const SpendView: React.FC = () => {
                                 style={{ width: `${Math.max(2, share(p.cost))}%` }}
                               />
                             </div>
-                            <span className="text-[10px] text-slate-400 tabular-nums">
+                            <span className="text-nano text-slate-500 dark:text-slate-400 tabular-nums">
                               {t('spend.runsCount', '{{n}} cloud runs', { n: p.runs })}
                             </span>
                           </div>
@@ -247,7 +247,7 @@ export const SpendView: React.FC = () => {
               </h3>
               <div className="max-h-64 overflow-y-auto -me-1 pe-1">
                 <table className="w-full text-xs">
-                  <thead className="text-[10px] text-slate-400">
+                  <thead className="text-nano text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="text-start font-medium pb-1.5">{t('spend.model', 'Model')}</th>
                       <th className="text-end font-medium pb-1.5">{t('spend.cost', 'Cost')}</th>
@@ -266,7 +266,7 @@ export const SpendView: React.FC = () => {
                           <div className="font-medium truncate max-w-[13rem]" title={m.model}>
                             {m.model}
                           </div>
-                          <div className="text-[10px] text-slate-400">
+                          <div className="text-nano text-slate-500 dark:text-slate-400">
                             {providerName(m.providerId)} ·{' '}
                             {t('spend.runsShort', '{{n}}×', { n: m.runs })}
                           </div>
@@ -274,7 +274,7 @@ export const SpendView: React.FC = () => {
                         <td className="py-1.5 text-end font-mono tabular-nums align-top">
                           {money(m.cost)}
                         </td>
-                        <td className="py-1.5 text-end text-slate-400 tabular-nums align-top">
+                        <td className="py-1.5 text-end text-slate-500 dark:text-slate-400 tabular-nums align-top">
                           {share(m.cost).toFixed(0)}%
                         </td>
                       </tr>

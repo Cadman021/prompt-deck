@@ -1,6 +1,7 @@
 // src/components/Toaster.tsx
 // Renders the global toast queue, bottom-center. Mounted once in App.
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
 import { useToastStore, type ToastKind } from '../store/useToastStore';
 
@@ -11,12 +12,18 @@ const ICONS: Record<ToastKind, React.ComponentType<{ className?: string }>> = {
 };
 
 export const Toaster: React.FC = () => {
+  const { t } = useTranslation();
   const toasts = useToastStore((s) => s.toasts);
   const dismiss = useToastStore((s) => s.dismiss);
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none">
+    <div
+      role="region"
+      aria-live="polite"
+      aria-label={t('common.notifications', 'Notifications')}
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"
+    >
       {toasts.map((toast) => {
         const Icon = ICONS[toast.kind];
         return (
@@ -31,7 +38,7 @@ export const Toaster: React.FC = () => {
             </span>
             <button
               onClick={() => dismiss(toast.id)}
-              aria-label="Dismiss"
+              aria-label={t('common.dismiss', 'Dismiss')}
               className="opacity-50 hover:opacity-100 transition-opacity"
             >
               <X className="w-3.5 h-3.5" />
