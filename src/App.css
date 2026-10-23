@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* Themes work by redefining Tailwind's own variables, not by matching class
+   names. That keeps every utility (including opacity modifiers) working and
+   means a new component inherits the theme without knowing it exists — see the
+   `.amoled` block in the base layer for the pattern. */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -61,24 +65,23 @@ html[lang='fa'] {
     background-color: #000;
   }
 
-  /* Push the slate surfaces down to true/pure black. Attribute selectors
-     match the compiled `dark:bg-…` utilities regardless of escaping. */
-  .amoled [class*='dark:bg-slate-950'] {
-    background-color: #000 !important;
-  }
-  .amoled [class*='dark:bg-slate-900'] {
-    background-color: #111111 !important;
-  }
-  .amoled [class*='dark:bg-slate-800'] {
-    background-color: #1e1e1e !important;
-  }
-  .amoled [class*='dark:border-slate-800'],
-  .amoled [class*='dark:border-slate-700'] {
-    border-color: #212123 !important;
-  }
-  .amoled [class*='dark:text-slate-100'],
-  .amoled [class*='dark:text-slate-200'] {
-    color: #ffffff !important;
+  /* Push the slate surfaces down to true/pure black.
+     This remaps the slate *variables* rather than matching `[class*='dark:bg-…']`:
+
+       - No `!important`, so components keep their own overrides.
+       - Opacity modifiers keep working. `bg-slate-900/60` compiles to
+         `color-mix(in oklab, var(--color-slate-900) 60%, transparent)`, so
+         redefining the variable yields 60% near-black — the old attribute
+         selector flattened every translucent panel into a solid one.
+       - Only AMOLED is affected; light and dark keep Tailwind's own values.
+     The scale stays monotonic, so the existing surface hierarchy survives: a
+     panel that read as one step lighter still does. */
+  .amoled {
+    --color-slate-950: #000000;
+    --color-slate-900: #0a0a0a;
+    --color-slate-800: #161618;
+    --color-slate-700: #212123;
+    --color-slate-600: #2f2f33;
   }
 
   /* Neon glow on the primary actions + status dots. */

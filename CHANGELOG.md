@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Fixed
 
+- **AMOLED flattened every translucent panel**: the theme matched compiled utility classes with `[class*='dark:bg-slate-900'] { … !important }`, which also caught `bg-slate-900/60` and forced it solid — 38 translucent surfaces (cards, drawers, headers) lost their opacity in AMOLED. The theme now remaps Tailwind's own `--color-slate-*` variables, so `color-mix()` keeps working, no `!important` is involved, and new components theme correctly without knowing AMOLED exists. Chrome colour is unchanged: pure black canvas, same surface steps
 - **Overscroll "slack" at the window edges**: dragging with a touchpad or touchscreen bounced/slid the whole page and revealed a gap behind the app. WebView2 swipe-navigation and elastic overscroll are now disabled, the document can no longer scroll, and inner panes contain their own overscroll
 - **Settings panel never animated**: it used `animate-in` / `slide-in-from-right`, which come from `tw-animate-css` — a package this project doesn't install, so the classes silently did nothing. Replaced with a real keyframe that also mirrors under RTL
 - **Delete button inside a button in Quick Prompts**: user presets wrapped a delete button in the preset button, which is invalid HTML and left the delete action unreachable by keyboard. The pill is now a container with two sibling buttons
