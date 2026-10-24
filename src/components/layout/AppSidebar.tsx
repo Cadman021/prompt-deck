@@ -10,10 +10,11 @@ import {
   FlaskConical,
   Terminal,
   Wallet,
+  TrendingUp,
 } from 'lucide-react';
 
 export type SidebarView =
-  'bench' | 'tests' | 'cloud' | 'spend' | 'history' | 'leaderboard' | 'settings';
+  'bench' | 'tests' | 'cloud' | 'spend' | 'trend' | 'history' | 'leaderboard' | 'settings';
 
 interface AppSidebarProps {
   activeView: SidebarView;
@@ -61,6 +62,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onNavigate }
       {navItem('tests', <FlaskConical className="w-5 h-5" />, t('nav.tests', 'Tests'))}
       {navItem('cloud', <Cloud className="w-5 h-5" />, t('nav.cloud', 'Cloud'))}
       {navItem('spend', <Wallet className="w-5 h-5" />, t('nav.spend', 'Spend'))}
+      {navItem('trend', <TrendingUp className="w-5 h-5" />, t('nav.trend', 'Trend'))}
       {navItem('history', <History className="w-5 h-5" />, t('nav.history', 'History'))}
       {navItem('leaderboard', <Trophy className="w-5 h-5" />, t('nav.leaderboard', 'Board'))}
 

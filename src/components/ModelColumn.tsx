@@ -141,6 +141,17 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
   // (the exact number still comes from the server once the run finishes).
   const liveTps = generating && genMs > 400 ? Math.round(output.length / 4 / (genMs / 1000)) : 0;
 
+  /**
+   * A stream "stutters" when its 95th-percentile gap is more than 2x the median:
+   * the average speed can look fine while every so often the model pauses.
+   * Needs enough samples for p95 to mean anything, hence the median floor.
+   */
+  const stutters =
+    metrics?.itlMs != null &&
+    metrics.itlP95Ms != null &&
+    metrics.itlMs > 0 &&
+    metrics.itlP95Ms > metrics.itlMs * 2;
+
   const handleCopy = async () => {
     if (!output) return;
     await navigator.clipboard.writeText(output);
@@ -421,6 +432,19 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
                 metrics.promptTps != null
                   ? t('metrics.promptSpeed', 'prompt {{v}} tok/s', { v: metrics.promptTps })
                   : '',
+                // ITL belongs next to TTFT: both describe "how waiting feels"
+                // rather than throughput. The tooltip carries the full picture
+                // so the metrics row stays three tiles wide.
+                metrics.itlMs != null
+                  ? t(
+                      'metrics.itlTooltip',
+                      'Inter-token latency: {{median}}ms median, {{p95}}ms p95',
+                      {
+                        median: metrics.itlMs,
+                        p95: metrics.itlP95Ms ?? metrics.itlMs,
+                      }
+                    ) + (metrics.itlEstimated ? ` (${t('metrics.estimatedShort')})` : '')
+                  : '',
               ]
                 .filter(Boolean)
                 .join('\n') || undefined
@@ -429,6 +453,17 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
             <Clock className="w-3 h-3" />
             <span>
               {t('metrics.ttft')}: {formatDurationMs(metrics.ttftMs)}
+              {/* A p95 far above the median means the stream stutters even if
+                  the average looks fine. Show it, don't just tooltip it. */}
+              {stutters && (
+                <span
+                  className="ms-1 text-amber-700 dark:text-amber-300"
+                  aria-hidden="true"
+                  title={t('metrics.stutterTitle', 'Uneven token pacing (high p95 vs median)')}
+                >
+                  ⚡
+                </span>
+              )}
             </span>
           </div>
           <div className="text-slate-500 dark:text-slate-400 text-end tabular-nums">

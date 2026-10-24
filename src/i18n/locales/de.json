@@ -85,7 +85,9 @@
     "costTitle": "Geschätzte Laufkosten",
     "medianOf": "Median aus {{n}} Läufen",
     "loadShare": "inkl. {{ms}}ms Modell-Ladezeit",
-    "promptSpeed": "Prompt {{v}} Tok/s"
+    "promptSpeed": "Prompt {{v}} Tok/s",
+    "itlTooltip": "Inter-Token-Latenz: {{median}}ms Median, {{p95}}ms p95",
+    "stutterTitle": "Ungleichmäßiges Token-Tempo (hoher p95 gegenüber Median)"
   },
   "history": {
     "title": "Benchmark-Verlauf",
@@ -187,7 +189,8 @@
     "cloud": "Cloud",
     "tests": "Tests",
     "models": "Modelle",
-    "spend": "Kosten"
+    "spend": "Kosten",
+    "trend": "Trend"
   },
   "settings": {
     "providerTitle": "Provider & Verbindung",
@@ -460,5 +463,17 @@
     "bodyPartial": "{{ok}} von {{total}} Modellen fertig, {{failed}} fehlgeschlagen. {{winner}}",
     "suiteTitle": "Testsuite beendet",
     "suiteBody": "{{done}} Läufe abgeschlossen."
+  },
+  "trend": {
+    "title": "Im Zeitverlauf vergleichen",
+    "subtitle": "Wurde dieses Modell langsamer? Gemessen an seiner eigenen Streuung.",
+    "pickModel": "Modell",
+    "empty": "Noch keine gemessenen Läufe. Benchmarke ein Modell ein paar Mal, dann erscheint hier sein Trend.",
+    "regression": "{{pct}}% langsamer als seine Basislinie",
+    "improvement": "{{pct}}% schneller als seine Basislinie",
+    "stable": "Innerhalb seiner normalen Lauf-zu-Lauf-Streuung (±{{pct}}%)",
+    "insufficient": "Noch zu wenig Verlauf — führe dieses Modell {{n}} Mal mehr aus.",
+    "detail": "Basis {{base}} tok/s ({{n}} Läufe) → zuletzt {{recent}} tok/s ({{m}} Läufe)",
+    "axisHint": "{{n}} Läufe, alt nach neu · zuletzt {{v}}"
   }
 }

@@ -72,6 +72,9 @@ const RaceView = lazy(() =>
 const SpendView = lazy(() =>
   import('./components/SpendView').then((m) => ({ default: m.SpendView }))
 );
+const TrendView = lazy(() =>
+  import('./components/TrendView').then((m) => ({ default: m.TrendView }))
+);
 
 const MAX_MODELS = 4;
 const MIN_MODELS = 2;
@@ -265,7 +268,7 @@ export default function App() {
   const shareRef = useRef<HTMLDivElement>(null);
 
   // App Shell navigation: 'bench'/'tests'/'cloud' are pages, the rest are overlay panels.
-  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud' | 'spend'>('bench');
+  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud' | 'spend' | 'trend'>('bench');
   const activeView: SidebarView = isSettingsOpen
     ? 'settings'
     : isLeaderboardOpen
@@ -275,7 +278,13 @@ export default function App() {
         : activePage;
 
   const handleSidebarNavigate = (view: SidebarView) => {
-    if (view === 'bench' || view === 'tests' || view === 'cloud' || view === 'spend') {
+    if (
+      view === 'bench' ||
+      view === 'tests' ||
+      view === 'cloud' ||
+      view === 'spend' ||
+      view === 'trend'
+    ) {
       setActivePage(view);
       setIsSidebarOpen(false);
       setIsLeaderboardOpen(false);
@@ -656,6 +665,10 @@ export default function App() {
           tokenSource: r.tokenSource === 'heuristic' ? 'heuristic' : 'server',
           promptTokens: r.promptTokens ?? undefined,
           completionTokens: r.completionTokens ?? undefined,
+          // Restored as-null when the row predates ITL measurement.
+          itlMs: r.itlMs ?? undefined,
+          itlP95Ms: r.itlP95Ms ?? undefined,
+          itlEstimated: r.itlEstimated,
         },
       };
     });
@@ -890,6 +903,9 @@ export default function App() {
             source: s.source.kind,
             providerId: s.source.kind === 'cloud' ? s.source.providerId : null,
             reasoning: reasoningRefs.current[s.id]?.trim() ? reasoningRefs.current[s.id] : null,
+            itlMs: m?.itlMs ?? null,
+            itlP95Ms: m?.itlP95Ms ?? null,
+            itlEstimated: m?.itlEstimated,
           };
         });
         void DbService.saveHistory(currentPrompt, results, null, runConfig).then((runId) => {
@@ -1007,6 +1023,9 @@ export default function App() {
             promptTokens: m?.promptTokens ?? null,
             completionTokens: m?.completionTokens ?? null,
             reasoning,
+            itlMs: m?.itlMs ?? null,
+            itlP95Ms: m?.itlP95Ms ?? null,
+            itlEstimated: m?.itlEstimated,
             costUsd:
               retried.source.kind === 'cloud' && m?.tokenSource === 'server'
                 ? calcCost(
@@ -1304,6 +1323,18 @@ export default function App() {
           >
             <div className="flex-1 min-h-0 overflow-y-auto">
               <SpendView />
+            </div>
+          </Suspense>
+        ) : activePage === 'trend' ? (
+          <Suspense
+            fallback={
+              <div className="flex-1 grid place-items-center text-xs text-slate-500 dark:text-slate-400">
+                {t('app.loading', 'Loading…')}
+              </div>
+            }
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <TrendView />
             </div>
           </Suspense>
         ) : (

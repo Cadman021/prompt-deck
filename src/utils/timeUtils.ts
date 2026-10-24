@@ -11,7 +11,12 @@ export type RelativeTime =
 // normalised to a proper UTC ISO string first.
 const SQLITE_TIMESTAMP = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
 
-const parseTimestamp = (value: string): number => {
+/**
+ * Parses a stored timestamp to epoch ms. Handles both the bare SQLite format
+ * (treated as UTC) and proper ISO 8601 strings, which carry their own zone.
+ * Returns NaN for anything unparseable — callers decide what that means.
+ */
+export const parseTimestamp = (value: string): number => {
   const normalized = SQLITE_TIMESTAMP.test(value) ? `${value.replace(' ', 'T')}Z` : value;
   return new Date(normalized).getTime();
 };

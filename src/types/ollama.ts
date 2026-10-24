@@ -73,6 +73,17 @@ export interface BenchmarkMetrics {
   tpsMean?: number;
   /** Population stdev of TPS across repeats (for tooltips). */
   tpsStd?: number;
+  /**
+   * Inter-token latency: the gap between consecutive tokens while generating.
+   * TPS is an average over the whole run, so a model that starts fast and then
+   * crawls still shows a healthy number; the p95 here is what exposes that.
+   * Absent when the stream produced too few chunks to measure.
+   */
+  itlMs?: number;
+  /** 95th-percentile inter-token gap — the stutter indicator. */
+  itlP95Ms?: number;
+  /** True when per-chunk token counts were estimated rather than reported. */
+  itlEstimated?: boolean;
 }
 
 /** Per-token USD prices, as reported by OpenRouter-style `/models` pricing. */

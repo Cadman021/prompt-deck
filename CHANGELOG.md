@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ Added
 
+- **Compare over time** — a Trend page charts one model's speed across its history. The verdict is judged against *that model's own run-to-run spread*, so a 5% dip on a steady model is reported and a 23% dip on a jumpy one is not: it says "regression" only when the change exceeds the noise it already shows, with a 5% floor so three near-identical runs can't make anything look significant
+- **Inter-token latency** — the gap between consecutive tokens is recorded during streaming and reported as a median plus a 95th percentile. TPS averages the whole run, so a model that starts fast and then crawls still looks healthy; the p95 is what exposes it, and a column whose p95 is more than 2× its median now shows a marker. Stored in the history DB (schema v5), so it survives a reload and a backup round-trip
 - **127K context sweep** — the sweep now offers 128K alongside 2K…64K for long-context models. It stays out of the default set: it is slow, and most local models cannot hold it
 - **KoboldCpp and Jan detection** — both are found by the automatic scan (KoboldCpp on 5001 under its `/api/v1` OpenAI layer, Jan on 1337). Probed after Ollama, LM Studio and llama.cpp, so an unreachable extra never delays the servers most people run
 - **Sound effects and desktop notifications** — short synthesised cues mark a run starting and finishing (a suite gets its own three-note resolve, an all-error run gets a falling tone), and a desktop notification fires when a long run ends while the window is in the background. Cues are generated with the Web Audio API rather than shipped as audio files, so there are no assets to load and nothing breaks if a webview refuses to start an `AudioContext`. New "Sound & alerts" section in Settings, with a volume slider that previews the real cue
@@ -22,6 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Fixed
 
+- **Backup restore was lossy**: importing a history backup dropped each result's `reasoning` trail, and would have dropped inter-token latency too. A round-trip now preserves every field the app can store
 - **Phantom servers in the detection scan**: a service answering `200` with unrelated JSON was reported as a local server with an empty model list. With five ports now probed, that was much likelier to happen; a candidate must return at least one model to count as detected
 - **AMOLED flattened every translucent panel**: the theme matched compiled utility classes with `[class*='dark:bg-slate-900'] { … !important }`, which also caught `bg-slate-900/60` and forced it solid — 38 translucent surfaces (cards, drawers, headers) lost their opacity in AMOLED. The theme now remaps Tailwind's own `--color-slate-*` variables, so `color-mix()` keeps working, no `!important` is involved, and new components theme correctly without knowing AMOLED exists. Chrome colour is unchanged: pure black canvas, same surface steps
 - **Overscroll "slack" at the window edges**: dragging with a touchpad or touchscreen bounced/slid the whole page and revealed a gap behind the app. WebView2 swipe-navigation and elastic overscroll are now disabled, the document can no longer scroll, and inner panes contain their own overscroll

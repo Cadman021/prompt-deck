@@ -85,7 +85,9 @@
     "costTitle": "Estimated run cost",
     "medianOf": "median of {{n}} runs",
     "loadShare": "incl. {{ms}}ms model load",
-    "promptSpeed": "prompt {{v}} tok/s"
+    "promptSpeed": "prompt {{v}} tok/s",
+    "itlTooltip": "Inter-token latency: {{median}}ms median, {{p95}}ms p95",
+    "stutterTitle": "Uneven token pacing (high p95 vs median)"
   },
   "history": {
     "title": "Benchmark History",
@@ -187,7 +189,8 @@
     "cloud": "Cloud",
     "tests": "Tests",
     "models": "models",
-    "spend": "Spend"
+    "spend": "Spend",
+    "trend": "Trend"
   },
   "settings": {
     "providerTitle": "Provider & Connection",
@@ -460,5 +463,17 @@
     "bodyPartial": "{{ok}} of {{total}} models finished, {{failed}} failed. {{winner}}",
     "suiteTitle": "Test suite finished",
     "suiteBody": "{{done}} runs completed."
+  },
+  "trend": {
+    "title": "Compare over time",
+    "subtitle": "Did this model get slower? Judged against its own noise.",
+    "pickModel": "Model",
+    "empty": "No timed runs yet. Benchmark a model a few times and its trend appears here.",
+    "regression": "Slower than its baseline by {{pct}}%",
+    "improvement": "Faster than its baseline by {{pct}}%",
+    "stable": "Within its normal run-to-run spread (±{{pct}}%)",
+    "insufficient": "Not enough history yet — run this model {{n}} more time(s) to judge a trend.",
+    "detail": "baseline {{base}} tok/s ({{n}} runs) → recent {{recent}} tok/s ({{m}} runs)",
+    "axisHint": "{{n}} runs, oldest to newest · latest {{v}}"
   }
 }

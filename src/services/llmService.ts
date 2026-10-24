@@ -4,6 +4,7 @@ import { Provider } from '../store/useSettingsStore';
 import { OllamaModel, PromptOptions, StreamCallbacks, BenchmarkMetrics } from '../types/ollama';
 import { httpError } from '../utils/httpError';
 import { estimateTokens } from '../utils/tokens';
+import { ItlTracker } from '../utils/itl';
 
 interface ProviderConfig {
   provider: Provider;
@@ -67,6 +68,9 @@ async function generateOpenAICompatibleStream(
   let firstTokenTime: number | null = null;
   let fullText = '';
   let fullReasoning = '';
+  // Chunk arrival times for inter-token latency. Fed where the token is known
+  // to have arrived, not where the SSE line was parsed.
+  const itl = new ItlTracker();
   let usageTokens: number | null = null;
   let usagePromptTokens: number | null = null;
   // llama.cpp (`timings`) and some LM Studio builds report exact per-second
@@ -142,6 +146,19 @@ async function generateOpenAICompatibleStream(
         completionTokens: usageTokens ?? undefined,
         promptTokens: usagePromptTokens ?? undefined,
         promptTps: reportedPromptTps ?? undefined,
+        ...itlFields(),
+      };
+    };
+
+    /** ITL is a heuristic whenever the server did not report token usage. */
+    const itlFields = (): Partial<BenchmarkMetrics> => {
+      itl.markEstimated(usageTokens == null);
+      const stats = itl.stats();
+      if (!stats) return {};
+      return {
+        itlMs: stats.medianMs,
+        itlP95Ms: stats.p95Ms,
+        itlEstimated: stats.estimated,
       };
     };
 
@@ -213,6 +230,10 @@ async function generateOpenAICompatibleStream(
           const ttft = Math.round(firstTokenTime - startTime);
           callbacks.onFirstToken?.(ttft);
         }
+        // Tokens per chunk: exact when the server reports usage, otherwise
+        // the same estimate the TPS fallback uses. Either way the gap is
+        // divided by it so a chunk of 5 tokens is not counted as one token.
+        itl.add(performance.now(), Math.max(1, estimateTokens(delta)));
         fullText += delta;
         callbacks.onChunk(delta, fullText);
       }

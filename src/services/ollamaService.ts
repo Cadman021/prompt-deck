@@ -1,6 +1,8 @@
 // src/services/ollamaService.ts
 import { OllamaModel, PromptOptions, StreamCallbacks, BenchmarkMetrics } from '../types/ollama';
 import { httpError } from '../utils/httpError';
+import { estimateTokens } from '../utils/tokens';
+import { ItlTracker } from '../utils/itl';
 import i18next from 'i18next';
 
 const OLLAMA_BASE_URL = 'http://localhost:11434';
@@ -77,6 +79,9 @@ export class OllamaService {
       let lastPromptEvalDurationNs: number | null = null;
       let lastLoadDurationNs: number | null = null;
 
+      // Chunk arrival times for inter-token latency.
+      const itl = new ItlTracker();
+
       const finish = (estimated: boolean): void => {
         if (finished) return;
         finished = true;
@@ -110,6 +115,15 @@ export class OllamaService {
           loadDurationMs:
             lastLoadDurationNs != null ? Math.round(lastLoadDurationNs / 1e6) : undefined,
           promptTps,
+          ...(() => {
+            // Ollama reports exact token counts, so the estimate flag follows
+            // the stream-level `estimated` value.
+            itl.markEstimated(estimated);
+            const stats = itl.stats();
+            return stats
+              ? { itlMs: stats.medianMs, itlP95Ms: stats.p95Ms, itlEstimated: stats.estimated }
+              : {};
+          })(),
         };
 
         callbacks.onComplete(fullText, metrics);
@@ -157,6 +171,7 @@ export class OllamaService {
           }
 
           if (json.response) {
+            itl.add(performance.now(), Math.max(1, estimateTokens(json.response)));
             fullText += json.response;
             tokenCount++;
             callbacks.onChunk(json.response, fullText);

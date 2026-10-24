@@ -21,6 +21,16 @@ export interface BenchmarkResult {
   source?: 'local' | 'cloud' | null;
   /** Cloud provider id when source === 'cloud'. */
   providerId?: string | null;
+  /**
+   * Median inter-token latency in ms — the gap between consecutive tokens
+   * while generating. `null`/absent means the run predates the measurement;
+   * the trend view must not read that as zero latency.
+   */
+  itlMs?: number | null;
+  /** 95th-percentile inter-token gap in ms — the stutter indicator. */
+  itlP95Ms?: number | null;
+  /** True when ITL came from estimated (not server-reported) token counts. */
+  itlEstimated?: boolean;
 }
 
 export interface HistoryRecord {
@@ -65,6 +75,9 @@ interface RawResultRow {
   source?: string | null;
   provider_id?: string | null;
   reasoning?: string | null;
+  itl_ms?: number | null;
+  itl_p95_ms?: number | null;
+  itl_estimated?: number | null;
 }
 
 interface RawRunRow {
@@ -76,7 +89,7 @@ interface RawRunRow {
 }
 
 /** Current schema version. Bump when appending to MIGRATIONS below. */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 // Retrospective versioning: v1 = winner votes + tps estimates, v2 = run
 // config + tokens + cost, v3 = explicit run source. Fresh installs get all
@@ -95,6 +108,11 @@ const MIGRATIONS: { version: number; sql: string }[] = [
   { version: 3, sql: `ALTER TABLE benchmark_results ADD COLUMN source TEXT DEFAULT 'local'` },
   { version: 3, sql: `ALTER TABLE benchmark_results ADD COLUMN provider_id TEXT` },
   { version: 4, sql: `ALTER TABLE benchmark_results ADD COLUMN reasoning TEXT` },
+  // v5: inter-token latency. Nullable on purpose — every existing row predates
+  // it, and the regression view must treat "unmeasured" differently from "0".
+  { version: 5, sql: `ALTER TABLE benchmark_results ADD COLUMN itl_ms REAL` },
+  { version: 5, sql: `ALTER TABLE benchmark_results ADD COLUMN itl_p95_ms REAL` },
+  { version: 5, sql: `ALTER TABLE benchmark_results ADD COLUMN itl_estimated INTEGER` },
 ];
 
 export class DbService {
@@ -161,6 +179,9 @@ export class DbService {
         source TEXT DEFAULT 'local',
         provider_id TEXT,
         reasoning TEXT,
+        itl_ms REAL,
+        itl_p95_ms REAL,
+        itl_estimated INTEGER,
         FOREIGN KEY (run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE
       );
     `);
@@ -252,7 +273,7 @@ export class DbService {
       for (let i = 0; i < results.length; i++) {
         const r = results[i];
         await db.execute(
-          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning, itl_ms, itl_p95_ms, itl_estimated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             runId,
             r.model,
@@ -268,6 +289,9 @@ export class DbService {
             r.source ?? 'local',
             r.providerId ?? null,
             r.reasoning || null,
+            r.itlMs ?? null,
+            r.itlP95Ms ?? null,
+            r.itlEstimated == null ? null : r.itlEstimated ? 1 : 0,
           ]
         );
       }
@@ -347,7 +371,7 @@ export class DbService {
       const ids = runRows.map((r) => r.id);
       const placeholders = ids.map(() => '?').join(',');
       const resultRows = await db.select<(RawResultRow & { run_id: number })[]>(
-        `SELECT run_id, model, tps, ttft, output, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning FROM benchmark_results WHERE run_id IN (${placeholders}) ORDER BY run_id DESC, position ASC`,
+        `SELECT run_id, model, tps, ttft, output, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning, itl_ms, itl_p95_ms, itl_estimated FROM benchmark_results WHERE run_id IN (${placeholders}) ORDER BY run_id DESC, position ASC`,
         ids
       );
       const byRun = new Map<number, (RawResultRow & { run_id: number })[]>();
@@ -375,6 +399,10 @@ export class DbService {
           source: r.source === 'cloud' ? 'cloud' : r.source === 'local' ? 'local' : null,
           providerId: r.provider_id ?? null,
           reasoning: r.reasoning ?? null,
+          // null stays null: "not measured" is not "0ms".
+          itlMs: r.itl_ms ?? null,
+          itlP95Ms: r.itl_p95_ms ?? null,
+          itlEstimated: r.itl_estimated == null ? undefined : Boolean(r.itl_estimated),
         })),
       }));
     } catch (error) {
@@ -507,12 +535,15 @@ export class DbService {
       | 'completionTokens'
       | 'costUsd'
       | 'reasoning'
+      | 'itlMs'
+      | 'itlP95Ms'
+      | 'itlEstimated'
     >
   ): Promise<void> {
     try {
       const db = await this.init();
       await db.execute(
-        `UPDATE benchmark_results SET output = ?, tps = ?, ttft = ?, tps_estimated = ?, token_source = ?, prompt_tokens = ?, completion_tokens = ?, cost_usd = ?, reasoning = ? WHERE run_id = ? AND model = ?`,
+        `UPDATE benchmark_results SET output = ?, tps = ?, ttft = ?, tps_estimated = ?, token_source = ?, prompt_tokens = ?, completion_tokens = ?, cost_usd = ?, reasoning = ?, itl_ms = ?, itl_p95_ms = ?, itl_estimated = ? WHERE run_id = ? AND model = ?`,
         [
           r.output || '',
           r.tps,
@@ -523,6 +554,9 @@ export class DbService {
           r.completionTokens ?? null,
           r.costUsd ?? null,
           r.reasoning || null,
+          r.itlMs ?? null,
+          r.itlP95Ms ?? null,
+          r.itlEstimated == null ? null : r.itlEstimated ? 1 : 0,
           runId,
           model,
         ]
@@ -575,7 +609,9 @@ export class DbService {
           const r = results[i];
           if (!r || typeof r.model !== 'string') continue;
           await db.execute(
-            `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            // A backup round-trip must be lossless: reasoning and ITL were
+            // being dropped here, which quietly degraded a restored history.
+            `INSERT INTO benchmark_results (run_id, model, tps, ttft, output, position, tps_estimated, token_source, prompt_tokens, completion_tokens, cost_usd, source, provider_id, reasoning, itl_ms, itl_p95_ms, itl_estimated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               runId,
               r.model,
@@ -590,6 +626,10 @@ export class DbService {
               r.costUsd ?? null,
               r.source ?? 'local',
               r.providerId ?? null,
+              r.reasoning ?? null,
+              r.itlMs ?? null,
+              r.itlP95Ms ?? null,
+              r.itlEstimated == null ? null : r.itlEstimated ? 1 : 0,
             ]
           );
         }

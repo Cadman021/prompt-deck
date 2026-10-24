@@ -85,7 +85,9 @@
     "costTitle": "Coût estimé d'exécution",
     "medianOf": "médiane de {{n}} exécutions",
     "loadShare": "dont {{ms}}ms de chargement du modèle",
-    "promptSpeed": "prompt {{v}} tok/s"
+    "promptSpeed": "prompt {{v}} tok/s",
+    "itlTooltip": "Latence inter-token : médiane {{median}} ms, p95 {{p95}} ms",
+    "stutterTitle": "Rythme des tokens irrégulier (p95 élevé vs médiane)"
   },
   "history": {
     "title": "Historique des benchmarks",
@@ -187,7 +189,8 @@
     "cloud": "Cloud",
     "tests": "Tests",
     "models": "modèles",
-    "spend": "Coûts"
+    "spend": "Coûts",
+    "trend": "Tendance"
   },
   "settings": {
     "providerTitle": "Fournisseur & Connexion",
@@ -460,5 +463,17 @@
     "bodyPartial": "{{ok}} sur {{total}} modèles terminés, {{failed}} en échec. {{winner}}",
     "suiteTitle": "Suite de tests terminée",
     "suiteBody": "{{done}} exécutions terminées."
+  },
+  "trend": {
+    "title": "Comparer dans le temps",
+    "subtitle": "Ce modèle a-t-il ralenti ? Jugé par rapport à sa propre variabilité.",
+    "pickModel": "Modèle",
+    "empty": "Aucune exécution chronométrée. Benchmarkez un modèle plusieurs fois et sa tendance apparaîtra ici.",
+    "regression": "{{pct}} % plus lent que sa référence",
+    "improvement": "{{pct}} % plus rapide que sa référence",
+    "stable": "Dans sa variabilité habituelle (±{{pct}} %)",
+    "insufficient": "Pas encore assez d'historique — relancez ce modèle {{n}} fois.",
+    "detail": "référence {{base}} tok/s ({{n}} exécutions) → récent {{recent}} tok/s ({{m}} exécutions)",
+    "axisHint": "{{n}} exécutions, de la plus ancienne à la plus récente · dernière {{v}}"
   }
 }

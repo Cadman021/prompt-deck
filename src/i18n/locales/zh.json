@@ -85,7 +85,9 @@
     "costTitle": "预估运行费用",
     "medianOf": "{{n}} 次运行的中位数",
     "loadShare": "含模型加载 {{ms}}ms",
-    "promptSpeed": "提示词 {{v}} tok/s"
+    "promptSpeed": "提示词 {{v}} tok/s",
+    "itlTooltip": "令牌间延迟：中位数 {{median}}ms，p95 {{p95}}ms",
+    "stutterTitle": "令牌节奏不均（p95 远高于中位数）"
   },
   "history": {
     "title": "基准测试历史",
@@ -187,7 +189,8 @@
     "cloud": "云端",
     "tests": "测试",
     "models": "个模型",
-    "spend": "花费"
+    "spend": "花费",
+    "trend": "趋势"
   },
   "settings": {
     "providerTitle": "服务商与连接",
@@ -460,5 +463,17 @@
     "bodyPartial": "{{total}} 个模型中 {{ok}} 个完成，{{failed}} 个失败。{{winner}}",
     "suiteTitle": "测试套件完成",
     "suiteBody": "已完成 {{done}} 次运行。"
+  },
+  "trend": {
+    "title": "随时间对比",
+    "subtitle": "这个模型变慢了吗？以其自身的波动为基准判断。",
+    "pickModel": "模型",
+    "empty": "还没有计时的运行。多次基准测试后，趋势会显示在这里。",
+    "regression": "比基线慢 {{pct}}%",
+    "improvement": "比基线快 {{pct}}%",
+    "stable": "在正常波动范围内（±{{pct}}%）",
+    "insufficient": "历史数据不足——再运行此模型 {{n}} 次。",
+    "detail": "基线 {{base}} tok/s（{{n}} 次）→ 近期 {{recent}} tok/s（{{m}} 次）",
+    "axisHint": "{{n}} 次运行，由旧到新 · 最新 {{v}}"
   }
 }
