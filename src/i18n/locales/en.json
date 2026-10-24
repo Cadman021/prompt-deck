@@ -262,6 +262,12 @@
     "editKey": "Edit",
     "testKey": "Test this key",
     "addKeyTitle": "Add {{name}} API Key",
+    "extraFields": "{{name}} connection details",
+    "missingVar": "{{var}} missing",
+    "urlVar": {
+      "accountId": "Account ID",
+      "accountIdHelp": "Find your Account ID in the right sidebar of dash.cloudflare.com."
+    },
     "keyName": "Name",
     "keyNamePlaceholder": "Production Key",
     "check": "Check",
@@ -302,7 +308,24 @@
       "xiaomi-mimo": "Xiaomi MiMo gateway: mimo-v2.6-pro, flash and 2.5 models via OpenAI-compatible API.",
       "mistral": "Official Mistral API (La Plateforme): Large, Medium and Codestral models, OpenAI-compatible.",
       "bai": "B.AI gateway with a large model catalogue. Model ids are fetched live from the provider.",
-      "anthropic": "Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth."
+      "anthropic": "Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth.",
+      "cloudflare": "Cloudflare Workers AI via its OpenAI-compatible endpoint. Replace {ACCOUNT_ID} in the base URL with your account id.",
+      "venice": "Private, uncensored inference. Free tier includes a daily allowance of text tokens.",
+      "siliconflow": "Chinese model gateway (global endpoint: api.siliconflow.com) with a generous free tier.",
+      "huggingface": "Hugging Face Inference Providers router: one token for many upstream providers.",
+      "hyperbolic": "Cheap open-model inference (Llama, Qwen, DeepSeek) with OpenAI-compatible API.",
+      "featherless": "Flat-fee subscription to a huge catalogue of open models, one model loaded at a time.",
+      "nous-research": "Nous Portal API for Hermes and other open models.",
+      "llm7": "Community gateway that forwards to many upstream models, including free ones.",
+      "morph": "Fast apply/edit models for coding agents (morph-v3) plus chat models.",
+      "cerebras": "Wafer-scale inference: fastest token throughput on open models. Free tier available.",
+      "fireworks": "High-throughput serving of open models and fine-tunes.",
+      "alibaba": "DashScope (Model Studio) international endpoint: Qwen models via OpenAI-compatible API. Use dashscope.aliyuncs.com for the China region.",
+      "baidu-qianfan": "Baidu Qianfan v2 OpenAI-compatible endpoint: ERNIE and third-party models.",
+      "tencent-hunyuan": "Tencent Hunyuan OpenAI-compatible endpoint: hunyuan-turbos and hunyuan-t1.",
+      "minimax": "MiniMax global platform: MiniMax-M2 and abab models. Use api.minimaxi.com for the China region.",
+      "dahl": "Dahl Inference gateway: OpenAI-compatible access to open chat models. Model ids are fetched live.",
+      "cohere": "Cohere compatibility API (OpenAI-style) for Command models. Free trial keys available."
     }
   },
   "judge": {
@@ -328,6 +351,7 @@
   "bench": {
     "localModels": "Local models",
     "noCloudKey": "No enabled API key for this cloud provider — add one on the Cloud page.",
+    "missingUrlVar": "This provider needs extra connection details (e.g. Cloudflare Account ID) — set them when adding the key.",
     "unknownProvider": "Unknown cloud provider.",
     "blind": "Blind",
     "blindTitle": "Blind mode: identities hidden for unbiased voting",

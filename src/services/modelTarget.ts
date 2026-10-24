@@ -8,7 +8,12 @@
 // The `cloud:` prefix is explicit so a local model id can never collide with
 // a provider id (e.g. LM Studio's `openai/gpt-oss-20b` stays local).
 
-import { CLOUD_CATALOG, CustomProviderDef } from '../data/cloudProviders';
+import {
+  CLOUD_CATALOG,
+  CustomProviderDef,
+  applyUrlVars,
+  missingUrlVars,
+} from '../data/cloudProviders';
 import type { Provider } from '../store/useSettingsStore';
 import type { ModelPricing } from '../types/ollama';
 import { secretFor } from './secrets';
@@ -97,6 +102,20 @@ export function findCloudBaseUrl(providerId: string, custom: CustomProviderDef[]
 }
 
 /**
+ * Base URL with every `{PLACEHOLDER}` filled from the connection's stored
+ * vars (Cloudflare `{ACCOUNT_ID}`, …). Placeholders without a value are left
+ * as-is so callers can detect `missingUrlVars`.
+ */
+export function findResolvedBaseUrl(
+  providerId: string,
+  custom: CustomProviderDef[],
+  connectionVars?: Record<string, string>
+): string | null {
+  const baseUrl = findCloudBaseUrl(providerId, custom);
+  return baseUrl ? applyUrlVars(baseUrl, connectionVars) : null;
+}
+
+/**
  * Estimated USD cost of one run. Returns null unless exact server-reported
  * token counts AND per-token pricing are both available — never guess.
  */
@@ -117,7 +136,7 @@ export function formatCost(usd: number): string {
   return `$${(usd / 1000).toFixed(2)}K`;
 }
 
-export type ResolveError = 'noCloudKey' | 'unknownProvider';
+export type ResolveError = 'noCloudKey' | 'unknownProvider' | 'missingUrlVar';
 
 /**
  * Resolve a cloud target to a runnable config using the first enabled key
@@ -126,13 +145,28 @@ export type ResolveError = 'noCloudKey' | 'unknownProvider';
 export function resolveCloudTarget(
   providerId: string,
   custom: CustomProviderDef[],
-  keys: { id: string; providerId: string; apiKey: string; enabled: boolean }[]
+  keys: {
+    id: string;
+    providerId: string;
+    apiKey: string;
+    enabled: boolean;
+    connectionVars?: Record<string, string>;
+  }[]
 ): { config: TargetConfig } | { error: ResolveError } {
   const baseUrl = findCloudBaseUrl(providerId, custom);
   if (!baseUrl) return { error: 'unknownProvider' };
-  const key = keys.find(
+  const candidates = keys.filter(
     (k) => k.providerId === providerId && k.enabled && secretFor(k).trim()
   );
-  if (!key) return { error: 'noCloudKey' };
-  return { config: { provider: 'openai-compatible', baseUrl, apiKey: secretFor(key).trim() } };
+  if (candidates.length === 0) return { error: 'noCloudKey' };
+  // Prefer a connection whose placeholder vars are all filled (Cloudflare).
+  const key = candidates.find((k) => missingUrlVars(baseUrl, k.connectionVars).length === 0);
+  if (!key) return { error: 'missingUrlVar' };
+  return {
+    config: {
+      provider: 'openai-compatible',
+      baseUrl: applyUrlVars(baseUrl, key.connectionVars),
+      apiKey: secretFor(key).trim(),
+    },
+  };
 }

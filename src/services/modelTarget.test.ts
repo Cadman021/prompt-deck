@@ -9,6 +9,7 @@ import {
   resolveCloudTarget,
   shortModelName,
 } from './modelTarget';
+import { applyUrlVars, missingUrlVars } from '../data/cloudProviders';
 
 describe('qualifiedName', () => {
   it('leaves local models untouched', () => {
@@ -123,6 +124,56 @@ describe('resolveCloudTarget', () => {
         { id: 'k2', providerId: 'openrouter', apiKey: ' ', enabled: true },
       ])
     ).toEqual({ error: 'noCloudKey' });
+  });
+
+  it('fills base-URL placeholders from the connection vars', () => {
+    const r = resolveCloudTarget('cloudflare', custom, [
+      {
+        id: 'cf1',
+        providerId: 'cloudflare',
+        apiKey: 'sk-cf',
+        enabled: true,
+        connectionVars: { ACCOUNT_ID: 'abc123' },
+      },
+    ]);
+    expect('config' in r && r.config.baseUrl).toBe(
+      'https://api.cloudflare.com/client/v4/accounts/abc123/ai/v1'
+    );
+  });
+
+  it('refuses a connection whose placeholder is still empty', () => {
+    expect(
+      resolveCloudTarget('cloudflare', custom, [
+        { id: 'cf2', providerId: 'cloudflare', apiKey: 'sk-cf', enabled: true },
+      ])
+    ).toEqual({ error: 'missingUrlVar' });
+  });
+
+  it('skips an incomplete connection when another one is complete', () => {
+    const r = resolveCloudTarget('cloudflare', custom, [
+      { id: 'cf3', providerId: 'cloudflare', apiKey: 'sk-a', enabled: true },
+      {
+        id: 'cf4',
+        providerId: 'cloudflare',
+        apiKey: 'sk-b',
+        enabled: true,
+        connectionVars: { ACCOUNT_ID: 'zzz' },
+      },
+    ]);
+    expect('config' in r && r.config.apiKey).toBe('sk-b');
+  });
+});
+
+describe('applyUrlVars / missingUrlVars', () => {
+  it('substitutes only known, non-empty values', () => {
+    expect(applyUrlVars('https://x/{A}/v1', { A: 'one' })).toBe('https://x/one/v1');
+    expect(applyUrlVars('https://x/{A}/v1', { A: '  ' })).toBe('https://x/{A}/v1');
+    expect(applyUrlVars('https://x/v1', undefined)).toBe('https://x/v1');
+  });
+
+  it('lists the tokens still missing', () => {
+    expect(missingUrlVars('https://x/{A}/{B}/v1', { A: '1' })).toEqual(['B']);
+    expect(missingUrlVars('https://x/v1', undefined)).toEqual([]);
   });
 });
 

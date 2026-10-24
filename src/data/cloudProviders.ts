@@ -34,6 +34,58 @@ export interface CloudProviderDef {
   infoDefault?: string;
   /** Suggested model ids shown as quick-add chips on the detail page. */
   suggestedModels?: string[];
+  /**
+   * Base-URL placeholders the provider needs before a request can be made,
+   * e.g. Cloudflare's `{ACCOUNT_ID}`. Each placeholder becomes an extra field
+   * in the Add/Edit key dialog and is stored per connection (`connectionVars`).
+   */
+  urlVars?: CloudUrlVar[];
+}
+
+/**
+ * A placeholder inside `defaultBaseUrl` that the user fills in per connection
+ * (Cloudflare Workers AI account id, regional subdomains, …).
+ */
+export interface CloudUrlVar {
+  /** Placeholder token as it appears in the URL, `{ACCOUNT_ID}` style. */
+  token: string;
+  /** Short field label, e.g. `Account ID`. */
+  labelKey: string;
+  labelDefault: string;
+  /** Example value shown as the input placeholder. */
+  example: string;
+  /** Where to find this value — rendered as a link under the field. */
+  helpUrl: string;
+  helpKey: string;
+  helpDefault: string;
+  /** Missing values block saving (a wrong account id can never connect). */
+  required?: boolean;
+  /** Narrower input grid column count hint is handled by the dialog. */
+  secret?: boolean;
+}
+
+/** Replace every `{TOKEN}` placeholder in a base URL with its stored value. */
+export function applyUrlVars(
+  baseUrl: string,
+  vars: Record<string, string> | undefined
+): string {
+  if (!vars) return baseUrl;
+  return baseUrl.replace(/\{([A-Z0-9_]+)\}/g, (match, token: string) => {
+    const value = vars[token]?.trim();
+    return value || match;
+  });
+}
+
+/** Tokens still unfilled in `baseUrl` — used to explain a failed resolve. */
+export function missingUrlVars(
+  baseUrl: string,
+  vars: Record<string, string> | undefined
+): string[] {
+  const found: string[] = [];
+  for (const [, token] of baseUrl.matchAll(/\{([A-Z0-9_]+)\}/g)) {
+    if (!vars?.[token]?.trim()) found.push(token);
+  }
+  return found;
 }
 
 export interface CustomProviderDef extends CloudProviderDef {
@@ -315,5 +367,248 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     infoKey: 'cloud.info.anthropic',
     infoDefault: 'Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth.',
     suggestedModels: ['claude-opus-5-5', 'claude-sonnet-4-6'],
+  },
+  // ── Cloud aggregators & inference platforms ────────────────────────────
+  {
+    id: 'cloudflare',
+    name: 'Cloudflare',
+    defaultBaseUrl: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+    color: '#f38020',
+    initials: 'CF',
+    freeTier: true,
+    icon: '/providers/cloudflare.png',
+    infoKey: 'cloud.info.cloudflare',
+    infoDefault: 'Cloudflare Workers AI via its OpenAI-compatible endpoint. Replace {ACCOUNT_ID} in the base URL with your account id.',
+    suggestedModels: ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/qwen/qwen2.5-coder-32b-instruct'],
+    urlVars: [
+      {
+        token: 'ACCOUNT_ID',
+        labelKey: 'cloud.urlVar.accountId',
+        labelDefault: 'Account ID',
+        example: 'abc123def456…',
+        helpUrl: 'https://dash.cloudflare.com/',
+        helpKey: 'cloud.urlVar.accountIdHelp',
+        helpDefault: 'Find your Account ID in the right sidebar of dash.cloudflare.com.',
+        required: true,
+      },
+    ],
+  },
+  {
+    id: 'venice',
+    name: 'Venice AI',
+    defaultBaseUrl: 'https://api.venice.ai/api/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://venice.ai/settings/api',
+    color: '#1b1b1f',
+    initials: 'V',
+    freeTier: true,
+    icon: '/providers/venice.png',
+    infoKey: 'cloud.info.venice',
+    infoDefault: 'Private, uncensored inference. Free tier includes a daily allowance of text tokens.',
+    suggestedModels: ['venice-uncensored', 'qwen3-235b-a22b', 'deepseek-v3.1'],
+  },
+  {
+    id: 'siliconflow',
+    name: 'SiliconFlow',
+    defaultBaseUrl: 'https://api.siliconflow.cn/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://cloud.siliconflow.cn/account/ak',
+    color: '#5b5bd6',
+    initials: 'SF',
+    freeTier: true,
+    icon: '/providers/siliconflow.png',
+    infoKey: 'cloud.info.siliconflow',
+    infoDefault: 'Chinese model gateway (global endpoint: api.siliconflow.com) with a generous free tier.',
+    suggestedModels: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen3-235B-A22B', 'moonshotai/Kimi-K2-Instruct'],
+  },
+  {
+    id: 'huggingface',
+    name: 'Hugging Face',
+    defaultBaseUrl: 'https://router.huggingface.co/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://huggingface.co/settings/tokens',
+    color: '#ffd21e',
+    initials: 'HF',
+    freeTier: true,
+    icon: '/providers/huggingface.png',
+    infoKey: 'cloud.info.huggingface',
+    infoDefault: 'Hugging Face Inference Providers router: one token for many upstream providers.',
+    suggestedModels: ['Qwen/Qwen3-235B-A22B', 'meta-llama/Llama-3.3-70B-Instruct'],
+  },
+  {
+    id: 'hyperbolic',
+    name: 'Hyperbolic',
+    defaultBaseUrl: 'https://api.hyperbolic.xyz/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://app.hyperbolic.xyz/settings',
+    color: '#00a3ff',
+    initials: 'Hy',
+    icon: '/providers/hyperbolic.png',
+    infoKey: 'cloud.info.hyperbolic',
+    infoDefault: 'Cheap open-model inference (Llama, Qwen, DeepSeek) with OpenAI-compatible API.',
+    suggestedModels: ['meta-llama/Llama-3.3-70B-Instruct', 'Qwen/Qwen2.5-72B-Instruct'],
+  },
+  {
+    id: 'featherless',
+    name: 'Featherless',
+    defaultBaseUrl: 'https://api.featherless.ai/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://featherless.ai/account/api-keys',
+    color: '#0b0b0d',
+    initials: 'FL',
+    icon: '/providers/featherless.png',
+    infoKey: 'cloud.info.featherless',
+    infoDefault: 'Flat-fee subscription to a huge catalogue of open models, one model loaded at a time.',
+    suggestedModels: ['deepseek-ai/DeepSeek-V3-0324', 'Qwen/Qwen3-235B-A22B'],
+  },
+  {
+    id: 'nous-research',
+    name: 'Nous Research',
+    defaultBaseUrl: 'https://inference-api.nousresearch.com/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://portal.nousresearch.com/',
+    color: '#1a1a1a',
+    initials: 'NR',
+    icon: '/providers/nous-research.png',
+    infoKey: 'cloud.info.nous-research',
+    infoDefault: 'Nous Portal API for Hermes and other open models.',
+    suggestedModels: ['Hermes-4-405B', 'Hermes-4-70B'],
+  },
+  {
+    id: 'llm7',
+    name: 'LLM7',
+    defaultBaseUrl: 'https://api.llm7.io/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://token.llm7.io/',
+    color: '#4b5563',
+    initials: 'L7',
+    freeTier: true,
+    icon: '/providers/llm7.png',
+    infoKey: 'cloud.info.llm7',
+    infoDefault: 'Community gateway that forwards to many upstream models, including free ones.',
+    suggestedModels: ['gpt-4o-mini', 'deepseek-chat'],
+  },
+  {
+    id: 'morph',
+    name: 'Morph',
+    defaultBaseUrl: 'https://api.morphllm.com/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://morphllm.com/dashboard',
+    color: '#7ee600',
+    initials: 'M',
+    icon: '/providers/morph.png',
+    infoKey: 'cloud.info.morph',
+    infoDefault: 'Fast apply/edit models for coding agents (morph-v3) plus chat models.',
+    suggestedModels: ['morph-v3-large', 'morph-v3-fast'],
+  },
+  {
+    id: 'cerebras',
+    name: 'Cerebras',
+    defaultBaseUrl: 'https://api.cerebras.ai/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://cloud.cerebras.ai/',
+    color: '#f55036',
+    initials: 'Ce',
+    freeTier: true,
+    icon: '/providers/cerebras.png',
+    infoKey: 'cloud.info.cerebras',
+    infoDefault: 'Wafer-scale inference: fastest token throughput on open models. Free tier available.',
+    suggestedModels: ['llama3.1-8b', 'llama-3.3-70b', 'qwen-3-32b'],
+  },
+  {
+    id: 'fireworks',
+    name: 'Fireworks AI',
+    defaultBaseUrl: 'https://api.fireworks.ai/inference/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://fireworks.ai/account/api-keys',
+    color: '#ff5c35',
+    initials: 'FW',
+    icon: '/providers/fireworks.png',
+    infoKey: 'cloud.info.fireworks',
+    infoDefault: 'High-throughput serving of open models and fine-tunes.',
+    suggestedModels: [
+      'accounts/fireworks/models/deepseek-v3',
+      'accounts/fireworks/models/llama-v3p3-70b-instruct',
+    ],
+  },
+  {
+    id: 'alibaba',
+    name: 'Alibaba',
+    defaultBaseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://bailian.console.alibabacloud.com/',
+    color: '#ff6a00',
+    initials: 'Al',
+    icon: '/providers/alibaba.png',
+    infoKey: 'cloud.info.alibaba',
+    infoDefault: 'DashScope (Model Studio) international endpoint: Qwen models via OpenAI-compatible API. Use dashscope.aliyuncs.com for the China region.',
+    suggestedModels: ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen3-coder-plus'],
+  },
+  {
+    id: 'baidu-qianfan',
+    name: 'Baidu Qianfan',
+    defaultBaseUrl: 'https://qianfan.baidubce.com/v2',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application',
+    color: '#2932e1',
+    initials: 'BQ',
+    icon: '/providers/baidu-qianfan.png',
+    infoKey: 'cloud.info.baidu-qianfan',
+    infoDefault: 'Baidu Qianfan v2 OpenAI-compatible endpoint: ERNIE and third-party models.',
+    suggestedModels: ['ernie-4.5-turbo-128k', 'deepseek-v3'],
+  },
+  {
+    id: 'tencent-hunyuan',
+    name: 'Tencent Hunyuan',
+    defaultBaseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://console.cloud.tencent.com/hunyuan/api-key',
+    color: '#0052d9',
+    initials: 'TH',
+    icon: '/providers/tencent-hunyuan.png',
+    infoKey: 'cloud.info.tencent-hunyuan',
+    infoDefault: 'Tencent Hunyuan OpenAI-compatible endpoint: hunyuan-turbos and hunyuan-t1.',
+    suggestedModels: ['hunyuan-turbos-latest', 'hunyuan-t1-latest'],
+  },
+  {
+    id: 'minimax',
+    name: 'MiniMax',
+    defaultBaseUrl: 'https://api.minimax.io/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://platform.minimax.io/user-center/basic-information/interface-key',
+    color: '#ff2d78',
+    initials: 'MM',
+    icon: '/providers/minimax.png',
+    infoKey: 'cloud.info.minimax',
+    infoDefault: 'MiniMax global platform: MiniMax-M2 and abab models. Use api.minimaxi.com for the China region.',
+    suggestedModels: ['MiniMax-M2', 'abab6.5s-chat'],
+  },
+  {
+    id: 'dahl',
+    name: 'Dahl Inference',
+    defaultBaseUrl: 'https://inference.dahl.global/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://dahl.global/',
+    color: '#e11d48',
+    initials: 'D',
+    icon: '/providers/dahl.png',
+    infoKey: 'cloud.info.dahl',
+    infoDefault: 'Dahl Inference gateway: OpenAI-compatible access to open chat models. Model ids are fetched live.',
+  },
+  {
+    id: 'cohere',
+    name: 'Cohere',
+    defaultBaseUrl: 'https://api.cohere.ai/compatibility/v1',
+    protocol: 'openai-compatible',
+    keyUrl: 'https://dashboard.cohere.com/api-keys',
+    color: '#39594d',
+    initials: 'Co',
+    freeTier: true,
+    icon: '/providers/cohere.png',
+    infoKey: 'cloud.info.cohere',
+    infoDefault: 'Cohere compatibility API (OpenAI-style) for Command models. Free trial keys available.',
+    suggestedModels: ['command-a-03-2025', 'command-r-plus-08-2024', 'command-r7b-12-2024'],
   },
 ];

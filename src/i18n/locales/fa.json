@@ -262,6 +262,12 @@
     "editKey": "ویرایش",
     "testKey": "تست این کلید",
     "addKeyTitle": "افزودن کلید API {{name}}",
+    "extraFields": "اطلاعات اتصال {{name}}",
+    "missingVar": "{{var}} وارد نشده",
+    "urlVar": {
+      "accountId": "شناسه حساب (Account ID)",
+      "accountIdHelp": "شناسه حساب خود را در نوار کناری سمت راست dash.cloudflare.com پیدا می‌کنی."
+    },
     "keyName": "نام",
     "keyNamePlaceholder": "کلید اصلی",
     "check": "بررسی",
@@ -302,7 +308,24 @@
       "xiaomi-mimo": "درگاه Xiaomi MiMo: مدل‌های mimo-v2.6-pro و flash و 2.5 با API سازگار با OpenAI.",
       "mistral": "API رسمی Mistral (La Plateforme): مدل‌های Large و Medium و Codestral، سازگار با OpenAI.",
       "bai": "درگاه B.AI با کاتالوگ بزرگ مدل‌ها. شناسه مدل‌ها به‌صورت زنده از ارائه‌دهنده گرفته می‌شود.",
-      "anthropic": "API رسمی Anthropic با سازگاری OpenAI SDK: مدل‌های Claude Opus و Sonnet و Haiku با احراز Bearer."
+      "anthropic": "API رسمی Anthropic با سازگاری OpenAI SDK: مدل‌های Claude Opus و Sonnet و Haiku با احراز Bearer.",
+      "cloudflare": "Cloudflare Workers AI از مسیر سازگار با OpenAI. در آدرس پایه، {ACCOUNT_ID} را با شناسه حساب خود عوض کن.",
+      "venice": "استنتاج خصوصی و بدون سانسور. سطح رایگان شامل سهمیه روزانه توکن متنی است.",
+      "siliconflow": "درگاه مدل‌های چینی (نقطه پایانی جهانی: api.siliconflow.com) با سطح رایگان سخاوتمندانه.",
+      "huggingface": "روتر Inference Providers هاگینگ‌فیس: یک توکن برای چند ارائه‌دهنده بالادستی.",
+      "hyperbolic": "استنتاج ارزان مدل‌های باز (Llama و Qwen و DeepSeek) با API سازگار با OpenAI.",
+      "featherless": "اشتراک ثابت برای کاتالوگ بزرگ مدل‌های باز؛ هر بار یک مدل لود می‌شود.",
+      "nous-research": "API پورتال Nous برای مدل‌های Hermes و دیگر مدل‌های باز.",
+      "llm7": "درگاه اجتماعی که درخواست‌ها را به مدل‌های بالادستی از جمله رایگان‌ها می‌فرستد.",
+      "morph": "مدل‌های سریع apply/edit برای ایجنت‌های کدنویسی (morph-v3) به همراه مدل‌های چت.",
+      "cerebras": "استنتاج مبتنی بر ویفر: بالاترین سرعت تولید توکن روی مدل‌های باز. سطح رایگان دارد.",
+      "fireworks": "سرویس پرتوان مدل‌های باز و مدل‌های فاین‌تیون‌شده.",
+      "alibaba": "نقطه پایانی بین‌المللی DashScope (Model Studio): مدل‌های Qwen با API سازگار با OpenAI. برای ریجن چین از dashscope.aliyuncs.com استفاده کن.",
+      "baidu-qianfan": "نقطه پایانی سازگار با OpenAI نسخه v2 بایدو کیانفان: مدل‌های ERNIE و مدل‌های دیگر.",
+      "tencent-hunyuan": "نقطه پایانی سازگار با OpenAI تنسنت هونیوان: مدل‌های hunyuan-turbos و hunyuan-t1.",
+      "minimax": "پلتفرم جهانی MiniMax: مدل‌های MiniMax-M2 و abab. برای ریجن چین از api.minimaxi.com استفاده کن.",
+      "dahl": "درگاه Dahl Inference: دسترسی سازگار با OpenAI به مدل‌های چت باز. شناسه مدل‌ها زنده گرفته می‌شود.",
+      "cohere": "API سازگاری Cohere (به سبک OpenAI) برای مدل‌های Command. کلید آزمایشی رایگان دارد."
     }
   },
   "judge": {
@@ -328,6 +351,7 @@
   "bench": {
     "localModels": "مدل‌های لوکال",
     "noCloudKey": "کلید API فعالی برای این ارائه‌دهنده ابری نیست — از صفحه Cloud اضافه کن.",
+    "missingUrlVar": "این ارائه‌دهنده به اطلاعات اتصال بیشتری نیاز دارد (مثلا Account ID کلادفلر) — هنگام افزودن کلید واردش کن.",
     "unknownProvider": "ارائه‌دهنده ابری ناشناس.",
     "blind": "کور",
     "blindTitle": "حالت کور: هویت‌ها برای رأی بی‌طرفانه پنهان است",

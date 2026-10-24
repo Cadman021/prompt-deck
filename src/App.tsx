@@ -711,7 +711,12 @@ export default function App() {
                 'bench.noCloudKey',
                 'No enabled API key for this cloud provider — add one on the Cloud page.'
               )
-            : t('bench.unknownProvider', 'Unknown cloud provider.');
+            : resolved.error === 'missingUrlVar'
+              ? t(
+                  'bench.missingUrlVar',
+                  'This provider needs extra connection details (e.g. Cloudflare Account ID) — set them when adding the key.'
+                )
+              : t('bench.unknownProvider', 'Unknown cloud provider.');
         setSlots((prev) =>
           prev.map((s) =>
             s.id === slot.id ? { ...s, output: `Error: ${msg}`, loading: false, error: msg } : s

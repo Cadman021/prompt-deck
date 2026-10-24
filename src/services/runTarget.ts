@@ -16,7 +16,7 @@ export interface LocalEndpoint {
   baseUrl: string;
 }
 
-export type EndpointError = 'noCloudKey' | 'unknownProvider';
+export type EndpointError = 'noCloudKey' | 'unknownProvider' | 'missingUrlVar';
 
 export interface ResolvedRun {
   config: TargetConfig;

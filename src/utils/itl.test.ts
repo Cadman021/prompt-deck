@@ -80,8 +80,10 @@ describe('ItlTracker', () => {
       t.add(clock, 1);
     }
     const s = t.stats()!;
-    expect(s.medianMs).toBeCloseTo(50, 0);
-    expect(s.p95Ms).toBeCloseTo(95, 0);
+    // Gaps are 1..100, so there are 100 samples: an even count means the
+    // median is the mean of the 50th and 51st (50 and 51) = 50.5, not 50.
+    expect(s.medianMs).toBeCloseTo(50.5, 1);
+    expect(s.p95Ms).toBeCloseTo(95.05, 1);
   });
 
   it('caps the sample buffer so a pathological stream cannot grow memory', () => {

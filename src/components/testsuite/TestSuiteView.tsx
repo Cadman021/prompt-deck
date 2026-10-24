@@ -167,7 +167,12 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
               'bench.noCloudKey',
               'No enabled API key for this cloud provider — add one on the Cloud page.'
             )
-          : t('bench.unknownProvider', 'Unknown cloud provider.');
+          : resolved.error === 'missingUrlVar'
+            ? t(
+                'bench.missingUrlVar',
+                'This provider needs extra connection details (e.g. Cloudflare Account ID) — set them when adding the key.'
+              )
+            : t('bench.unknownProvider', 'Unknown cloud provider.');
       updateCell(ti, target, { status: 'error', error: msg });
       return Promise.resolve();
     }

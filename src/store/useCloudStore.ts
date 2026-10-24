@@ -28,6 +28,11 @@ export interface CloudApiKey {
   storage?: 'keychain' | 'local';
   /** Last-4 fingerprint for masked display when the secret isn't local. */
   keyHint?: string;
+  /**
+   * Values for `{PLACEHOLDER}` tokens in the provider's base URL (e.g.
+   * Cloudflare's `{ACCOUNT_ID}`). Stored in plain text — they are not secrets.
+   */
+  connectionVars?: Record<string, string>;
   enabled: boolean;
   status: CloudStatus;
   lastTested?: string;

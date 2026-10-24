@@ -30,6 +30,7 @@ import {
 import { openExternal } from '../../utils/openExternal';
 import { createKeyId, useCloudStore } from '../../store/useCloudStore';
 import type { CloudProviderDef, CustomProviderDef } from '../../data/cloudProviders';
+import { applyUrlVars, missingUrlVars } from '../../data/cloudProviders';
 import { ProviderIcon } from './ProviderIcon';
 import { AddKeyModal } from './AddKeyModal';
 
@@ -81,12 +82,19 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const info = def.infoKey ? t(def.infoKey, def.infoDefault || '') : def.infoDefault || '';
 
   const activeKey = providerKeys.find((k) => k.enabled && secretFor(k));
+  const urlVars = def.urlVars ?? [];
+
+  /** Base URL with this connection's `{PLACEHOLDER}` values filled in. */
+  const urlFor = (conn?: { connectionVars?: Record<string, string> }): string =>
+    applyUrlVars(baseUrl, conn?.connectionVars);
+  const unresolved = (conn?: { connectionVars?: Record<string, string> }): string[] =>
+    missingUrlVars(baseUrl, conn?.connectionVars);
 
   const testOneKey = async (id: string) => {
     const key = providerKeys.find((k) => k.id === id);
     if (!key || testingKey) return;
     setTestingKey(id);
-    const result = await LLMService.testCloudConnection(baseUrl, secretFor(key));
+    const result = await LLMService.testCloudConnection(urlFor(key), secretFor(key));
     updateKey(id, {
       status: result.ok ? 'ok' : 'error',
       lastTested: new Date().toISOString(),
@@ -106,7 +114,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     setRefreshing(true);
     setRefreshError(null);
     setRefreshInfo(null);
-    const result = await LLMService.testCloudConnection(baseUrl, secretFor(activeKey));
+    const result = await LLMService.testCloudConnection(urlFor(activeKey), secretFor(activeKey));
     if (result.ok && result.pricing) {
       setModelPricing(def.id, result.pricing);
     }
@@ -131,7 +139,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const handleProbeModel = async (model: string) => {
     if (!activeKey || probes[model]?.phase === 'testing') return;
     setProbes((p) => ({ ...p, [model]: { phase: 'testing' } }));
-    const result = await LLMService.probeCloudModel(baseUrl, secretFor(activeKey), model);
+    const result = await LLMService.probeCloudModel(urlFor(activeKey), secretFor(activeKey), model);
     setProbes((p) => ({
       ...p,
       [model]: result.ok
@@ -226,6 +234,18 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                   <div className="text-xs font-bold truncate">{k.label}</div>
                   <div className="text-micro font-mono text-slate-500 dark:text-slate-400 truncate" dir="ltr">
                     {fingerprint(secretFor(k)) || '••••'}
+                    {urlVars.map((v) =>
+                      (k.connectionVars?.[v.token] ?? '').trim() ? (
+                        <span key={v.token} className="ms-2">
+                          {t(v.labelKey, v.labelDefault)}: {k.connectionVars?.[v.token]}
+                        </span>
+                      ) : null
+                    )}
+                    {unresolved(k).length > 0 && (
+                      <span className="ms-2 font-sans text-amber-600 dark:text-amber-400">
+                        {t('cloud.missingVar', '{{var}} missing', { var: unresolved(k)[0] })}
+                      </span>
+                    )}
                     {k.status === 'error' && k.error && (
                       <span className="ms-2 font-sans text-rose-700 dark:text-rose-400">{k.error}</span>
                     )}
@@ -484,22 +504,31 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
         <AddKeyModal
           providerName={def.name}
           baseUrl={baseUrl}
+          urlVars={def.urlVars}
           initialLabel={editingKey?.label ?? ''}
           initialKey={editingKey ? secretFor(editingKey) : ''}
+          initialVars={editingKey?.connectionVars}
           onClose={() => setKeyModal(null)}
-          onSave={(label, apiKey) => {
+          onSave={(label, apiKey, vars) => {
             void (async () => {
               const trimmed = apiKey.trim();
+              // Only keep placeholders the provider actually declares.
+              const connectionVars: Record<string, string> = {};
+              for (const v of urlVars) {
+                const value = (vars[v.token] ?? '').trim();
+                if (value) connectionVars[v.token] = value;
+              }
               if (keyModal.mode === 'edit' && editingKey) {
                 // Empty box on edit keeps the existing secret, label still updates.
                 if (!trimmed) {
-                  updateKey(editingKey.id, { label });
+                  updateKey(editingKey.id, { label, connectionVars });
                 } else if (currentBackend() === 'keychain') {
                   try {
                     await keychainSet(editingKey.id, trimmed);
                     cacheSecret(editingKey.id, trimmed);
                     updateKey(editingKey.id, {
                       label,
+                      connectionVars,
                       apiKey: '',
                       storage: 'keychain',
                       keyHint: fingerprint(trimmed),
@@ -508,11 +537,11 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     });
                   } catch {
                     cacheSecret(editingKey.id, trimmed);
-                    updateKey(editingKey.id, { label, apiKey: trimmed, status: 'unknown', error: undefined });
+                    updateKey(editingKey.id, { label, connectionVars, apiKey: trimmed, status: 'unknown', error: undefined });
                   }
                 } else {
                   cacheSecret(editingKey.id, trimmed);
-                  updateKey(editingKey.id, { label, apiKey: trimmed, status: 'unknown', error: undefined });
+                  updateKey(editingKey.id, { label, connectionVars, apiKey: trimmed, status: 'unknown', error: undefined });
                 }
               } else {
                 const id = createKeyId();
@@ -524,6 +553,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                       id,
                       providerId: def.id,
                       label,
+                      connectionVars,
                       apiKey: '',
                       storage: 'keychain',
                       keyHint: fingerprint(trimmed),
@@ -532,11 +562,11 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     });
                   } catch {
                     cacheSecret(id, trimmed);
-                    addKey({ id, providerId: def.id, label, apiKey: trimmed, enabled: true, status: 'unknown' });
+                    addKey({ id, providerId: def.id, label, connectionVars, apiKey: trimmed, enabled: true, status: 'unknown' });
                   }
                 } else {
                   cacheSecret(id, trimmed);
-                  addKey({ id, providerId: def.id, label, apiKey: trimmed, enabled: true, status: 'unknown' });
+                  addKey({ id, providerId: def.id, label, connectionVars, apiKey: trimmed, enabled: true, status: 'unknown' });
                 }
               }
               setKeyModal(null);

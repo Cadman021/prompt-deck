@@ -5,6 +5,7 @@ import { OllamaModel, PromptOptions, StreamCallbacks, BenchmarkMetrics } from '.
 import { httpError } from '../utils/httpError';
 import { estimateTokens } from '../utils/tokens';
 import { ItlTracker } from '../utils/itl';
+import { applyUrlVars, missingUrlVars } from '../data/cloudProviders';
 
 interface ProviderConfig {
   provider: Provider;
@@ -297,6 +298,8 @@ export interface CloudTestResult {
   pricing?: Record<string, { prompt: number; completion: number }>;
   /** False when the provider has no `/models` endpoint (key verified via probe instead). */
   modelsListed: boolean;
+  /** Set when the base URL still had an unfilled `{PLACEHOLDER}` — no request was sent. */
+  missingVar?: string;
   error?: string;
 }
 
@@ -314,13 +317,31 @@ export function parsePricing(raw: unknown): { prompt: number; completion: number
  * optional `Authorization: Bearer` header. Used by the Cloud providers page.
  * The key itself is never logged.
  *
+ * `vars` fills `{PLACEHOLDER}` tokens in the base URL (Cloudflare's
+ * `{ACCOUNT_ID}`); an unfilled token is reported as `missingVar` instead of
+ * firing a request at a URL that can only 404.
+ *
  * Some providers (e.g. Poolside) don't implement `/models` but serve
  * `/chat/completions` fine. In that case (404/405/501) we fall back to a
  * key-only probe: a 401/403 means a bad key, anything else means the key
  * was accepted — reported as ok with `modelsListed: false` so the UI can
  * suggest adding model ids manually.
  */
-async function testCloudConnection(baseUrl: string, apiKey?: string): Promise<CloudTestResult> {
+async function testCloudConnection(
+  baseUrl: string,
+  apiKey?: string,
+  vars?: Record<string, string>
+): Promise<CloudTestResult> {
+  const missing = missingUrlVars(baseUrl, vars);
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      modelsListed: true,
+      missingVar: missing[0],
+      error: `Missing ${missing[0]} — fill it in above.`,
+    };
+  }
+  baseUrl = applyUrlVars(baseUrl, vars);
   const normalized = baseUrl.replace(/\/+$/, '');
   const auth: Record<string, string> = {};
   if (apiKey?.trim()) auth['Authorization'] = `Bearer ${apiKey.trim()}`;
