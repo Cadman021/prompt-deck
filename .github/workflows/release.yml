@@ -6,7 +6,76 @@ on:
       - 'v*.*.*'
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Create the draft release exactly ONCE, before the build matrix starts.
+  #
+  # Why: the four matrix jobs start at the same time. If each of them tries to
+  # find-or-create the release for the tag, a draft is invisible to the "find by
+  # tag" lookup, so several jobs create their own draft and the binaries end up
+  # split across duplicate releases (and `latest.json` lists only some platforms).
+  # Creating it here and handing the id to every matrix job removes that race.
+  # ---------------------------------------------------------------------------
+  create-release:
+    name: Create draft release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.release.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Create (or reuse) the draft release
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Release notes come from the CHANGELOG section for this tag.
+          node scripts/extract-notes.cjs "$TAG" > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::Release notes are empty for $TAG."
+            exit 1
+          fi
+
+          # Idempotent: if a release for this tag already exists (e.g. the
+          # workflow was re-run), reuse it instead of creating a duplicate.
+          # NOTE: it must still be a draft; tauri-action requires
+          # `releaseDraft` to match the existing release's status.
+          EXISTING=$(gh api "repos/$REPO/releases" --paginate \
+            --jq ".[] | select(.tag_name == \"$TAG\") | .id" | head -n1)
+
+          if [ -n "$EXISTING" ]; then
+            echo "Reusing existing release $EXISTING for $TAG"
+            ID="$EXISTING"
+          else
+            ID=$(gh api "repos/$REPO/releases" \
+              -f tag_name="$TAG" \
+              -f name="PromptDeck $TAG" \
+              -F draft=true \
+              -F prerelease=false \
+              -F body=@notes.md \
+              --jq .id)
+            echo "Created draft release $ID for $TAG"
+          fi
+
+          echo "release_id=$ID" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # 2) Build every platform and upload into that single release.
+  # ---------------------------------------------------------------------------
   release:
+    name: Build (${{ matrix.platform }} ${{ matrix.args }})
+    needs: create-release
     permissions:
       contents: write
     strategy:
@@ -71,17 +140,7 @@ jobs:
       # token (or Azure Trusted Signing); uncomment + configure once owned.
       # See https://v2.tauri.app/distribute/sign/windows/
 
-      - name: Extract release notes from CHANGELOG
-        # One shared source of truth: the CHANGELOG section for this tag.
-        # shell: bash keeps the heredoc working on all three OS runners.
-        shell: bash
-        run: |
-          BODY=$(node scripts/extract-notes.cjs "${{ github.ref_name }}")
-          echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
-          echo "$BODY" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Build and release Tauri app
+      - name: Build and upload Tauri app
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,9 +152,80 @@ jobs:
           # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
+          # Upload into the release created above; never create another one.
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          # Keep tagName too: without it the updater URLs in latest.json point
+          # at `releases/latest/download/...` instead of this exact tag.
           tagName: ${{ github.ref_name }}
-          releaseName: 'PromptDeck ${{ github.ref_name }}'
-          releaseBody: ${{ env.RELEASE_BODY }}
+          # Must match the status of the existing (draft) release.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # ---------------------------------------------------------------------------
+  # 3) Safety net: the matrix jobs all merge their platform into the same
+  # latest.json. If two of them ever finish at the same instant one can
+  # overwrite the other, silently dropping a platform from auto-update.
+  # Fail loudly here instead of finding out from a user.
+  # ---------------------------------------------------------------------------
+  verify-release:
+    name: Verify release assets
+    needs: [create-release, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Check latest.json covers every platform
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+        run: |
+          set -euo pipefail
+
+          ASSET_ID=$(gh api "repos/$REPO/releases/$RELEASE_ID" \
+            --jq '.assets[] | select(.name == "latest.json") | .id')
+          if [ -z "$ASSET_ID" ]; then
+            echo "::error::latest.json was not uploaded to the release."
+            exit 1
+          fi
+
+          curl -sSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/octet-stream" \
+            "https://api.github.com/repos/$REPO/releases/assets/$ASSET_ID" \
+            -o latest.json
+
+          node -e '
+            const fs = require("fs");
+            const platforms = Object.keys(JSON.parse(fs.readFileSync("latest.json", "utf8")).platforms || {});
+            const required = ["darwin-aarch64", "darwin-x86_64", "linux-x86_64", "windows-x86_64"];
+            const missing = required.filter((k) => !platforms.includes(k));
+            console.log("platforms in latest.json:", platforms.join(", "));
+            if (missing.length) {
+              console.error("::error::latest.json is missing: " + missing.join(", "));
+              process.exit(1);
+            }
+          '
+
+      - name: Check there is exactly one release for this tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          COUNT=$(gh api "repos/$REPO/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"$TAG\")] | length" | awk '{s+=$1} END{print s+0}')
+          echo "releases for $TAG: $COUNT"
+          if [ "$COUNT" != "1" ]; then
+            echo "::error::Expected exactly 1 release for $TAG but found $COUNT."
+            exit 1
+          fi
