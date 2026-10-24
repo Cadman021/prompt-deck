@@ -21,11 +21,28 @@ export interface DetectCandidate {
   path: string;
 }
 
-/** Default ports: Ollama, LM Studio, and llama.cpp's server. */
+/**
+ * Default ports, in probe order.
+ *
+ * Every non-Ollama entry speaks the OpenAI-compatible `/v1/models` shape that
+ * `extractModelNames` expects (`data[].id`), so supporting a server is just one
+ * more row here.
+ *
+ * KoboldCpp exposes its OpenAI layer under `/api/v1` rather than `/v1` (the
+ * bare `/v1` is a different, older surface) and defaults to port 5001. Jan runs
+ * a Cortex server on 1337.
+ *
+ * Both extra entries are best-effort: a server that isn't running simply fails
+ * its probe and is skipped, so a wrong port costs one timed-out request and can
+ * never break detection. Both are probed last, after the two servers whose
+ * addresses are stable.
+ */
 export const DETECT_CANDIDATES: readonly DetectCandidate[] = [
   { provider: 'ollama', baseUrl: 'http://localhost:11434', path: '/api/tags' },
   { provider: 'openai-compatible', baseUrl: 'http://localhost:1234/v1', path: '/models' },
   { provider: 'openai-compatible', baseUrl: 'http://localhost:8080/v1', path: '/models' },
+  { provider: 'openai-compatible', baseUrl: 'http://localhost:5001/api/v1', path: '/models' },
+  { provider: 'openai-compatible', baseUrl: 'http://localhost:1337/v1', path: '/models' },
 ];
 
 export const DEFAULT_DETECT_TIMEOUT_MS = 600;
@@ -67,6 +84,10 @@ export async function probeServer(
     });
     if (!response.ok) return null;
     const models = extractModelNames(await response.json());
+    // A 200 with no recognizable model list is some *other* service on the
+    // port (or a server still loading). Reporting it would show the user a
+    // phantom server with zero models, which they cannot select anyway.
+    if (models.length === 0) return null;
     return { provider: candidate.provider, baseUrl: candidate.baseUrl, models };
   } catch {
     return null;

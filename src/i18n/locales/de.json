@@ -389,7 +389,7 @@
     "dismiss": "Ausblenden",
     "scanning": "Lokale Server werden gesucht…",
     "found": "Lokale Server erkannt",
-    "none": "Kein lokaler Server auf Port 11434, 1234 oder 8080 gefunden. Installiere einen und suche erneut:",
+    "none": "Kein lokaler Server gefunden. PromptDeck sucht Ollama, LM Studio, llama.cpp, KoboldCpp und Jan auf ihren Standardports — installiere einen und suche erneut:",
     "models": "{{count}} Modelle",
     "ollama": "Ollama holen",
     "lmstudio": "LM Studio holen",

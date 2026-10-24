@@ -22,7 +22,9 @@ import type { CloudGroup, ModelSource } from '../services/modelTarget';
 import { buildSweepPrompt, labelForContext } from '../utils/sweep';
 import { formatDurationMs } from '../utils/timeUtils';
 
-const SIZES = [2048, 4096, 8192, 16384, 32768, 65536] as const;
+// 128K is opt-in per run (it is slow and most local models cannot hold it):
+// it stays out of DEFAULT_SIZES but is offered for long-context models.
+const SIZES = [2048, 4096, 8192, 16384, 32768, 65536, 131072] as const;
 const DEFAULT_SIZES = [4096, 8192, 16384, 32768];
 /** Small, fixed output so the measurement is generation speed, not length. */
 const SWEEP_MAX_TOKENS = 256;

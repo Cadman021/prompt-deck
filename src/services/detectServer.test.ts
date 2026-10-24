@@ -97,3 +97,79 @@ describe('detectLocalServers', () => {
     expect(await detectLocalServers(600, fetchImpl as unknown as typeof fetch)).toEqual([]);
   });
 });
+
+describe('DETECT_CANDIDATES', () => {
+  it('probes the common local servers on their documented ports', () => {
+    const urls = DETECT_CANDIDATES.map((c) => `${c.baseUrl}${c.path}`);
+    // Ordered: the two stable addresses first, the best-effort ones after, so
+    // an unreachable extra never delays the servers most people run.
+    expect(urls[0]).toBe('http://localhost:11434/api/tags');
+    expect(urls[1]).toBe('http://localhost:1234/v1/models');
+    expect(urls[2]).toBe('http://localhost:8080/v1/models');
+    expect(urls).toContain('http://localhost:5001/api/v1/models'); // KoboldCpp
+    expect(urls).toContain('http://localhost:1337/v1/models'); // Jan
+  });
+
+  it('only ever uses the two providers the app can talk to', () => {
+    for (const c of DETECT_CANDIDATES) {
+      expect(['ollama', 'openai-compatible']).toContain(c.provider);
+    }
+  });
+
+  it('has no duplicate base URLs', () => {
+    const urls = DETECT_CANDIDATES.map((c) => c.baseUrl);
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+
+  it('finds KoboldCpp through its /api/v1 path', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (url.includes('5001')) return jsonResponse({ data: [{ id: 'koboldcpp/model' }] });
+      throw new Error('refused');
+    });
+    const found = await detectLocalServers(600, fetchImpl as unknown as typeof fetch);
+    expect(found).toEqual([
+      {
+        provider: 'openai-compatible',
+        baseUrl: 'http://localhost:5001/api/v1',
+        models: ['koboldcpp/model'],
+      },
+    ]);
+  });
+
+  it('finds Jan on 1337', async () => {
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (url.includes('1337')) return jsonResponse({ data: [{ id: 'llama3-8b' }] });
+      throw new Error('refused');
+    });
+    const found = await detectLocalServers(600, fetchImpl as unknown as typeof fetch);
+    expect(found.map((f) => f.baseUrl)).toEqual(['http://localhost:1337/v1']);
+  });
+});
+
+describe('probeServer', () => {
+  it('rejects a 200 response whose body has no model list', async () => {
+    // Another service on a probed port can answer 200 with unrelated JSON.
+    // Reporting it would surface a phantom server with zero selectable models.
+    const fetchImpl = vi.fn(async () => jsonResponse({ status: 'ok' }));
+    const found = await probeServer(
+      { provider: 'openai-compatible', baseUrl: 'http://localhost:5001/api/v1', path: '/models' },
+      600,
+      fetchImpl as unknown as typeof fetch
+    );
+    expect(found).toBeNull();
+  });
+
+  it('accepts a response with at least one model', async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ data: [{ id: 'm' }] }));
+    const found = await probeServer(
+      { provider: 'openai-compatible', baseUrl: 'http://localhost:5001/api/v1', path: '/models' },
+      600,
+      fetchImpl as unknown as typeof fetch
+    );
+    expect(found).toEqual({
+      provider: 'openai-compatible',
+      baseUrl: 'http://localhost:5001/api/v1',
+      models: ['m'],
+    });
+  });
+});

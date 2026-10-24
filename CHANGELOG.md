@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ Added
 
+- **127K context sweep** — the sweep now offers 128K alongside 2K…64K for long-context models. It stays out of the default set: it is slow, and most local models cannot hold it
+- **KoboldCpp and Jan detection** — both are found by the automatic scan (KoboldCpp on 5001 under its `/api/v1` OpenAI layer, Jan on 1337). Probed after Ollama, LM Studio and llama.cpp, so an unreachable extra never delays the servers most people run
 - **Sound effects and desktop notifications** — short synthesised cues mark a run starting and finishing (a suite gets its own three-note resolve, an all-error run gets a falling tone), and a desktop notification fires when a long run ends while the window is in the background. Cues are generated with the Web Audio API rather than shipped as audio files, so there are no assets to load and nothing breaks if a webview refuses to start an `AudioContext`. New "Sound & alerts" section in Settings, with a volume slider that previews the real cue
 - **Race view** — a live timing board above the columns: one lane per model, ranked by tok/s as the run streams, with TTFT split times and the model's own color. Bars encode *speed*, not characters written, so a model that rambles for 800 tokens doesn't outrank one that answers in 80. Toggled with the Race button in the results toolbar
 - **Share card (PNG)** — saves a run as a fixed-size card (prompt, per-model speed bars, TTFT, token counts, cloud cost) for posting. Renders on a fixed dark ground so the image looks the same regardless of the sender's theme
@@ -20,6 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Fixed
 
+- **Phantom servers in the detection scan**: a service answering `200` with unrelated JSON was reported as a local server with an empty model list. With five ports now probed, that was much likelier to happen; a candidate must return at least one model to count as detected
 - **AMOLED flattened every translucent panel**: the theme matched compiled utility classes with `[class*='dark:bg-slate-900'] { … !important }`, which also caught `bg-slate-900/60` and forced it solid — 38 translucent surfaces (cards, drawers, headers) lost their opacity in AMOLED. The theme now remaps Tailwind's own `--color-slate-*` variables, so `color-mix()` keeps working, no `!important` is involved, and new components theme correctly without knowing AMOLED exists. Chrome colour is unchanged: pure black canvas, same surface steps
 - **Overscroll "slack" at the window edges**: dragging with a touchpad or touchscreen bounced/slid the whole page and revealed a gap behind the app. WebView2 swipe-navigation and elastic overscroll are now disabled, the document can no longer scroll, and inner panes contain their own overscroll
 - **Settings panel never animated**: it used `animate-in` / `slide-in-from-right`, which come from `tw-animate-css` — a package this project doesn't install, so the classes silently did nothing. Replaced with a real keyframe that also mirrors under RTL

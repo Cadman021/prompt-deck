@@ -97,7 +97,7 @@ export const OnboardingCard: React.FC<OnboardingCardProps> = ({ onConnect, onDis
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {t(
                 'onboarding.none',
-                'No local server found on ports 11434, 1234 or 8080. Install one, then scan again:'
+                'No local server found. PromptDeck looks for Ollama, LM Studio, llama.cpp, KoboldCpp and Jan on their default ports — install one, then scan again:'
               )}
             </p>
             <div className="flex flex-wrap items-center gap-2">
