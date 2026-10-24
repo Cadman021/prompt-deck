@@ -74,10 +74,7 @@ export const TrendView: React.FC = () => {
     return out;
   }, [records]);
 
-  const models = useMemo(
-    () => [...byModel.keys()].sort((a, b) => a.localeCompare(b)),
-    [byModel]
-  );
+  const models = useMemo(() => [...byModel.keys()].sort((a, b) => a.localeCompare(b)), [byModel]);
 
   // Pick the model with the most history by default — it is the one whose
   // trend can actually be judged.
@@ -128,7 +125,10 @@ export const TrendView: React.FC = () => {
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
           <Activity className="w-6 h-6 mx-auto mb-2 text-slate-400" />
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            {t('trend.empty', 'No timed runs yet. Benchmark a model a few times and its trend appears here.')}
+            {t(
+              'trend.empty',
+              'No timed runs yet. Benchmark a model a few times and its trend appears here.'
+            )}
           </p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export const TrendView: React.FC = () => {
   }
 
   const color = model ? modelColorHex(model) : '#6366f1';
-  const value = metric === 'tps' ? trend.recentTps : points.at(-1)?.ttftMs ?? 0;
+  const value = metric === 'tps' ? trend.recentTps : (points.at(-1)?.ttftMs ?? 0);
 
   const verdictStyle = {
     regression: 'text-rose-700 dark:text-rose-400 bg-rose-500/10 border-rose-500/30',
@@ -225,12 +225,16 @@ export const TrendView: React.FC = () => {
           <div className="font-semibold">{verdictLabel}</div>
           {trend.verdict !== 'insufficient' && (
             <div className="mt-0.5 opacity-80 font-mono tabular-nums text-micro">
-              {t('trend.detail', 'baseline {{base}} tok/s ({{n}} runs) → recent {{recent}} tok/s ({{m}} runs)', {
-                base: trend.baselineTps,
-                n: trend.baselineCount,
-                recent: trend.recentTps,
-                m: trend.recentCount,
-              })}
+              {t(
+                'trend.detail',
+                'baseline {{base}} tok/s ({{n}} runs) → recent {{recent}} tok/s ({{m}} runs)',
+                {
+                  base: trend.baselineTps,
+                  n: trend.baselineCount,
+                  recent: trend.recentTps,
+                  m: trend.recentCount,
+                }
+              )}
             </div>
           )}
         </div>
@@ -239,7 +243,10 @@ export const TrendView: React.FC = () => {
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-3">
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-800" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              className="stroke-slate-200 dark:stroke-slate-800"
+            />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 10, fill: 'currentColor' }}

@@ -8,8 +8,8 @@ trust seriously — thank you for reporting issues responsibly.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.5.x   | :white_check_mark: |
-| < 1.5.0 | :x:                |
+| 1.6.x   | :white_check_mark: |
+| < 1.6.0 | :x:                |
 
 Only the latest minor release receives security fixes. Please upgrade before
 reporting.
@@ -52,16 +52,12 @@ Out of scope:
   issues
 - Vulnerabilities in bundled third-party models or servers (Ollama, LM Studio…)
 
-## Known Limitation (not a vulnerability, but be aware)
+## Key storage (not a vulnerability, but be aware)
 
-Cloud API keys are currently stored in the app's local persisted store in
-plaintext. All secret access already flows through a single module
-(`src/services/secrets.ts`), so the planned OS-keychain backend only needs
-to implement `initSecrets`/`cacheSecret` there.
-
-Deliberately NOT shipped yet: there is no official Tauri v2 keyring plugin
-(`@tauri-apps/plugin-keyring` does not exist; the only community crate is an
-unmaintained 0.1.0), so the correct path is the `keyring` crate behind three
-small custom Tauri commands — which requires a Rust toolchain and real-OS
-testing to land safely. If you work in a shared-machine environment, keep
-the current storage in mind.
+Cloud API keys are stored in the OS credential store (Windows Credential
+Manager, macOS Keychain, libsecret) through three small Tauri commands. Under
+`vite dev` in a plain browser — and on the rare machine where the keychain is
+unreachable — keys fall back to the app's local persisted store. That fallback
+is deliberate: it keeps the app usable rather than failing a run, and the
+Settings page states which backend is live. All secret access flows through
+`src/services/secrets.ts`, so there is one place to audit.

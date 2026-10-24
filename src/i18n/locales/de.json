@@ -203,7 +203,13 @@
     "detectModels": "{{count}} Modelle",
     "resetTitle": "Einstellungen zurücksetzen",
     "resetConfirm": "Provider, Verbindung und erweiterte Optionen auf Standardwerte zurücksetzen? Sprache und Design bleiben erhalten.",
-    "resetButton": "Auf Standard zurücksetzen"
+    "resetButton": "Auf Standard zurücksetzen",
+    "updatesTitle": "Updates",
+    "checkUpdates": "Nach Updates suchen",
+    "updateAvailable": "v{{version}} ist verfügbar — starte neu, um es zu bekommen.",
+    "updateLatest": "Du hast die neueste Version.",
+    "updateError": "Update-Prüfung fehlgeschlagen: {{message}}",
+    "updateUnavailable": "Update-Prüfungen laufen nur in der Desktop-App."
   },
   "theme": {
     "appearance": "Darstellung",

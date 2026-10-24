@@ -320,11 +320,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button
-              onClick={onClose}
-              aria-label={t('common.close', 'Close')}
-              className={iconBtn}
-            >
+            <button onClick={onClose} aria-label={t('common.close', 'Close')} className={iconBtn}>
               <X className="w-5 h-5" />
             </button>
           </div>

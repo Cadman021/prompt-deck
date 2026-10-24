@@ -23,6 +23,7 @@ instead of opening a public issue.
 ## Reporting Bugs
 
 Please include:
+
 - Your OS and Ollama version
 - Steps to reproduce
 - Expected vs actual behavior

@@ -17,8 +17,7 @@ function sseResponse(chunks: string[], status = 200): Response {
 }
 
 const sse = (obj: unknown): string => `data: ${JSON.stringify(obj)}\n\n`;
-const delta = (content: string): string =>
-  sse({ choices: [{ delta: { content } }] });
+const delta = (content: string): string => sse({ choices: [{ delta: { content } }] });
 
 interface Collected {
   chunks: string[];
@@ -52,12 +51,14 @@ describe('openai-compatible streaming', () => {
   it('completes normally on [DONE] with server usage', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => sseResponse([
-        delta('Hello'),
-        delta(' world'),
-        sse({ usage: { completion_tokens: 2, prompt_tokens: 5 } }),
-        'data: [DONE]\n\n',
-      ]))
+      vi.fn(async () =>
+        sseResponse([
+          delta('Hello'),
+          delta(' world'),
+          sse({ usage: { completion_tokens: 2, prompt_tokens: 5 } }),
+          'data: [DONE]\n\n',
+        ])
+      )
     );
     const { cbs, out } = collect();
     await LLMService.generateStream(
@@ -73,7 +74,10 @@ describe('openai-compatible streaming', () => {
   });
 
   it('still completes when the server closes without [DONE]', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => sseResponse([delta('par'), delta('tial')])));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => sseResponse([delta('par'), delta('tial')]))
+    );
     const { cbs, out } = collect();
     await LLMService.generateStream(
       { provider: 'openai-compatible', baseUrl: 'https://x/v1' },
@@ -118,8 +122,7 @@ describe('openai-compatible streaming', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(
-        async () =>
-          new Response(JSON.stringify({ error: { message: 'bad key' } }), { status: 401 })
+        async () => new Response(JSON.stringify({ error: { message: 'bad key' } }), { status: 401 })
       )
     );
     const { cbs, out } = collect();
@@ -138,7 +141,9 @@ describe('openai-compatible streaming', () => {
       vi.fn(
         (_url: string, init?: RequestInit) =>
           new Promise<Response>((_resolve, reject) => {
-            init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+            init?.signal?.addEventListener('abort', () =>
+              reject(new DOMException('aborted', 'AbortError'))
+            );
           })
       )
     );

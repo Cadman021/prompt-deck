@@ -27,7 +27,12 @@ export function diffLines(left: string, right: string): DiffLine[] {
     return b.map((text, i) => ({ kind: 'added' as DiffKind, text, leftNo: null, rightNo: i + 1 }));
   }
   if (b.length === 1 && b[0] === '') {
-    return a.map((text, i) => ({ kind: 'removed' as DiffKind, text, leftNo: i + 1, rightNo: null }));
+    return a.map((text, i) => ({
+      kind: 'removed' as DiffKind,
+      text,
+      leftNo: i + 1,
+      rightNo: null,
+    }));
   }
 
   const n = a.length;
@@ -43,8 +48,7 @@ export function diffLines(left: string, right: string): DiffLine[] {
   const dp: Uint16Array[] = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      dp[i][j] =
-        a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }
 

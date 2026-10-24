@@ -17,7 +17,7 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 
 - 🧭 **App Shell workspace** — icon-rail sidebar (Bench, Tests, Cloud, History, Board, Config) plus a slim 48px TopBar with a provider connection pill (status dot, server URL, model count). Result actions live in a contextual toolbar that only appears when there are results, so model outputs always get maximum space
 - 🔎 **Auto-detect & first-run onboarding** — PromptDeck scans the usual local ports (Ollama `11434`, LM Studio `1234`, llama.cpp `8080`) and offers one-click connect; when nothing is found, an onboarding card links straight to the Ollama / LM Studio installers
-- ☁️ **Cloud providers** — manage OpenAI-compatible endpoints 9Router-style: curated catalog of 19 providers (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini, Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, Anthropic) split into Free Tier / API Key sections, custom endpoints, named API keys per provider with direct key-creation links, and a detail page with connection testing plus model picking (search, per-model 1-token probe, enable toggles)
+- ☁️ **Cloud providers** — manage OpenAI-compatible endpoints 9Router-style: curated catalog of 36 providers split into Free Tier / API Key sections (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini, Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, Anthropic, Cloudflare Workers AI, Venice AI, SiliconFlow, Hugging Face, Hyperbolic, Featherless, Nous Research, LLM7, Morph, Cerebras, Fireworks AI, Alibaba DashScope, Baidu Qianfan, Tencent Hunyuan, MiniMax, Dahl Inference, Cohere), custom endpoints, named API keys per provider with direct key-creation links, and a detail page with connection testing plus model picking (search, per-model 1-token probe, enable toggles). Providers that need extra connection details — Cloudflare's `{ACCOUNT_ID}`, for instance — ask for them right in the Add-key dialog
 
   ![Cloud Providers](./docs/screenshot-cloud.png)
   <!-- NEW IMAGE for v1.1.0: open the Cloud page (cloud icon in sidebar), capture the Free Tier + API Key sections with a few connected cards. Save exactly as docs/screenshot-cloud.png -->
@@ -32,6 +32,9 @@ Run the same prompt against multiple local models — via [Ollama](https://ollam
 - 🏆 **Winner votes & leaderboard** — crown the best answer per run and track Elo ratings plus average speed per model over time (a 4-model win moves more points than head-to-head)
 - 🙈 **Blind voting** — hide model identities (columns, chart, diff) behind letter labels to vote without bias
 - ⚖️ **LLM judge** — one model scores all outputs blind against a fixed rubric (accuracy/completeness/clarity), with an advisory pick badge; the human still crowns
+- 🏁 **Race view** — a live timing board above the columns: one lane per model, ranked by tok/s as the run streams, with TTFT split times and each model's own color. Bars encode _speed_, not characters written, so a model that rambles for 800 tokens doesn't outrank one that answers in 80
+- 📈 **Trend page** — charts one model's speed across its own history and calls a run a regression only when the change exceeds that model's normal run-to-run spread (5% floor), so a steady model's 5% dip is reported while a jumpy one's 23% dip is not
+- 🖼️ **Share card (PNG)** — save a run as a fixed-size card (prompt, per-model speed bars, TTFT, token counts, cloud cost) rendered on a fixed dark ground, so it looks the same regardless of the sender's theme
 - ✅ **Suite auto-checks** — per-test rules (contains/regex/exact/valid-JSON) with pass/fail badges and pass-rate summary
 
   ![Model Leaderboard](./docs/screenshot-leaderboard.png)
@@ -181,7 +184,12 @@ npm run tauri build
 - [x] Re-run any run from History with its prompt, columns and sampling settings
 - [x] JSON Schema output checks in Test Suite
 - [x] Cloud spend dashboard — totals, 30-day trend, by provider and model
-- [x] Context sweep — tok/s and TTFT across 2K–64K context windows
+- [x] Context sweep — tok/s and TTFT across 2K–128K context windows
+- [x] Race view — live per-model timing board ranked by tok/s
+- [x] Trend page — per-model speed over time, judged against that model's own variance
+- [x] Share card (PNG) export for posting a run
+- [x] Inter-token latency (median + p95), sound cues and desktop notifications
+- [x] 36-provider cloud catalog with per-connection URL variables
 
 Contributions and ideas are very welcome — see [Contributing](#-contributing) below.
 

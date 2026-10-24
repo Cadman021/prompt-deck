@@ -21,7 +21,6 @@ import { useTranslation } from 'react-i18next';
 import { formatDurationMs } from '../utils/timeUtils';
 import { toast } from '../store/useToastStore';
 
-
 interface ModelColumnProps {
   models: OllamaModel[];
   source: ModelSource;
@@ -207,7 +206,10 @@ export const ModelColumn: React.FC<ModelColumnProps> = ({
                 onClick={() => setParamsOpen((v) => !v)}
                 aria-pressed={paramsOpen}
                 title={t('bench.paramsTitle', 'Per-model parameters (unset fields use global)')}
-                aria-label={t('bench.paramsTitle', 'Per-model parameters (unset fields use global)')}
+                aria-label={t(
+                  'bench.paramsTitle',
+                  'Per-model parameters (unset fields use global)'
+                )}
                 className={`relative p-1 rounded transition shrink-0 ${
                   paramsOpen || overridden
                     ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40'

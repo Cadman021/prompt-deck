@@ -40,9 +40,12 @@ export function qualifiedName(source: ModelSource, model: string): string {
 
 /** Short display name: cloud drops the `cloud:providerId/` prefix. Local names are never truncated. */
 export function shortModelName(qualified: string, source?: ModelSource): string {
-  const isCloud = source?.kind === 'cloud' || (source === undefined && qualified.startsWith(CLOUD_PREFIX));
+  const isCloud =
+    source?.kind === 'cloud' || (source === undefined && qualified.startsWith(CLOUD_PREFIX));
   if (!isCloud) return qualified;
-  const rest = qualified.startsWith(CLOUD_PREFIX) ? qualified.slice(CLOUD_PREFIX.length) : qualified;
+  const rest = qualified.startsWith(CLOUD_PREFIX)
+    ? qualified.slice(CLOUD_PREFIX.length)
+    : qualified;
   const slash = rest.indexOf('/');
   return slash >= 0 ? rest.slice(slash + 1) : rest;
 }

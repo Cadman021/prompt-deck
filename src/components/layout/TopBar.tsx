@@ -55,7 +55,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">
             {provider === 'ollama' ? 'Ollama' : 'LM Studio'}
           </span>
-          <span className="text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px]" title={baseUrl}>
+          <span
+            className="text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px]"
+            title={baseUrl}
+          >
             {shortUrl}
           </span>
           <span className="font-mono text-slate-500 dark:text-slate-400">·</span>
@@ -79,7 +82,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           onClick={() => setTheme(NEXT_THEME[theme] ?? 'dark')}
           className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-          title={t('theme.switchTo', { theme: t(`theme.${NEXT_THEME[theme] ?? 'dark'}`, NEXT_THEME[theme] ?? 'dark') })}
+          title={t('theme.switchTo', {
+            theme: t(`theme.${NEXT_THEME[theme] ?? 'dark'}`, NEXT_THEME[theme] ?? 'dark'),
+          })}
         >
           {theme === 'light' ? (
             <Sun className="w-4 h-4" />

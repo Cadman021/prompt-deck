@@ -57,7 +57,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="px-5 pb-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed" dir="auto">
+        <p
+          className="px-5 pb-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed"
+          dir="auto"
+        >
           {message}
         </p>
         <div className="flex items-center justify-end gap-2 px-5 py-4">

@@ -66,9 +66,7 @@ const TestSuiteView = lazy(() =>
 const CloudProvidersView = lazy(() =>
   import('./components/cloud/CloudProvidersView').then((m) => ({ default: m.CloudProvidersView }))
 );
-const RaceView = lazy(() =>
-  import('./components/RaceView').then((m) => ({ default: m.RaceView }))
-);
+const RaceView = lazy(() => import('./components/RaceView').then((m) => ({ default: m.RaceView })));
 const SpendView = lazy(() =>
   import('./components/SpendView').then((m) => ({ default: m.SpendView }))
 );
@@ -215,7 +213,10 @@ export default function App() {
   const cloudPricing = useCloudStore((s) => s.modelPricing);
 
   /** Raw run cost in USD for priced cloud slots, else null. */
-  const costFor = (s: Pick<Slot, 'source' | 'model'>, m: BenchmarkMetrics | null): number | null => {
+  const costFor = (
+    s: Pick<Slot, 'source' | 'model'>,
+    m: BenchmarkMetrics | null
+  ): number | null => {
     if (s.source.kind !== 'cloud' || !m || m.tokenSource !== 'server') return null;
     return calcCost(
       m.promptTokens,
@@ -268,7 +269,9 @@ export default function App() {
   const shareRef = useRef<HTMLDivElement>(null);
 
   // App Shell navigation: 'bench'/'tests'/'cloud' are pages, the rest are overlay panels.
-  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud' | 'spend' | 'trend'>('bench');
+  const [activePage, setActivePage] = useState<'bench' | 'tests' | 'cloud' | 'spend' | 'trend'>(
+    'bench'
+  );
   const activeView: SidebarView = isSettingsOpen
     ? 'settings'
     : isLeaderboardOpen
@@ -319,13 +322,10 @@ export default function App() {
   // than from the render closure: a run can finish long after the render that
   // started it, and the user may have toggled sound off in between.
 
-  const announceCue = useCallback(
-    (cue: Cue) => {
-      const { alerts } = useSettingsStore.getState();
-      playCue(cue, alerts.volume, alerts.sound);
-    },
-    []
-  );
+  const announceCue = useCallback((cue: Cue) => {
+    const { alerts } = useSettingsStore.getState();
+    playCue(cue, alerts.volume, alerts.sound);
+  }, []);
 
   /**
    * Called once per finished run. Picks the cue from how the run actually
@@ -358,12 +358,16 @@ export default function App() {
 
       const body =
         failed > 0
-          ? t('notify.bodyPartial', '{{ok}} of {{total}} models finished, {{failed}} failed. {{winner}}', {
-              ok: ok.length,
-              total: modelCount,
-              failed,
-              winner,
-            })
+          ? t(
+              'notify.bodyPartial',
+              '{{ok}} of {{total}} models finished, {{failed}} failed. {{winner}}',
+              {
+                ok: ok.length,
+                total: modelCount,
+                failed,
+                winner,
+              }
+            )
           : t('notify.body', '{{count}} models finished. {{winner}}', {
               count: ok.length,
               winner,
@@ -1467,8 +1471,7 @@ export default function App() {
                         name: blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
                         // Blind: label doubles as the color key so the bar
                         // can't fingerprint the model it is hiding.
-                        colorKey:
-                          blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
+                        colorKey: blindMode && s.model ? blindLabelFor(i) : slotQualified(s),
                         metrics: s.metrics!,
                       }))}
                     />

@@ -69,7 +69,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ isOpen, onClose }) => 
                     {i === 0 && s.wins > 0 ? (
                       <Crown className="w-4 h-4 text-amber-500 shrink-0" />
                     ) : (
-                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400 w-4 shrink-0">{i + 1}</span>
+                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400 w-4 shrink-0">
+                        {i + 1}
+                      </span>
                     )}
                     <span className="text-xs font-semibold font-mono truncate" title={s.model}>
                       {s.model}

@@ -64,26 +64,44 @@ export interface CloudUrlVar {
   secret?: boolean;
 }
 
-/** Replace every `{TOKEN}` placeholder in a base URL with its stored value. */
-export function applyUrlVars(
-  baseUrl: string,
-  vars: Record<string, string> | undefined
-): string {
+/**
+ * Allowed shape of a URL-variable value: path/query-safe RFC 3986 chars. It
+ * excludes `/ ? # % & = { }` and any whitespace, so a pasted value can never
+ * escape its own path segment or inject an extra query parameter.
+ */
+const URL_VAR_SAFE = /^[-._~A-Za-z0-9]+$/;
+
+/** True when a value may be substituted into a base URL as-is. */
+export function isValidUrlVarValue(value: string | undefined): boolean {
+  return URL_VAR_SAFE.test((value ?? '').trim());
+}
+
+/**
+ * Replace every `{TOKEN}` placeholder in a base URL with its stored value.
+ *
+ * Values are validated against the RFC 3986 unreserved set (`-._~A-Za-z0-9`)
+ * and then percent-encoded, so a pasted value can never escape its own path
+ * segment, add a `?query` / `#fragment`, or re-form a `{PLACEHOLDER}`. Anything
+ * else leaves the placeholder in place, which `missingUrlVars` reports — a URL
+ * that could only 404 is never sent.
+ */
+export function applyUrlVars(baseUrl: string, vars: Record<string, string> | undefined): string {
   if (!vars) return baseUrl;
   return baseUrl.replace(/\{([A-Z0-9_]+)\}/g, (match, token: string) => {
     const value = vars[token]?.trim();
-    return value || match;
+    return value && URL_VAR_SAFE.test(value) ? encodeURIComponent(value) : match;
   });
 }
 
-/** Tokens still unfilled in `baseUrl` — used to explain a failed resolve. */
+/** Tokens still unfilled (or unusable) in `baseUrl`. */
 export function missingUrlVars(
   baseUrl: string,
   vars: Record<string, string> | undefined
 ): string[] {
   const found: string[] = [];
   for (const [, token] of baseUrl.matchAll(/\{([A-Z0-9_]+)\}/g)) {
-    if (!vars?.[token]?.trim()) found.push(token);
+    const value = vars?.[token]?.trim();
+    if (!value || !URL_VAR_SAFE.test(value)) found.push(token);
   }
   return found;
 }
@@ -286,7 +304,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'MA',
     icon: '/providers/modelark.png',
     infoKey: 'cloud.info.modelark',
-    infoDefault: 'BytePlus ModelArk (Beijing region): Doubao and DeepSeek models via OpenAI-compatible API.',
+    infoDefault:
+      'BytePlus ModelArk (Beijing region): Doubao and DeepSeek models via OpenAI-compatible API.',
     suggestedModels: ['doubao-seed-1-6-251015', 'doubao-seed-1-6-flash-250828'],
   },
   {
@@ -299,7 +318,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'P',
     icon: '/providers/poolside.png',
     infoKey: 'cloud.info.poolside',
-    infoDefault: 'Poolside AI: Proprietary Laguna foundation models and autonomous software engineering agents for enterprise development via API and local deployment.',
+    infoDefault:
+      'Poolside AI: Proprietary Laguna foundation models and autonomous software engineering agents for enterprise development via API and local deployment.',
     suggestedModels: ['poolside/laguna-xs-2.1', 'poolside/laguna-s-2.1'],
   },
   {
@@ -313,7 +333,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     freeTier: true,
     icon: '/providers/agnes.png',
     infoKey: 'cloud.info.agnes',
-    infoDefault: 'OpenAI-compatible gateway from Agnes AI, offering free API credits on sign-up. Accepts a bearer token or an x-api-key header.',
+    infoDefault:
+      'OpenAI-compatible gateway from Agnes AI, offering free API credits on sign-up. Accepts a bearer token or an x-api-key header.',
     suggestedModels: ['agnes-3.0-flash', 'agnes-2.5-pro-alpha'],
   },
   {
@@ -326,7 +347,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'Mi',
     icon: '/providers/xiaomi-mimo.png',
     infoKey: 'cloud.info.xiaomi-mimo',
-    infoDefault: 'Xiaomi MiMo gateway: mimo-v2.6-pro, flash and 2.5 models via OpenAI-compatible API.',
+    infoDefault:
+      'Xiaomi MiMo gateway: mimo-v2.6-pro, flash and 2.5 models via OpenAI-compatible API.',
     suggestedModels: ['mimo-v2.6-pro', 'mimo-v2.6-flash', 'mimo-v2.5'],
   },
   {
@@ -339,7 +361,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'M',
     icon: '/providers/mistral.png',
     infoKey: 'cloud.info.mistral',
-    infoDefault: 'Official Mistral API (La Plateforme): Large, Medium and Codestral models, OpenAI-compatible.',
+    infoDefault:
+      'Official Mistral API (La Plateforme): Large, Medium and Codestral models, OpenAI-compatible.',
     suggestedModels: ['mistral-large-latest', 'mistral-medium-latest', 'codestral-latest'],
   },
   {
@@ -352,7 +375,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'B',
     icon: '/providers/bai.png',
     infoKey: 'cloud.info.bai',
-    infoDefault: 'B.AI gateway with a large model catalogue. Model ids are fetched live from the provider.',
+    infoDefault:
+      'B.AI gateway with a large model catalogue. Model ids are fetched live from the provider.',
     suggestedModels: ['gpt-6-astra', 'glm-5.2'],
   },
   {
@@ -365,7 +389,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'An',
     icon: '/providers/anthropic.png',
     infoKey: 'cloud.info.anthropic',
-    infoDefault: 'Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth.',
+    infoDefault:
+      'Official Anthropic API via OpenAI SDK compatibility: Claude Opus, Sonnet and Haiku with Bearer auth.',
     suggestedModels: ['claude-opus-5-5', 'claude-sonnet-4-6'],
   },
   // ── Cloud aggregators & inference platforms ────────────────────────────
@@ -380,8 +405,12 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     freeTier: true,
     icon: '/providers/cloudflare.png',
     infoKey: 'cloud.info.cloudflare',
-    infoDefault: 'Cloudflare Workers AI via its OpenAI-compatible endpoint. Replace {ACCOUNT_ID} in the base URL with your account id.',
-    suggestedModels: ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/qwen/qwen2.5-coder-32b-instruct'],
+    infoDefault:
+      'Cloudflare Workers AI via its OpenAI-compatible endpoint. Replace {ACCOUNT_ID} in the base URL with your account id.',
+    suggestedModels: [
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/qwen/qwen2.5-coder-32b-instruct',
+    ],
     urlVars: [
       {
         token: 'ACCOUNT_ID',
@@ -406,8 +435,9 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     freeTier: true,
     icon: '/providers/venice.png',
     infoKey: 'cloud.info.venice',
-    infoDefault: 'Private, uncensored inference. Free tier includes a daily allowance of text tokens.',
-    suggestedModels: ['venice-uncensored', 'qwen3-235b-a22b', 'deepseek-v3.1'],
+    infoDefault:
+      'Private, uncensored inference. Free tier includes a daily allowance of text tokens.',
+    suggestedModels: ['venice-uncensored-1-2', 'z-ai-glm-5-3', 'gemini-4-argon'],
   },
   {
     id: 'siliconflow',
@@ -420,8 +450,13 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     freeTier: true,
     icon: '/providers/siliconflow.png',
     infoKey: 'cloud.info.siliconflow',
-    infoDefault: 'Chinese model gateway (global endpoint: api.siliconflow.com) with a generous free tier.',
-    suggestedModels: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen3-235B-A22B', 'moonshotai/Kimi-K2-Instruct'],
+    infoDefault:
+      'Chinese model gateway (global endpoint: api.siliconflow.com) with a generous free tier.',
+    suggestedModels: [
+      'deepseek-ai/DeepSeek-V3',
+      'Qwen/Qwen3-235B-A22B',
+      'moonshotai/Kimi-K2-Instruct',
+    ],
   },
   {
     id: 'huggingface',
@@ -460,7 +495,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'FL',
     icon: '/providers/featherless.png',
     infoKey: 'cloud.info.featherless',
-    infoDefault: 'Flat-fee subscription to a huge catalogue of open models, one model loaded at a time.',
+    infoDefault:
+      'Flat-fee subscription to a huge catalogue of open models, one model loaded at a time.',
     suggestedModels: ['deepseek-ai/DeepSeek-V3-0324', 'Qwen/Qwen3-235B-A22B'],
   },
   {
@@ -473,8 +509,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'NR',
     icon: '/providers/nous-research.png',
     infoKey: 'cloud.info.nous-research',
-    infoDefault: 'Nous Portal API for Hermes and other open models.',
-    suggestedModels: ['Hermes-4-405B', 'Hermes-4-70B'],
+    infoDefault: 'Nous Portal API router: one Nous key for Hermes and hundreds of open models.',
+    suggestedModels: ['moonshotai/kimi-k3.1-pro', 'deepseek/deepseek-v4.1-flash-1017'],
   },
   {
     id: 'llm7',
@@ -488,7 +524,7 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     icon: '/providers/llm7.png',
     infoKey: 'cloud.info.llm7',
     infoDefault: 'Community gateway that forwards to many upstream models, including free ones.',
-    suggestedModels: ['gpt-4o-mini', 'deepseek-chat'],
+    suggestedModels: ['gpt-oss:20b', 'minimax-m2.7', 'codestral-latest'],
   },
   {
     id: 'morph',
@@ -500,7 +536,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'M',
     icon: '/providers/morph.png',
     infoKey: 'cloud.info.morph',
-    infoDefault: 'Fast apply/edit models for coding agents (morph-v3) plus chat models.',
+    infoDefault:
+      'Fast apply/edit models for coding agents (morph-v3). Exposes no model list — add model ids manually.',
     suggestedModels: ['morph-v3-large', 'morph-v3-fast'],
   },
   {
@@ -514,7 +551,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     freeTier: true,
     icon: '/providers/cerebras.png',
     infoKey: 'cloud.info.cerebras',
-    infoDefault: 'Wafer-scale inference: fastest token throughput on open models. Free tier available.',
+    infoDefault:
+      'Wafer-scale inference: fastest token throughput on open models. Free tier available.',
     suggestedModels: ['llama3.1-8b', 'llama-3.3-70b', 'qwen-3-32b'],
   },
   {
@@ -543,7 +581,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'Al',
     icon: '/providers/alibaba.png',
     infoKey: 'cloud.info.alibaba',
-    infoDefault: 'DashScope (Model Studio) international endpoint: Qwen models via OpenAI-compatible API. Use dashscope.aliyuncs.com for the China region.',
+    infoDefault:
+      'DashScope (Model Studio) international endpoint: Qwen models via OpenAI-compatible API. Use dashscope.aliyuncs.com for the China region.',
     suggestedModels: ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen3-coder-plus'],
   },
   {
@@ -582,7 +621,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'MM',
     icon: '/providers/minimax.png',
     infoKey: 'cloud.info.minimax',
-    infoDefault: 'MiniMax global platform: MiniMax-M2 and abab models. Use api.minimaxi.com for the China region.',
+    infoDefault:
+      'MiniMax global platform: MiniMax-M2 and abab models. Use api.minimaxi.com for the China region.',
     suggestedModels: ['MiniMax-M2', 'abab6.5s-chat'],
   },
   {
@@ -595,7 +635,9 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     initials: 'D',
     icon: '/providers/dahl.png',
     infoKey: 'cloud.info.dahl',
-    infoDefault: 'Dahl Inference gateway: OpenAI-compatible access to open chat models. Model ids are fetched live.',
+    infoDefault:
+      'Dahl Inference gateway (gonka-backed). Model ids are fetched live from the provider.',
+    suggestedModels: ['MiniMaxAI/MiniMax-M2.7', 'zai-org/GLM-5.3-Flash'],
   },
   {
     id: 'cohere',
@@ -608,7 +650,8 @@ export const CLOUD_CATALOG: CloudProviderDef[] = [
     freeTier: true,
     icon: '/providers/cohere.png',
     infoKey: 'cloud.info.cohere',
-    infoDefault: 'Cohere compatibility API (OpenAI-style) for Command models. Free trial keys available.',
+    infoDefault:
+      'Cohere compatibility API (OpenAI-style) for Command models. Free trial keys available.',
     suggestedModels: ['command-a-03-2025', 'command-r-plus-08-2024', 'command-r7b-12-2024'],
   },
 ];

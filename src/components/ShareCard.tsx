@@ -51,7 +51,13 @@ export const ShareCard = React.forwardRef<HTMLDivElement, ShareCardProps>(
         <div className="flex items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 grid place-items-center">
-              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="white" strokeWidth={2.5}>
+              <svg
+                viewBox="0 0 24 24"
+                className="w-4 h-4"
+                fill="none"
+                stroke="white"
+                strokeWidth={2.5}
+              >
                 <path d="M4 17l6-6-6-6M12 19h8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>

@@ -203,7 +203,13 @@
     "detectModels": "{{count}} 个模型",
     "resetTitle": "重置设置",
     "resetConfirm": "将服务商、连接和高级选项恢复为默认值？语言和主题保持不变。",
-    "resetButton": "恢复默认设置"
+    "resetButton": "恢复默认设置",
+    "updatesTitle": "更新",
+    "checkUpdates": "检查更新",
+    "updateAvailable": "可获取 v{{version}} — 重启后即可安装。",
+    "updateLatest": "已是最新版本。",
+    "updateError": "检查更新失败：{{message}}",
+    "updateUnavailable": "更新检查仅在桌面应用中可用。"
   },
   "theme": {
     "appearance": "外观",

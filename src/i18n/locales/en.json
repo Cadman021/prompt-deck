@@ -203,7 +203,13 @@
     "detectModels": "{{count}} models",
     "resetTitle": "Reset Settings",
     "resetConfirm": "Reset provider, connection and advanced options to their defaults? Language and theme are kept.",
-    "resetButton": "Reset to defaults"
+    "resetButton": "Reset to defaults",
+    "updatesTitle": "Updates",
+    "checkUpdates": "Check for updates",
+    "updateAvailable": "v{{version}} is available — restart to get the prompt.",
+    "updateLatest": "You're on the latest version.",
+    "updateError": "Update check failed: {{message}}",
+    "updateUnavailable": "Update checks only run in the desktop app."
   },
   "theme": {
     "appearance": "Appearance",
@@ -264,6 +270,7 @@
     "addKeyTitle": "Add {{name}} API Key",
     "extraFields": "{{name}} connection details",
     "missingVar": "{{var}} missing",
+    "invalidVar": "Only letters, digits and - . _ ~ are allowed here (it goes straight into the URL).",
     "urlVar": {
       "accountId": "Account ID",
       "accountIdHelp": "Find your Account ID in the right sidebar of dash.cloudflare.com."
@@ -315,16 +322,16 @@
       "huggingface": "Hugging Face Inference Providers router: one token for many upstream providers.",
       "hyperbolic": "Cheap open-model inference (Llama, Qwen, DeepSeek) with OpenAI-compatible API.",
       "featherless": "Flat-fee subscription to a huge catalogue of open models, one model loaded at a time.",
-      "nous-research": "Nous Portal API for Hermes and other open models.",
+      "nous-research": "Nous Portal API router: one Nous key for Hermes and hundreds of open models.",
       "llm7": "Community gateway that forwards to many upstream models, including free ones.",
-      "morph": "Fast apply/edit models for coding agents (morph-v3) plus chat models.",
+      "morph": "Fast apply/edit models for coding agents (morph-v3). Exposes no model list — add model ids manually.",
       "cerebras": "Wafer-scale inference: fastest token throughput on open models. Free tier available.",
       "fireworks": "High-throughput serving of open models and fine-tunes.",
       "alibaba": "DashScope (Model Studio) international endpoint: Qwen models via OpenAI-compatible API. Use dashscope.aliyuncs.com for the China region.",
       "baidu-qianfan": "Baidu Qianfan v2 OpenAI-compatible endpoint: ERNIE and third-party models.",
       "tencent-hunyuan": "Tencent Hunyuan OpenAI-compatible endpoint: hunyuan-turbos and hunyuan-t1.",
       "minimax": "MiniMax global platform: MiniMax-M2 and abab models. Use api.minimaxi.com for the China region.",
-      "dahl": "Dahl Inference gateway: OpenAI-compatible access to open chat models. Model ids are fetched live.",
+      "dahl": "Dahl Inference gateway (gonka-backed). Model ids are fetched live from the provider.",
       "cohere": "Cohere compatibility API (OpenAI-style) for Command models. Free trial keys available."
     }
   },

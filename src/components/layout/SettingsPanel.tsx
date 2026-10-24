@@ -2,7 +2,18 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  X, Server, SlidersHorizontal, Palette, Languages, Sun, Moon, Zap, Check, Volume2, Play,
+  X,
+  Server,
+  SlidersHorizontal,
+  Palette,
+  Languages,
+  Sun,
+  Moon,
+  Zap,
+  Check,
+  Volume2,
+  Play,
+  RefreshCw,
 } from 'lucide-react';
 import { ProviderSettings } from '../ProviderSettings';
 import type { AdvancedConfig } from '../AdvancedSettings';
@@ -11,6 +22,9 @@ import { LanguageModal, SUPPORTED_LANGUAGES } from './LanguageModal';
 import { ConfirmModal } from '../ConfirmModal';
 import { openExternal } from '../../utils/openExternal';
 import { playCue } from '../../utils/sound';
+import { checkForUpdate, type UpdateCheck } from '../../utils/updater';
+import { requestNotifyPermission } from '../../utils/notify';
+import { APP_VERSION } from '../../version';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -29,7 +43,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const { theme, setTheme, language, resetSettings, alerts, setAlerts } = useSettingsStore();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateResult, setUpdateResult] = useState<UpdateCheck | null>(null);
   if (!isOpen) return null;
+
+  const handleCheckUpdate = async () => {
+    if (updating) return;
+    setUpdating(true);
+    setUpdateResult(null);
+    setUpdateResult(await checkForUpdate(APP_VERSION));
+    setUpdating(false);
+  };
 
   const themeOption = (id: Theme, icon: React.ReactNode, labelKey: string, fallback: string) => {
     const selected = theme === id;
@@ -37,10 +61,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <button
         key={id}
         onClick={() => setTheme(id)}
-        className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-3 border text-micro font-medium transition-all ${selected
-          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 shadow-[0_0_14px_rgba(99,102,241,0.3)]'
-          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
+        className={`flex-1 flex flex-col items-center gap-1 rounded-xl px-2 py-3 border text-micro font-medium transition-all ${
+          selected
+            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 shadow-[0_0_14px_rgba(99,102,241,0.3)]'
+            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+        }`}
       >
         {icon}
         <span>{t(labelKey, fallback)}</span>
@@ -87,9 +112,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 hover:border-indigo-400 transition text-xs"
             >
               <span className="font-semibold">
-                {SUPPORTED_LANGUAGES.find((l) => l.id === language)?.native ?? language.toUpperCase()}
+                {SUPPORTED_LANGUAGES.find((l) => l.id === language)?.native ??
+                  language.toUpperCase()}
               </span>
-              <span className="font-mono text-slate-500 dark:text-slate-400">{language.toUpperCase()}</span>
+              <span className="font-mono text-slate-500 dark:text-slate-400">
+                {language.toUpperCase()}
+              </span>
             </button>
           </section>
 
@@ -138,9 +166,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     <button
                       type="button"
                       disabled={!alerts.sound || alerts.volume === 0}
-                      onClick={() =>
-                        playCue('runFinish', alerts.volume, alerts.sound)
-                      }
+                      onClick={() => playCue('runFinish', alerts.volume, alerts.sound)}
                       title={t('alerts.preview', 'Play a preview')}
                       aria-label={t('alerts.preview', 'Play a preview')}
                       className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 transition disabled:opacity-40"
@@ -177,7 +203,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <input
                   type="checkbox"
                   checked={alerts.notify}
-                  onChange={(e) => setAlerts({ notify: e.target.checked })}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    setAlerts({ notify: on });
+                    // Ask for the OS permission at opt-in time, not silently in
+                    // the middle of a run: the request is a one-shot dialog, and
+                    // a benchmark finishing while the window is minimized is the
+                    // worst possible moment for it to appear.
+                    if (on) void requestNotifyPermission();
+                  }}
                   aria-label={t('alerts.notify', 'Desktop notification')}
                   className="w-4 h-4 accent-indigo-500 shrink-0"
                 />
@@ -193,7 +227,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60">
               <ProviderSettings />
               <p className="mt-2 text-micro text-slate-500 dark:text-slate-400 leading-relaxed">
-                {t('settings.providerHint', 'Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server.')}
+                {t(
+                  'settings.providerHint',
+                  'Ollama for local models, OpenAI-compatible for LM Studio / llama.cpp server.'
+                )}
               </p>
             </div>
           </section>
@@ -213,7 +250,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <textarea
                     rows={3}
                     value={advancedConfig.system || ''}
-                    onChange={(e) => onAdvancedChange({ ...advancedConfig, system: e.target.value })}
+                    onChange={(e) =>
+                      onAdvancedChange({ ...advancedConfig, system: e.target.value })
+                    }
                     placeholder={t('advanced.systemPromptPlaceholder')}
                     className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs resize-none"
                     dir="auto"
@@ -223,26 +262,43 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <div>
                     <div className="flex justify-between text-slate-600 dark:text-slate-400 mb-1">
                       <span>{t('advanced.temperature')}:</span>
-                      <span className="font-mono font-bold text-indigo-500">{advancedConfig.temperature ?? 0.7}</span>
+                      <span className="font-mono font-bold text-indigo-500">
+                        {advancedConfig.temperature ?? 0.7}
+                      </span>
                     </div>
                     <input
-                      type="range" min="0" max="1.5" step="0.05"
+                      type="range"
+                      min="0"
+                      max="1.5"
+                      step="0.05"
                       value={advancedConfig.temperature ?? 0.7}
                       disabled={advancedConfig.serverDefaults}
-                      onChange={(e) => onAdvancedChange({ ...advancedConfig, temperature: parseFloat(e.target.value) })}
+                      onChange={(e) =>
+                        onAdvancedChange({
+                          ...advancedConfig,
+                          temperature: parseFloat(e.target.value),
+                        })
+                      }
                       className="w-full accent-indigo-500 cursor-pointer disabled:opacity-50"
                     />
                   </div>
                   <div>
                     <div className="flex justify-between text-slate-600 dark:text-slate-400 mb-1">
                       <span>{t('advanced.topP')}:</span>
-                      <span className="font-mono font-bold text-indigo-500">{advancedConfig.top_p ?? 0.9}</span>
+                      <span className="font-mono font-bold text-indigo-500">
+                        {advancedConfig.top_p ?? 0.9}
+                      </span>
                     </div>
                     <input
-                      type="range" min="0.1" max="1" step="0.05"
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.05"
                       value={advancedConfig.top_p ?? 0.9}
                       disabled={advancedConfig.serverDefaults}
-                      onChange={(e) => onAdvancedChange({ ...advancedConfig, top_p: parseFloat(e.target.value) })}
+                      onChange={(e) =>
+                        onAdvancedChange({ ...advancedConfig, top_p: parseFloat(e.target.value) })
+                      }
                       className="w-full accent-indigo-500 cursor-pointer disabled:opacity-50"
                     />
                   </div>
@@ -252,7 +308,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     </label>
                     <select
                       value={advancedConfig.num_ctx ?? 4096}
-                      onChange={(e) => onAdvancedChange({ ...advancedConfig, num_ctx: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        onAdvancedChange({ ...advancedConfig, num_ctx: parseInt(e.target.value) })
+                      }
                       disabled={advancedConfig.serverDefaults}
                       className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono disabled:opacity-50"
                     >
@@ -263,14 +321,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       <option value={32768}>32768 (32K)</option>
                     </select>
                   </div>
-                  <label className={`flex items-center justify-between gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 cursor-pointer ${advancedConfig.serverDefaults ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700' : ''}`}>
+                  <label
+                    className={`flex items-center justify-between gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700/60 cursor-pointer ${advancedConfig.serverDefaults ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700' : ''}`}
+                  >
                     <span className="text-slate-600 dark:text-slate-300 font-medium">
                       {t('advanced.serverDefaults')}
                     </span>
                     <input
                       type="checkbox"
                       checked={advancedConfig.serverDefaults ?? false}
-                      onChange={(e) => onAdvancedChange({ ...advancedConfig, serverDefaults: e.target.checked })}
+                      onChange={(e) =>
+                        onAdvancedChange({ ...advancedConfig, serverDefaults: e.target.checked })
+                      }
                       className="w-3.5 h-3.5 accent-indigo-500"
                     />
                   </label>
@@ -284,10 +346,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         min={0}
                         value={advancedConfig.seed ?? ''}
                         placeholder="—"
-                        onChange={(e) => onAdvancedChange({
-                          ...advancedConfig,
-                          seed: e.target.value === '' ? null : Math.max(0, Math.floor(Number(e.target.value) || 0)),
-                        })}
+                        onChange={(e) =>
+                          onAdvancedChange({
+                            ...advancedConfig,
+                            seed:
+                              e.target.value === ''
+                                ? null
+                                : Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                          })
+                        }
                         className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
@@ -300,10 +367,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         min={1}
                         value={advancedConfig.maxTokens ?? ''}
                         placeholder="—"
-                        onChange={(e) => onAdvancedChange({
-                          ...advancedConfig,
-                          maxTokens: e.target.value === '' ? null : Math.max(1, Math.floor(Number(e.target.value) || 0)),
-                        })}
+                        onChange={(e) =>
+                          onAdvancedChange({
+                            ...advancedConfig,
+                            maxTokens:
+                              e.target.value === ''
+                                ? null
+                                : Math.max(1, Math.floor(Number(e.target.value) || 0)),
+                          })
+                        }
                         className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
@@ -316,10 +388,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         min={1}
                         max={5}
                         value={advancedConfig.repeats ?? 1}
-                        onChange={(e) => onAdvancedChange({
-                          ...advancedConfig,
-                          repeats: Math.min(5, Math.max(1, Math.floor(Number(e.target.value) || 1))),
-                        })}
+                        onChange={(e) =>
+                          onAdvancedChange({
+                            ...advancedConfig,
+                            repeats: Math.min(
+                              5,
+                              Math.max(1, Math.floor(Number(e.target.value) || 1))
+                            ),
+                          })
+                        }
                         className="w-full p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
@@ -329,9 +406,61 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </section>
           <section>
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <RefreshCw className="w-4 h-4" />
+              <span>{t('settings.updatesTitle', 'Updates')}</span>
+            </div>
+            <button
+              onClick={() => void handleCheckUpdate()}
+              disabled={updating}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-60"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${updating ? 'animate-spin' : ''}`} />
+              {t('settings.checkUpdates', 'Check for updates')}
+              <span className="font-mono font-normal text-slate-500 dark:text-slate-400">
+                v{APP_VERSION}
+              </span>
+            </button>
+            {updateResult && (
+              <p
+                className={`mt-2 text-micro ${
+                  updateResult.kind === 'update'
+                    ? 'text-indigo-600 dark:text-indigo-300'
+                    : updateResult.kind === 'latest'
+                      ? 'text-emerald-700 dark:text-emerald-300'
+                      : 'text-amber-700 dark:text-amber-300'
+                }`}
+              >
+                {updateResult.kind === 'update'
+                  ? t(
+                      'settings.updateAvailable',
+                      'v{{version}} is available — restart to get the prompt.',
+                      {
+                        version: updateResult.version,
+                      }
+                    )
+                  : updateResult.kind === 'latest'
+                    ? t('settings.updateLatest', "You're on the latest version.")
+                    : updateResult.kind === 'error'
+                      ? t('settings.updateError', 'Update check failed: {{message}}', {
+                          message: updateResult.message,
+                        })
+                      : t(
+                          'settings.updateUnavailable',
+                          'Update checks only run in the desktop app.'
+                        )}
+              </p>
+            )}
+          </section>
+          <section>
             <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-rose-700 dark:text-red-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
               <span>{t('settings.resetTitle', 'Reset Settings')}</span>
             </div>

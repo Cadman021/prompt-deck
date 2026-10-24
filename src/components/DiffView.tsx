@@ -41,7 +41,9 @@ export const DiffView: React.FC<DiffViewProps> = ({
     <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex-wrap">
         <div className="flex items-center gap-2 text-xs flex-wrap">
-          <span className="font-semibold text-slate-700 dark:text-slate-300">{t('diff.title')}</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-300">
+            {t('diff.title')}
+          </span>
           {pairCount > 2 && (
             <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
               <select
@@ -71,11 +73,17 @@ export const DiffView: React.FC<DiffViewProps> = ({
               </select>
             </span>
           )}
-          <span className="font-mono text-indigo-600 dark:text-indigo-300 truncate max-w-[180px]" title={leftName}>
+          <span
+            className="font-mono text-indigo-600 dark:text-indigo-300 truncate max-w-[180px]"
+            title={leftName}
+          >
             {shortModelName(leftName).split(':')[0]}
           </span>
           <span className="text-slate-500 dark:text-slate-400">↔</span>
-          <span className="font-mono text-cyan-700 dark:text-cyan-300 truncate max-w-[180px]" title={rightName}>
+          <span
+            className="font-mono text-cyan-700 dark:text-cyan-300 truncate max-w-[180px]"
+            title={rightName}
+          >
             {shortModelName(rightName).split(':')[0]}
           </span>
           <span className="text-micro text-slate-500 dark:text-slate-400 font-mono">
@@ -110,10 +118,16 @@ export const DiffView: React.FC<DiffViewProps> = ({
       </div>
 
       <div className="grid grid-cols-2 text-xs font-mono">
-        <div className="px-3 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-semibold text-slate-600 dark:text-slate-300 truncate" title={leftName}>
+        <div
+          className="px-3 py-1.5 border-b border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-semibold text-slate-600 dark:text-slate-300 truncate"
+          title={leftName}
+        >
           {leftName}
         </div>
-        <div className="px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-semibold text-slate-600 dark:text-slate-300 truncate" title={rightName}>
+        <div
+          className="px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 font-semibold text-slate-600 dark:text-slate-300 truncate"
+          title={rightName}
+        >
           {rightName}
         </div>
       </div>
@@ -125,7 +139,10 @@ export const DiffView: React.FC<DiffViewProps> = ({
           </div>
         ) : (
           visible.map((r, i) => (
-            <div key={i} className="grid grid-cols-2 border-b border-slate-100 dark:border-slate-800/50">
+            <div
+              key={i}
+              className="grid grid-cols-2 border-b border-slate-100 dark:border-slate-800/50"
+            >
               <div
                 dir="auto"
                 className={`px-2 py-0.5 whitespace-pre-wrap break-words border-r border-slate-200 dark:border-slate-800 ${

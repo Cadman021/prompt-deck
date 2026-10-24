@@ -964,7 +964,9 @@ export const TestSuiteView: React.FC<{ models: OllamaModel[] }> = ({ models }) =
                   >
                     <td className="px-3 py-2 text-slate-600 dark:text-slate-300 max-w-[260px]">
                       <div className="font-medium truncate" title={prompt} dir="auto">
-                        <span className="font-mono text-slate-500 dark:text-slate-400 me-1">#{row + 1}</span>
+                        <span className="font-mono text-slate-500 dark:text-slate-400 me-1">
+                          #{row + 1}
+                        </span>
                         {prompt.split('\n')[0].slice(0, 80)}
                       </div>
                     </td>

@@ -63,7 +63,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     setAllModels,
   } = useCloudStore();
 
-  const [keyModal, setKeyModal] = useState<{ mode: 'create' } | { mode: 'edit'; id: string } | null>(null);
+  const [keyModal, setKeyModal] = useState<
+    { mode: 'create' } | { mode: 'edit'; id: string } | null
+  >(null);
   const [testingKey, setTestingKey] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -123,7 +125,12 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     } else if (result.ok) {
       // Key is valid but the provider exposes no model list — the user
       // adds model ids manually (or via suggestions) below.
-      setRefreshInfo(t('cloud.noListEndpoint', 'Key works, but this provider exposes no model list — add model ids manually below.'));
+      setRefreshInfo(
+        t(
+          'cloud.noListEndpoint',
+          'Key works, but this provider exposes no model list — add model ids manually below.'
+        )
+      );
     } else {
       setRefreshError(result.error || t('cloud.failed', 'Connection failed'));
     }
@@ -151,7 +158,8 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const mq = modelQuery.trim().toLowerCase();
   const visibleModels = mq ? known.filter((m) => m.toLowerCase().includes(mq)) : known;
 
-  const editingKey = keyModal?.mode === 'edit' ? providerKeys.find((k) => k.id === keyModal.id) : undefined;
+  const editingKey =
+    keyModal?.mode === 'edit' ? providerKeys.find((k) => k.id === keyModal.id) : undefined;
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
@@ -232,7 +240,10 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold truncate">{k.label}</div>
-                  <div className="text-micro font-mono text-slate-500 dark:text-slate-400 truncate" dir="ltr">
+                  <div
+                    className="text-micro font-mono text-slate-500 dark:text-slate-400 truncate"
+                    dir="ltr"
+                  >
                     {fingerprint(secretFor(k)) || '••••'}
                     {urlVars.map((v) =>
                       (k.connectionVars?.[v.token] ?? '').trim() ? (
@@ -247,7 +258,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                       </span>
                     )}
                     {k.status === 'error' && k.error && (
-                      <span className="ms-2 font-sans text-rose-700 dark:text-rose-400">{k.error}</span>
+                      <span className="ms-2 font-sans text-rose-700 dark:text-rose-400">
+                        {k.error}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -286,7 +299,10 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
-                <label className="relative inline-flex cursor-pointer items-center" title={t('cloud.enabled', 'Enabled')}>
+                <label
+                  className="relative inline-flex cursor-pointer items-center"
+                  title={t('cloud.enabled', 'Enabled')}
+                >
                   <input
                     type="checkbox"
                     checked={k.enabled}
@@ -310,7 +326,10 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
             <span className="ms-2 font-mono font-normal text-slate-500 dark:text-slate-400">
               {enabled.length}/{known.length}
               {mq && (
-                <span> · {visibleModels.length} {t('cloud.shown', 'shown')}</span>
+                <span>
+                  {' '}
+                  · {visibleModels.length} {t('cloud.shown', 'shown')}
+                </span>
               )}
             </span>
           </h3>
@@ -344,7 +363,11 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
               onClick={() => void handleRefreshModels()}
               disabled={refreshing || !activeKey}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition disabled:opacity-50"
-              title={!activeKey ? t('cloud.fetchHint', 'Add an enabled API key first') : t('cloud.refreshModels', 'Fetch model list from the provider')}
+              title={
+                !activeKey
+                  ? t('cloud.fetchHint', 'Add an enabled API key first')
+                  : t('cloud.refreshModels', 'Fetch model list from the provider')
+              }
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               {t('cloud.refresh', 'Refresh')}
@@ -420,7 +443,11 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                       title={t('cloud.copyId', 'Copy model id')}
                       aria-label={t('cloud.copyId', 'Copy model id')}
                     >
-                      {copied === m ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied === m ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                     </button>
                     <button
                       onClick={(e) => {
@@ -455,7 +482,10 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                   setNewModel('');
                 }
               }}
-              placeholder={t('cloud.modelPlaceholder', 'Add model id manually, e.g. openai/gpt-4o-mini')}
+              placeholder={t(
+                'cloud.modelPlaceholder',
+                'Add model id manually, e.g. openai/gpt-4o-mini'
+              )}
               dir="ltr"
               className="flex-1 min-w-0 p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700/60 text-micro font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
@@ -537,11 +567,23 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     });
                   } catch {
                     cacheSecret(editingKey.id, trimmed);
-                    updateKey(editingKey.id, { label, connectionVars, apiKey: trimmed, status: 'unknown', error: undefined });
+                    updateKey(editingKey.id, {
+                      label,
+                      connectionVars,
+                      apiKey: trimmed,
+                      status: 'unknown',
+                      error: undefined,
+                    });
                   }
                 } else {
                   cacheSecret(editingKey.id, trimmed);
-                  updateKey(editingKey.id, { label, connectionVars, apiKey: trimmed, status: 'unknown', error: undefined });
+                  updateKey(editingKey.id, {
+                    label,
+                    connectionVars,
+                    apiKey: trimmed,
+                    status: 'unknown',
+                    error: undefined,
+                  });
                 }
               } else {
                 const id = createKeyId();
@@ -562,11 +604,27 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     });
                   } catch {
                     cacheSecret(id, trimmed);
-                    addKey({ id, providerId: def.id, label, connectionVars, apiKey: trimmed, enabled: true, status: 'unknown' });
+                    addKey({
+                      id,
+                      providerId: def.id,
+                      label,
+                      connectionVars,
+                      apiKey: trimmed,
+                      enabled: true,
+                      status: 'unknown',
+                    });
                   }
                 } else {
                   cacheSecret(id, trimmed);
-                  addKey({ id, providerId: def.id, label, connectionVars, apiKey: trimmed, enabled: true, status: 'unknown' });
+                  addKey({
+                    id,
+                    providerId: def.id,
+                    label,
+                    connectionVars,
+                    apiKey: trimmed,
+                    enabled: true,
+                    status: 'unknown',
+                  });
                 }
               }
               setKeyModal(null);

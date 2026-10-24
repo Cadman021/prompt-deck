@@ -66,9 +66,7 @@ export const PromptPresets: React.FC<PromptPresetsProps> = ({
         </button>
       ))}
 
-      {userPresets.length > 0 && (
-        <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
-      )}
+      {userPresets.length > 0 && <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1" />}
 
       {/* User presets: the pill is a container, not a button — a button inside
           a button is invalid and left the delete action keyboard-unreachable. */}

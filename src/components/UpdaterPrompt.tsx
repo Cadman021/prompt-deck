@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { ArrowDownToLine, X, RefreshCw } from 'lucide-react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { APP_VERSION } from '../version';
+import { isTauri } from '../utils/tauriEnv';
 
 type Phase =
   | { kind: 'idle' }
@@ -22,9 +24,14 @@ export const UpdaterPrompt: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      // Settings has a manual "Check for updates" button; this is the
+      // launch-time prompt. Both go through the same plugin call.
+      if (!isTauri()) return;
       try {
         const update = await check();
-        if (update && !cancelled) setPhase({ kind: 'available', update });
+        if (update && update.version !== APP_VERSION && !cancelled) {
+          setPhase({ kind: 'available', update });
+        }
       } catch {
         // Not running under Tauri, offline, or updater misconfigured.
       }
@@ -59,8 +66,7 @@ export const UpdaterPrompt: React.FC = () => {
 
   if (phase.kind === 'idle') return null;
 
-  const version =
-    phase.kind === 'restarting' ? '' : `v${phase.update.version}`;
+  const version = phase.kind === 'restarting' ? '' : `v${phase.update.version}`;
   const title =
     phase.kind === 'downloading'
       ? t('updater.downloading', 'Downloading update… ({{kb}} KB)', { kb: phase.downloadedKb })
@@ -95,7 +101,10 @@ export const UpdaterPrompt: React.FC = () => {
         {phase.kind === 'available' && (
           <>
             {phase.update.body && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-4" dir="auto">
+              <p
+                className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-4"
+                dir="auto"
+              >
                 {phase.update.body}
               </p>
             )}

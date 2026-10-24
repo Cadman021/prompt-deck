@@ -48,10 +48,7 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
   // clipped to the header instead of covering the viewport.
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-[640px] max-w-full max-h-[80vh] flex flex-col rounded-2xl bg-white dark:bg-[#161616] border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
           <h2 className="text-base font-bold">{t('language.title', 'Select Language')}</h2>
@@ -89,7 +86,10 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
             })}
           </div>
           <p className="mt-3 px-1 text-micro text-slate-500 dark:text-slate-400">
-            {t('language.hint', 'More languages coming soon — English, Deutsch and فارسی are fully supported.')}
+            {t(
+              'language.hint',
+              'More languages coming soon — English, Deutsch and فارسی are fully supported.'
+            )}
           </p>
         </div>
       </div>

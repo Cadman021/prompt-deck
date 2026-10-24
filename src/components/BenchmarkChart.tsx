@@ -54,11 +54,14 @@ export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
       {/* TPS Chart */}
       <div>
         <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 text-center">
-          Tokens / Sec ({t("Chart.moreIsBetter")})
+          Tokens / Sec ({t('Chart.moreIsBetter')})
         </h3>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={tpsData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-800" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              className="stroke-slate-200 dark:stroke-slate-800"
+            />
             <XAxis
               dataKey="name"
               tick={{ fontSize: 10, fill: 'currentColor' }}
@@ -68,7 +71,10 @@ export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
               textAnchor={entries.length > 3 ? 'end' : 'middle'}
               height={entries.length > 3 ? 40 : 20}
             />
-            <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
+            <YAxis
+              tick={{ fontSize: 11, fill: 'currentColor' }}
+              className="text-slate-500 dark:text-slate-400"
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#1e293b',
@@ -103,11 +109,14 @@ export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
       {/* TTFT Chart */}
       <div>
         <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 text-center">
-          Time To First Token — ms ({t("Chart.lessIsBetter")})
+          Time To First Token — ms ({t('Chart.lessIsBetter')})
         </h3>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={ttftData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-800" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              className="stroke-slate-200 dark:stroke-slate-800"
+            />
             <XAxis
               dataKey="name"
               tick={{ fontSize: 10, fill: 'currentColor' }}
@@ -117,7 +126,10 @@ export const BenchmarkChart: React.FC<BenchmarkChartProps> = ({ entries }) => {
               textAnchor={entries.length > 3 ? 'end' : 'middle'}
               height={entries.length > 3 ? 40 : 20}
             />
-            <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} className="text-slate-500 dark:text-slate-400" />
+            <YAxis
+              tick={{ fontSize: 11, fill: 'currentColor' }}
+              className="text-slate-500 dark:text-slate-400"
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#1e293b',

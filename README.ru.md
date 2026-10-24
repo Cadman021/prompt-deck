@@ -14,7 +14,7 @@
 
 - 🧭 **App Shell** — иконки-сайдбар (Bench, Tests, Cloud, History, Board, Config) + slim-топбар 48px (статус подключения, URL сервера, число моделей). Кнопки действий появляются только когда есть результаты
 - 🔎 **Автоопределение и онбординг при первом запуске** — PromptDeck сканирует привычные локальные порты (Ollama `11434`, LM Studio `1234`, llama.cpp `8080`) и предлагает подключиться в один клик; если ничего не найдено, карточка-онбординг даёт ссылки прямо на установщики Ollama / LM Studio
-- ☁️ **Облачные провайдеры** — эндпоинты в стиле 9Router: каталог из 19 провайдеров (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini, Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, Anthropic) с секциями Free Tier / API Key, свои эндпоинты, именованные API-ключи с прямыми ссылками на их создание, страница провайдера с тестом соединения и выбором моделей (поиск, 1-токен проба, тумблеры)
+- ☁️ **Облачные провайдеры** — эндпоинты в стиле 9Router: каталог из 36 провайдеров (OpenRouter, DeepSeek, Groq, Together AI, OpenAI, xAI Grok, Kimi, NVIDIA NIM, Ollama Cloud, Gemini, Kilo Gateway, Bazaarlink, BytePlus ModelArk, Poolside, Agnes, Xiaomi MiMo, Mistral, B.AI, Anthropic, Cloudflare Workers AI, Venice AI, SiliconFlow, Hugging Face, Hyperbolic, Featherless, Nous Research, LLM7, Morph, Cerebras, Fireworks AI, Alibaba DashScope, Baidu Qianfan, Tencent Hunyuan, MiniMax, Dahl Inference, Cohere); провайдеры с дополнительными параметрами подключения (например `{ACCOUNT_ID}` у Cloudflare) спрашивают их прямо в диалоге добавления ключа с секциями Free Tier / API Key, свои эндпоинты, именованные API-ключи с прямыми ссылками на их создание, страница провайдера с тестом соединения и выбором моделей (поиск, 1-токен проба, тумблеры)
 
   ![Cloud Providers](./docs/screenshot-cloud.png)
 
@@ -164,6 +164,11 @@ npm run tauri build
 - [x] Подсветка кода с кнопкой копирования
 - [x] Хранение API-ключей в системном keychain (автомиграция, in-memory кэш, тихий fallback)
 - [x] Статистика трат на облако
+- [x] Race view — живая таблица скорости моделей
+- [x] Страница Trend — скорость модели во времени относительно её собственного разброса
+- [x] Share card (PNG) — карточка рана для публикации
+- [x] Межтокентная задержка (медиана + p95), звуки и уведомления
+- [x] Контекстный свип до 128K
 
 Идеи приветствуются — см. [Contributing](#-contributing) ниже.
 

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Info } from 'lucide-react';
 import { LLMService } from '../../services/llmService';
 import type { CloudUrlVar } from '../../data/cloudProviders';
+import { isValidUrlVarValue } from '../../data/cloudProviders';
 import { openExternal } from '../../utils/openExternal';
 
 interface AddKeyModalProps {
@@ -47,6 +48,13 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
     .filter((v) => v.required)
     .every((v) => (vars[v.token] ?? '').trim());
 
+  // A filled-in value that cannot be put in a URL is as blocking as an empty
+  // one: the request would go to a path the provider cannot serve.
+  const invalidVars = (urlVars ?? []).filter(
+    (v) => (vars[v.token] ?? '').trim() && !isValidUrlVarValue(vars[v.token])
+  );
+  const varsOk = requiredVarsFilled && invalidVars.length === 0;
+
   const handleCheck = async () => {
     if (checking || !apiKey.trim()) return;
     setChecking(true);
@@ -54,7 +62,12 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
     const result = await LLMService.testCloudConnection(baseUrl, apiKey.trim(), vars);
     setCheckMsg(
       result.ok
-        ? { ok: true, text: t('cloud.keyWorks', 'Key works — {{count}} models found.', { count: result.modelCount ?? 0 }) }
+        ? {
+            ok: true,
+            text: t('cloud.keyWorks', 'Key works — {{count}} models found.', {
+              count: result.modelCount ?? 0,
+            }),
+          }
         : { ok: false, text: result.error || t('cloud.failed', 'Connection failed') }
     );
     setChecking(false);
@@ -110,7 +123,7 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
               />
               <button
                 onClick={handleCheck}
-                disabled={checking || !apiKey.trim() || !requiredVarsFilled}
+                disabled={checking || !apiKey.trim() || !varsOk}
                 className="px-3.5 rounded-lg bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 font-semibold transition disabled:opacity-50 shrink-0"
               >
                 {checking ? (
@@ -121,7 +134,9 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
               </button>
             </div>
             {checkMsg && (
-              <p className={`mt-1.5 text-micro ${checkMsg.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-400'}`}>
+              <p
+                className={`mt-1.5 text-micro ${checkMsg.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-400'}`}
+              >
                 {checkMsg.text}
               </p>
             )}
@@ -155,6 +170,14 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
                     spellCheck={false}
                     className="w-full p-2.5 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
+                  {invalidVars.some((x) => x.token === v.token) && (
+                    <p className="mt-1.5 text-micro text-rose-700 dark:text-rose-400">
+                      {t(
+                        'cloud.invalidVar',
+                        'Only letters, digits and - . _ ~ are allowed here (it goes straight into the URL).'
+                      )}
+                    </p>
+                  )}
                   {v.helpUrl ? (
                     <p className="mt-1.5 text-micro text-slate-500 dark:text-slate-400">
                       {t(v.helpKey, v.helpDefault)}{' '}
@@ -187,12 +210,9 @@ export const AddKeyModal: React.FC<AddKeyModalProps> = ({
           </button>
           <button
             onClick={() =>
-              label.trim() &&
-              apiKey.trim() &&
-              requiredVarsFilled &&
-              onSave(label.trim(), apiKey.trim(), vars)
+              label.trim() && apiKey.trim() && varsOk && onSave(label.trim(), apiKey.trim(), vars)
             }
-            disabled={!label.trim() || !apiKey.trim() || !requiredVarsFilled}
+            disabled={!label.trim() || !apiKey.trim() || !varsOk}
             className="px-5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
           >
             {t('cloud.save', 'Save')}

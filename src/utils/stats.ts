@@ -12,9 +12,7 @@ export function median(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1] + sorted[mid]) / 2
-    : sorted[mid];
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
 /** Population standard deviation (0 for <2 samples). */
@@ -57,7 +55,9 @@ export function eloUpdate(winner: number, loser: number, k = ELO_K): [number, nu
  * other model in that run pairwise (a 4-model win moves more points than a
  * head-to-head). Matches must arrive in chronological order.
  */
-export function computeElo(matches: { winner: string; opponents: string[] }[]): Map<string, number> {
+export function computeElo(
+  matches: { winner: string; opponents: string[] }[]
+): Map<string, number> {
   const ratings = new Map<string, number>();
   const get = (m: string): number => ratings.get(m) ?? ELO_INITIAL;
   for (const match of matches) {

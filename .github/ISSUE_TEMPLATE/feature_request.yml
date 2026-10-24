@@ -1,6 +1,6 @@
 name: 💡 Feature request
 description: Have an idea? Describe the use case first.
-title: "[feat]: "
+title: '[feat]: '
 labels: [enhancement]
 body:
   - type: markdown
@@ -13,7 +13,7 @@ body:
     attributes:
       label: What problem does this solve?
       description: Who hits this problem, and when? What do you do today as a workaround?
-      placeholder: "Example: I run the same 5 prompts every release and have to retype them each time..."
+      placeholder: 'Example: I run the same 5 prompts every release and have to retype them each time...'
     validations:
       required: true
 

@@ -31,6 +31,12 @@ jobs:
       - name: ESLint
         run: npx eslint .
 
+      # Prettier is enforced in CI because the whole tree was formatted once
+      # (.prettierrc existed but was never applied), so this gate is what keeps
+      # it from drifting again.
+      - name: Prettier
+        run: npx prettier --check .
+
       # The Tauri npm/Rust parity gate deliberately does NOT run here: Dependabot
       # opens the npm and Rust halves as separate PRs, so a per-PR gate would
       # red-flag both forever. It runs in release.yml instead, where it still

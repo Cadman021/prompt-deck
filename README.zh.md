@@ -14,7 +14,7 @@
 
 - 🧭 **App Shell 工作区** — 图标侧边栏（Bench、Tests、Cloud、History、Board、Config）+ 48px 顶栏（服务商连接状态、服务器 URL、模型数量）。结果操作只在有结果时出现在上下文工具栏，模型输出永远拥有最大空间
 - 🔎 **自动探测与首次引导** — PromptDeck 自动扫描常见本地端口（Ollama `11434`、LM Studio `1234`、llama.cpp `8080`）并支持一键连接；若未发现任何服务，引导卡片会直接给出 Ollama / LM Studio 安装链接
-- ☁️ **云服务商** — 9Router 风格管理 OpenAI 兼容端点：19 个精选服务商（OpenRouter、DeepSeek、Groq、Together AI、OpenAI、xAI Grok、Kimi、NVIDIA NIM、Ollama Cloud、Gemini、Kilo Gateway、Bazaarlink、BytePlus ModelArk、Poolside、Agnes、Xiaomi MiMo、Mistral、B.AI、Anthropic），分免费套餐 / API Key 分区，自定义端点，每个服务商可存多个命名 API Key（附直达 Key 申请链接），详情页可测试连接、挑选模型（搜索、单模型 1-token 探测、启用开关）
+- ☁️ **云服务商** — 9Router 风格管理 OpenAI 兼容端点：36 个精选服务商（OpenRouter、DeepSeek、Groq、Together AI、OpenAI、xAI Grok、Kimi、NVIDIA NIM、Ollama Cloud、Gemini、Kilo Gateway、Bazaarlink、BytePlus ModelArk、Poolside、Agnes、Xiaomi MiMo、Mistral、B.AI、Anthropic、Cloudflare Workers AI、Venice AI、SiliconFlow、Hugging Face、Hyperbolic、Featherless、Nous Research、LLM7、Morph、Cerebras、Fireworks AI、Alibaba DashScope、Baidu Qianfan、Tencent Hunyuan、MiniMax、Dahl Inference、Cohere）；需要额外连接参数的服务商（如 Cloudflare 的 `{ACCOUNT_ID}`）会在添加 Key 对话框中直接询问，分免费套餐 / API Key 分区，自定义端点，每个服务商可存多个命名 API Key（附直达 Key 申请链接），详情页可测试连接、挑选模型（搜索、单模型 1-token 探测、启用开关）
 
   ![Cloud Providers](./docs/screenshot-cloud.png)
 
@@ -164,6 +164,11 @@ npm run tauri build
 - [x] 语法高亮且可复制的代码块
 - [x] API Key 存入系统钥匙串（自动迁移、内存缓存、静默兜底）
 - [x] 云端运行费用/用量统计
+- [x] 竞速视图 — 按 tok/s 实时排名的计时榜
+- [x] 趋势页 — 模型速度随时间变化，按该模型自身波动判定回归
+- [x] 分享卡片（PNG）
+- [x] 词间延迟（中位数 + p95）、音效与桌面通知
+- [x] 最长 128K 的上下文扫描
 
 欢迎贡献想法 — 见下方 [Contributing](#-contributing)。
 

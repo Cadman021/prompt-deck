@@ -25,7 +25,18 @@ describe('qualifiedName', () => {
 });
 
 describe('parseQualified', () => {
-  const custom = [{ id: 'mine', name: 'Mine', defaultBaseUrl: 'https://x/v1', protocol: 'openai-compatible' as const, keyUrl: '', color: '', initials: '', custom: true as const }];
+  const custom = [
+    {
+      id: 'mine',
+      name: 'Mine',
+      defaultBaseUrl: 'https://x/v1',
+      protocol: 'openai-compatible' as const,
+      keyUrl: '',
+      color: '',
+      initials: '',
+      custom: true as const,
+    },
+  ];
 
   it('parses the explicit cloud: prefix without consulting the catalog', () => {
     // A local LM Studio model that happens to share a provider id must NOT
@@ -174,6 +185,26 @@ describe('applyUrlVars / missingUrlVars', () => {
   it('lists the tokens still missing', () => {
     expect(missingUrlVars('https://x/{A}/{B}/v1', { A: '1' })).toEqual(['B']);
     expect(missingUrlVars('https://x/v1', undefined)).toEqual([]);
+  });
+
+  it('refuses values that could escape their URL segment', () => {
+    // A slash would silently retarget the path; a `?` would add a query.
+    expect(applyUrlVars('https://x/{A}/v1', { A: 'a/b' })).toBe('https://x/{A}/v1');
+    expect(applyUrlVars('https://x/{A}/v1', { A: 'a?key=b' })).toBe('https://x/{A}/v1');
+    expect(applyUrlVars('https://x/{A}/v1', { A: 'a{b}' })).toBe('https://x/{A}/v1');
+    expect(applyUrlVars('https://x/{A}/v1', { A: 'a b' })).toBe('https://x/{A}/v1');
+    // Percent-encoded characters must not smuggle a slash back in.
+    expect(applyUrlVars('https://x/{A}/v1', { A: 'a%2Fb' })).toBe('https://x/{A}/v1');
+  });
+
+  it('reports an unusable value as missing, not as filled', () => {
+    expect(missingUrlVars('https://x/{A}/v1', { A: 'a/b' })).toEqual(['A']);
+  });
+
+  it('accepts the id shapes providers actually issue', () => {
+    for (const ok of ['abc123', 'aB3-_x.y~z', 'f'.repeat(32)]) {
+      expect(applyUrlVars('https://x/{A}', { A: ok })).toBe(`https://x/${ok}`);
+    }
   });
 });
 

@@ -23,21 +23,46 @@ export function shouldNotify(): boolean {
   return !document.hasFocus() || document.visibilityState === 'hidden';
 }
 
+let permissionAsked = false;
+
+/**
+ * Asks the OS for notification permission exactly once per session.
+ *
+ * Called when the user turns notifications on in Settings — never from a run
+ * callback. The request is a one-shot system dialog: firing it while a
+ * benchmark ends in the background would (a) pop unexpectedly, (b) only be
+ * seen as intrusive, and (c) on some platforms get silently denied, which
+ * burns the single chance the OS gives us.
+ *
+ * Resolves to the final grant state. Safe to call outside Tauri (`false`).
+ */
+export async function requestNotifyPermission(): Promise<boolean> {
+  if (!isTauri() || permissionAsked) return false;
+  permissionAsked = true;
+  try {
+    const { isPermissionGranted, requestPermission } =
+      await import('@tauri-apps/plugin-notification');
+    if (await isPermissionGranted()) return true;
+    return (await requestPermission()) === 'granted';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Posts a desktop notification. Resolves regardless of outcome — callers are
  * inside run-completion callbacks and must not handle failures.
+ *
+ * Deliberately does NOT request permission: that one-shot dialog belongs to
+ * the settings toggle (`requestNotifyPermission`). If permission is missing
+ * here, the run still completes silently rather than interrupting the user.
  */
 export async function notify({ title, body }: NotifyOptions): Promise<void> {
   if (!isTauri()) return;
   try {
-    const { isPermissionGranted, requestPermission, sendNotification } = await import(
-      '@tauri-apps/plugin-notification'
-    );
-    let granted = await isPermissionGranted();
-    if (!granted) {
-      granted = (await requestPermission()) === 'granted';
-    }
-    if (!granted) return;
+    const { isPermissionGranted, sendNotification } =
+      await import('@tauri-apps/plugin-notification');
+    if (!(await isPermissionGranted())) return;
     sendNotification({ title, body });
   } catch {
     // Plugin missing, permission denied, or not in Tauri — all non-fatal.

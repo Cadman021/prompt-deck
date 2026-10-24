@@ -203,7 +203,13 @@
     "detectModels": "{{count}} مدل",
     "resetTitle": "بازنشانی تنظیمات",
     "resetConfirm": "ارائه‌دهنده، اتصال و گزینه‌های پیشرفته به پیش‌فرض بازگردند؟ زبان و تم حفظ می‌شوند.",
-    "resetButton": "بازنشانی به پیش‌فرض"
+    "resetButton": "بازنشانی به پیش‌فرض",
+    "updatesTitle": "به‌روزرسانی",
+    "checkUpdates": "بررسی به‌روزرسانی",
+    "updateAvailable": "نسخه {{version}} موجود است — برای دریافت، برنامه را دوباره باز کن.",
+    "updateLatest": "آخرین نسخه را داری.",
+    "updateError": "بررسی به‌روزرسانی ناموفق: {{message}}",
+    "updateUnavailable": "بررسی به‌روزرسانی فقط در نسخه دسکتاپ کار می‌کند."
   },
   "theme": {
     "appearance": "ظاهر",
@@ -264,6 +270,7 @@
     "addKeyTitle": "افزودن کلید API {{name}}",
     "extraFields": "اطلاعات اتصال {{name}}",
     "missingVar": "{{var}} وارد نشده",
+    "invalidVar": "اینجا فقط حرف، رقم و - . _ ~ مجاز است (این مقدار مستقیم در URL می‌رود).",
     "urlVar": {
       "accountId": "شناسه حساب (Account ID)",
       "accountIdHelp": "شناسه حساب خود را در نوار کناری سمت راست dash.cloudflare.com پیدا می‌کنی."
@@ -315,16 +322,16 @@
       "huggingface": "روتر Inference Providers هاگینگ‌فیس: یک توکن برای چند ارائه‌دهنده بالادستی.",
       "hyperbolic": "استنتاج ارزان مدل‌های باز (Llama و Qwen و DeepSeek) با API سازگار با OpenAI.",
       "featherless": "اشتراک ثابت برای کاتالوگ بزرگ مدل‌های باز؛ هر بار یک مدل لود می‌شود.",
-      "nous-research": "API پورتال Nous برای مدل‌های Hermes و دیگر مدل‌های باز.",
+      "nous-research": "روتر API پورتال Nous: یک کلید Nous برای Hermes و صدها مدل باز.",
       "llm7": "درگاه اجتماعی که درخواست‌ها را به مدل‌های بالادستی از جمله رایگان‌ها می‌فرستد.",
-      "morph": "مدل‌های سریع apply/edit برای ایجنت‌های کدنویسی (morph-v3) به همراه مدل‌های چت.",
+      "morph": "مدل‌های سریع apply/edit برای ایجنت‌های کدنویسی (morph-v3). لیست مدل نمی‌دهد — شناسه‌ها را دستی اضافه کن.",
       "cerebras": "استنتاج مبتنی بر ویفر: بالاترین سرعت تولید توکن روی مدل‌های باز. سطح رایگان دارد.",
       "fireworks": "سرویس پرتوان مدل‌های باز و مدل‌های فاین‌تیون‌شده.",
       "alibaba": "نقطه پایانی بین‌المللی DashScope (Model Studio): مدل‌های Qwen با API سازگار با OpenAI. برای ریجن چین از dashscope.aliyuncs.com استفاده کن.",
       "baidu-qianfan": "نقطه پایانی سازگار با OpenAI نسخه v2 بایدو کیانفان: مدل‌های ERNIE و مدل‌های دیگر.",
       "tencent-hunyuan": "نقطه پایانی سازگار با OpenAI تنسنت هونیوان: مدل‌های hunyuan-turbos و hunyuan-t1.",
       "minimax": "پلتفرم جهانی MiniMax: مدل‌های MiniMax-M2 و abab. برای ریجن چین از api.minimaxi.com استفاده کن.",
-      "dahl": "درگاه Dahl Inference: دسترسی سازگار با OpenAI به مدل‌های چت باز. شناسه مدل‌ها زنده گرفته می‌شود.",
+      "dahl": "درگاه Dahl Inference (مبتنی بر gonka). شناسه مدل‌ها زنده از ارائه‌دهنده گرفته می‌شود.",
       "cohere": "API سازگاری Cohere (به سبک OpenAI) برای مدل‌های Command. کلید آزمایشی رایگان دارد."
     }
   },

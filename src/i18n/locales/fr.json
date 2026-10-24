@@ -203,7 +203,13 @@
     "detectModels": "{{count}} modèles",
     "resetTitle": "Réinitialiser les réglages",
     "resetConfirm": "Réinitialiser le fournisseur, la connexion et les options avancées ? La langue et le thème sont conservés.",
-    "resetButton": "Réinitialiser par défaut"
+    "resetButton": "Réinitialiser par défaut",
+    "updatesTitle": "Mises à jour",
+    "checkUpdates": "Rechercher des mises à jour",
+    "updateAvailable": "v{{version}} est disponible — redémarre pour l'installer.",
+    "updateLatest": "Tu as la dernière version.",
+    "updateError": "Échec de la vérification : {{message}}",
+    "updateUnavailable": "Les vérifications ne fonctionnent que dans l'application de bureau."
   },
   "theme": {
     "appearance": "Apparence",

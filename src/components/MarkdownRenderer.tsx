@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Copy } from 'lucide-react';
 import { openExternal } from '../utils/openExternal';
 import { toast } from '../store/useToastStore';
+import { CODE_LANGUAGES, resolveLanguage } from '../utils/codeLanguages';
 
 interface MarkdownRendererProps {
   content: string;
@@ -39,12 +40,27 @@ const CodeBlock: React.FC<{
     let cancelled = false;
     void (async () => {
       try {
-        const [highlighterMod, styleMod] = await Promise.all([
-          import('react-syntax-highlighter'),
+        // The library's own Prism entry point (`Prism` / `PrismAsyncLight`)
+        // imports `refractor/all`, which pulls in ~450 grammars — the bundler
+        // then emits one chunk per grammar (~3.6 MB of installer assets).
+        // `highlight()` plus `refractor/core` gives the identical renderer
+        // bound to a core with only the grammars registered below.
+        const [highlightMod, styleMod] = await Promise.all([
+          import('react-syntax-highlighter/dist/esm/highlight'),
           import('react-syntax-highlighter/dist/esm/styles/prism/one-dark'),
         ]);
         if (cancelled) return;
-        setHighlighter(() => highlighterMod.PrismAsyncLight as unknown as HighlighterComponent);
+        const { refractor } = await import('refractor/core');
+        for (const grammar of Object.values(CODE_LANGUAGES)) {
+          // `register` keys the grammar by its own name; aliased fence labels
+          // (`js`, `ts`, `sh`…) resolve through ALIASES before reaching here.
+          refractor.register(grammar);
+        }
+        const Highlighter = highlightMod.default(
+          refractor,
+          styleMod.default as Record<string, React.CSSProperties>
+        );
+        setHighlighter(() => Highlighter);
         setTheme(styleMod.default as Record<string, React.CSSProperties>);
       } catch {
         // Offline or chunk load failed — plain code is a fine fallback.
@@ -80,7 +96,7 @@ const CodeBlock: React.FC<{
       </div>
       {Highlighter && theme ? (
         <Highlighter
-          language={language || 'text'}
+          language={resolveLanguage(language) ?? 'text'}
           style={theme}
           PreTag="div"
           customStyle={{
