@@ -282,6 +282,8 @@
     "addModel": "添加模型",
     "modelPlaceholder": "手动添加模型 id，例如 openai/gpt-4o-mini",
     "copyId": "复制模型 id",
+    "copyIds": "复制已启用的模型 ID",
+    "copiedIds": "已复制模型 ID！",
     "suggested": "推荐：",
     "modelsSelected": "个已选模型",
     "connectedCount": "已连接",

@@ -282,6 +282,8 @@
     "addModel": "Modell hinzufügen",
     "modelPlaceholder": "Modell-ID manuell hinzufügen, z. B. openai/gpt-4o-mini",
     "copyId": "Modell-ID kopieren",
+    "copyIds": "Aktivierte Modell-IDs kopieren",
+    "copiedIds": "Modell-IDs kopiert!",
     "suggested": "Vorgeschlagen:",
     "modelsSelected": "Modelle ausgewählt",
     "connectedCount": "Verbunden",
