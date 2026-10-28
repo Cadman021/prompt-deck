@@ -289,6 +289,8 @@
     "addModel": "افزودن مدل",
     "modelPlaceholder": "شناسه مدل را دستی اضافه کن، مثلا openai/gpt-4o-mini",
     "copyId": "کپی شناسه مدل",
+    "copyIds": "کپی شناسه‌های فعال",
+    "copiedIds": "شناسه‌ها کپی شدند!",
     "suggested": "پیشنهادی:",
     "modelsSelected": "مدل انتخاب شده",
     "connectedCount": "متصل",

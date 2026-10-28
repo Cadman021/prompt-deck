@@ -72,6 +72,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const [refreshInfo, setRefreshInfo] = useState<string | null>(null);
   const [newModel, setNewModel] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
+  const [copiedIds, setCopiedIds] = useState(false);
   const [modelQuery, setModelQuery] = useState('');
   const [probes, setProbes] = useState<
     Record<string, { phase: 'testing' | 'ok' | 'error'; msg?: string }>
@@ -143,6 +144,18 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     setTimeout(() => setCopied(null), 1500);
   };
 
+  const handleCopyIds = async () => {
+    if (enabled.length === 0) return;
+    setCopiedIds(false);
+    try {
+      await navigator.clipboard.writeText(enabled.join('\n'));
+      setCopiedIds(true);
+      setTimeout(() => setCopiedIds(false), 1500);
+    } catch (error) {
+      console.error('Failed to copy model IDs:', error);
+    }
+  };
+
   const handleProbeModel = async (model: string) => {
     if (!activeKey || probes[model]?.phase === 'testing') return;
     setProbes((p) => ({ ...p, [model]: { phase: 'testing' } }));
@@ -160,6 +173,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
 
   const editingKey =
     keyModal?.mode === 'edit' ? providerKeys.find((k) => k.id === keyModal.id) : undefined;
+  const copyIdsLabel = copiedIds
+    ? t('cloud.copiedIds', 'IDs copied!')
+    : t('cloud.copyIds', 'Copy enabled IDs');
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
@@ -359,6 +375,19 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 </button>
               </>
             )}
+            <button
+              onClick={() => void handleCopyIds()}
+              disabled={enabled.length === 0}
+              title={copyIdsLabel}
+              aria-label={copyIdsLabel}
+              className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-indigo-500 transition shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {copiedIds ? (
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
             <button
               onClick={() => void handleRefreshModels()}
               disabled={refreshing || !activeKey}

@@ -282,6 +282,8 @@
     "addModel": "Добавить модель",
     "modelPlaceholder": "Добавить id модели вручную, напр. openai/gpt-4o-mini",
     "copyId": "Скопировать id модели",
+    "copyIds": "Скопировать ID включённых моделей",
+    "copiedIds": "ID скопированы!",
     "suggested": "Рекомендуемые:",
     "modelsSelected": "моделей выбрано",
     "connectedCount": "Подключено",
