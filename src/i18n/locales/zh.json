@@ -230,6 +230,7 @@
     "connections": "个连接",
     "deleteModel": "从列表删除模型",
     "searchModels": "搜索模型…",
+    "enabledFirst": "已启用的模型优先",
     "shown": "个显示",
     "testModel": "测试此模型（1 token 探测）",
     "models": "个模型",
