@@ -230,6 +230,7 @@
     "connections": "Verbindungen",
     "deleteModel": "Modell aus Liste entfernen",
     "searchModels": "Modelle suchen…",
+    "enabledFirst": "Aktivierte Modelle zuerst",
     "shown": "angezeigt",
     "testModel": "Dieses Modell testen (1-Token-Probe)",
     "models": "Modelle",
