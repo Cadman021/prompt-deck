@@ -15,6 +15,8 @@ import {
   ExternalLink,
   Info,
   Search,
+  ListChecks,
+  ArrowUp,
   FlaskConical,
   X,
 } from 'lucide-react';
@@ -74,6 +76,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   const [copied, setCopied] = useState<string | null>(null);
   const [copiedIds, setCopiedIds] = useState(false);
   const [modelQuery, setModelQuery] = useState('');
+  const [enabledFirst, setEnabledFirst] = useState(false);
   const [probes, setProbes] = useState<
     Record<string, { phase: 'testing' | 'ok' | 'error'; msg?: string }>
   >({});
@@ -169,7 +172,13 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
   };
 
   const mq = modelQuery.trim().toLowerCase();
-  const visibleModels = mq ? known.filter((m) => m.toLowerCase().includes(mq)) : known;
+  let visibleModels = mq ? known.filter((m) => m.toLowerCase().includes(mq)) : known;
+  if (enabledFirst) {
+    const enabledSet = new Set(enabled);
+    visibleModels = [...visibleModels].sort(
+      (a, b) => Number(enabledSet.has(b)) - Number(enabledSet.has(a)) || a.localeCompare(b)
+    );
+  }
 
   const editingKey =
     keyModal?.mode === 'edit' ? providerKeys.find((k) => k.id === keyModal.id) : undefined;
@@ -359,6 +368,21 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                 className="text-xs ps-8 pe-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-48"
               />
             </div>
+            <button
+              type="button"
+              title={t('cloud.enabledFirst')}
+              aria-label={t('cloud.enabledFirst')}
+              aria-pressed={enabledFirst}
+              onClick={() => setEnabledFirst((value) => !value)}
+              className={`inline-flex h-7 items-center justify-center gap-0.5 rounded-lg border px-1.5 shrink-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                enabledFirst
+                  ? 'border-indigo-400 bg-indigo-50 text-indigo-600 dark:border-indigo-500 dark:bg-indigo-500/15 dark:text-indigo-300'
+                  : 'border-slate-200 text-slate-500 hover:border-indigo-400 hover:text-indigo-500 dark:border-slate-700 dark:text-slate-400'
+              }`}
+            >
+              <ListChecks className="w-4 h-4" aria-hidden="true" />
+              <ArrowUp className="w-3 h-3" aria-hidden="true" />
+            </button>
             {known.length > 0 && (
               <>
                 <button
