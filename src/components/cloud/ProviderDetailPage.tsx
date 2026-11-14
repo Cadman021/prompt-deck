@@ -104,6 +104,7 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
     updateKey(id, {
       status: result.ok ? 'ok' : 'error',
       lastTested: new Date().toISOString(),
+      latencyMs: result.latencyMs,
       error: result.error,
     });
     if (result.ok && result.models && result.models.length > 0) {
@@ -270,6 +271,9 @@ export const ProviderDetailPage: React.FC<ProviderDetailPageProps> = ({
                     dir="ltr"
                   >
                     {fingerprint(secretFor(k)) || '••••'}
+                    {k.status === 'ok' && k.lastTested && k.latencyMs !== undefined && (
+                      <span className="ms-2">· {k.latencyMs}ms</span>
+                    )}
                     {urlVars.map((v) =>
                       (k.connectionVars?.[v.token] ?? '').trim() ? (
                         <span key={v.token} className="ms-2">

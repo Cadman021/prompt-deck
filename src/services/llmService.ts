@@ -288,6 +288,8 @@ function fetchFailedMessage(error: unknown): string {
 
 export interface CloudTestResult {
   ok: boolean;
+  /** Rounded time until the successful key check receives response headers. */
+  latencyMs?: number;
   modelCount?: number;
   /** Model ids reported by `GET /models` (capped). */
   models?: string[];
@@ -346,7 +348,9 @@ async function testCloudConnection(
   const auth: Record<string, string> = {};
   if (apiKey?.trim()) auth['Authorization'] = `Bearer ${apiKey.trim()}`;
   try {
+    const started = performance.now();
     const response = await fetch(`${normalized}/models`, { headers: auth });
+    const latencyMs = Math.round(performance.now() - started);
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         return { ok: false, modelsListed: true, error: 'Unauthorized — check the API key.' };
@@ -378,6 +382,7 @@ async function testCloudConnection(
     }
     return {
       ok: true,
+      latencyMs,
       modelCount: models.length,
       models: ids,
       pricing: Object.keys(pricing).length > 0 ? pricing : undefined,
@@ -395,6 +400,7 @@ async function testCloudConnection(
 /** Key-only check for providers without a `/models` endpoint. */
 async function probeKeyOnly(baseUrl: string, apiKey: string): Promise<CloudTestResult> {
   try {
+    const started = performance.now();
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -408,12 +414,13 @@ async function probeKeyOnly(baseUrl: string, apiKey: string): Promise<CloudTestR
         stream: false,
       }),
     });
+    const latencyMs = Math.round(performance.now() - started);
     if (response.status === 401 || response.status === 403) {
       return { ok: false, modelsListed: false, error: 'Unauthorized — check the API key.' };
     }
     // Any other status (unknown-model 404, quota 402/429, bad request 400…)
     // proves the key itself was accepted.
-    return { ok: true, modelCount: 0, models: [], modelsListed: false };
+    return { ok: true, latencyMs, modelCount: 0, models: [], modelsListed: false };
   } catch (error) {
     return {
       ok: false,
