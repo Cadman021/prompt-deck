@@ -36,6 +36,7 @@ export interface CloudApiKey {
   enabled: boolean;
   status: CloudStatus;
   lastTested?: string;
+  latencyMs?: number;
   error?: string;
 }
 
@@ -75,8 +76,12 @@ export const useCloudStore = create<CloudState>()(
       knownModels: {},
       modelPricing: {},
       addKey: (key) => set((s) => ({ keys: [...s.keys, key] })),
-      updateKey: (id, patch) =>
-        set((s) => ({ keys: s.keys.map((k) => (k.id === id ? { ...k, ...patch } : k)) })),
+      updateKey: (id, patch) => {
+        // Test All can update the status without supplying a timing. Clear the old
+        // latency so the row doesn't show a duration from a different test.
+        const update = patch.status === undefined ? patch : { latencyMs: undefined, ...patch };
+        set((s) => ({ keys: s.keys.map((k) => (k.id === id ? { ...k, ...update } : k)) }));
+      },
       removeKey: (id) => set((s) => ({ keys: s.keys.filter((k) => k.id !== id) })),
       setKnownModels: (providerId, models) =>
         set((s) => {
